@@ -5,7 +5,7 @@ VisualStudioVersion = 17.13.35919.96
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cos", "cos\cos.csproj", "{C9CE0E24-E902-4112-8109-3B2D9A01C0A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MpinCrypt", "..\mpin-crypt-routine-package\src\MpinCrypt\MpinCrypt.csproj", "{BD8188E7-1458-4792-8896-36ADEE951B96}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MpinCrypt", "external\MpinCrypt\MpinCrypt.csproj", "{BD8188E7-1458-4792-8896-36ADEE951B96}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
