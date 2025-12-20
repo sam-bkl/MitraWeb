@@ -1,0 +1,620 @@
+@model cos.ViewModels.CtopUsersPageVM
+@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "CSC - Ctop Users";
+}
+
+<div class="row">
+    <div class="col-12">
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">@TempData["Success"]</div>
+        }
+        <h3>CTOP Users</h3>
+        <p><strong>Admin Mobile:</strong> @Model.AdminMobile</p>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5>Users linked to CTOP: @Model.AdminMobile</h5>
+            <button class="btn btn-primary" data-toggle="modal" data-target="#addCtopModal">Add</button>
+        </div>
+        <table class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>CTOPUP No</th>
+                <th>Contact</th>
+                <th>BA Letter</th>
+                <th>ID Card</th>
+                <th>Aadhaar</th>
+                <th>PAN</th>
+                <th>Photo</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var u in Model.Users)
+            {
+                <tr>
+                    <td>@u.name</td>
+                    <td>@u.username</td>
+                    <td>@u.ctopupno</td>
+                    <td>@u.contact_number</td>
+                    <td class="text-center">
+                        <button type="button"
+                                class="btn btn-link p-0 doc-thumb"
+                                data-username="@u.username"
+                                data-category="BA_APPROVAL"
+                                data-title="BA Head Approved Letter - @u.name">
+                            <span class="badge badge-light">BA</span>
+                        </button>
+                    </td>
+                    <td class="text-center">
+                        <button type="button"
+                                class="btn btn-link p-0 doc-thumb"
+                                data-username="@u.username"
+                                data-category="ID_CARD"
+                                data-title="Employee ID Card - @u.name">
+                            <span class="badge badge-light">ID</span>
+                        </button>
+                    </td>
+                    <td class="text-center">
+                        <button type="button"
+                                class="btn btn-link p-0 doc-thumb"
+                                data-username="@u.username"
+                                data-category="AADHAR"
+                                data-title="Aadhaar Card - @u.name">
+                            <span class="badge badge-light">AAD</span>
+                        </button>
+                    </td>
+                    <td class="text-center">
+                        <button type="button"
+                                class="btn btn-link p-0 doc-thumb"
+                                data-username="@u.username"
+                                data-category="PAN_CARD"
+                                data-title="PAN Card - @u.name">
+                            <span class="badge badge-light">PAN</span>
+                        </button>
+                    </td>
+                    <td class="text-center">
+                        <button type="button"
+                                class="btn btn-link p-0 doc-thumb"
+                                data-username="@u.username"
+                                data-category="PHOTO"
+                                data-title="Photo - @u.name">
+                            <span class="badge badge-light">PH</span>
+                        </button>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="addCtopModal" tabindex="-1" role="dialog" aria-labelledby="addCtopModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" style="position: relative;">
+            <!-- Loading Overlay -->
+            <div id="formLoader" class="d-none" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.8); z-index: 1050;">
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="mt-2">Processing, please wait...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCtopModalLabel">Add CTOP User</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Error Alert Area -->
+                <div id="formErrorAlert" class="alert alert-danger d-none" role="alert">
+                    <strong>Error:</strong> <span id="formErrorText"></span>
+                </div>
+                <form asp-action="CreateCtopUser" method="post" enctype="multipart/form-data" id="createCtopForm">
+                    @Html.AntiForgeryToken()
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewCtop.name">Name (As in Aadhar)</label>
+                            <input class="form-control" asp-for="NewCtop.name" />
+                            <span class="text-danger" asp-validation-for="NewCtop.name"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewCtop.dealertype"></label>
+                            <input class="form-control" asp-for="NewCtop.dealertype" value="CSR" readonly/>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.contact_number"></label>
+                            <input class="form-control" asp-for="NewCtop.contact_number" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_owner_name"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_owner_name" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_name_ss"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_name_ss" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_hno"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_hno" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_street"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_street" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_landmark"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_landmark" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_locality"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_locality" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_city"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_city" />
+                        </div>
+                        @*<div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_district"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_district" />
+                        </div>*@
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Circle</label>
+                            <select class="form-control" id="circleSelect" asp-for="NewCtop.circle_id">
+                                <option value="">-- Select Circle --</option>
+                                @foreach (var c in Model.Circles)
+                                {
+                                    <option value="@c.id" data-code="@c.circle_code" data-zone="@c.zone_code" data-name="@c.circle_name">@c.circle_name</option>
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewCtop.circle_id"></span>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>SSA</label>
+                            <select class="form-control" id="ssaSelect" asp-for="NewCtop.ssa_id">
+                                <option value="">-- Select SSA --</option>
+                                @foreach (var s in Model.Ssas)
+                                {
+                                    <option value="@s.id" data-name="@s.ssa_name" data-code="@s.ssa_code">@s.ssa_name</option>
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewCtop.ssa_id"></span>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_pincode"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_pincode" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_state"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_state" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.circle_name"></label>
+                            <input class="form-control" asp-for="NewCtop.circle_name" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.zone_code"></label>
+                            <input class="form-control" asp-for="NewCtop.zone_code" readonly />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_district"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_district" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.aadhaar_no"></label>
+                            <input class="form-control" asp-for="NewCtop.aadhaar_no" maxlength="12" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.aadhaar_issue_year">Year of Birth</label>
+                            <input class="form-control" asp-for="NewCtop.aadhaar_issue_year" maxlength="4" />
+                            <span class="text-danger" asp-validation-for="NewCtop.aadhaar_issue_year"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewCtop.BaApprovalLetter"></label>
+                            <input type="file" class="form-control-file" asp-for="NewCtop.BaApprovalLetter" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewCtop.BaApprovalLetter"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewCtop.EmployeeIdCard"></label>
+                            <input type="file" class="form-control-file" asp-for="NewCtop.EmployeeIdCard" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewCtop.EmployeeIdCard"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewCtop.AadhaarCard"></label>
+                            <input type="file" class="form-control-file" asp-for="NewCtop.AadhaarCard" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewCtop.AadhaarCard"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewCtop.PanCard"></label>
+                            <input type="file" class="form-control-file" asp-for="NewCtop.PanCard" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewCtop.PanCard"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewCtop.Photo"></label>
+                            <input type="file" class="form-control-file" asp-for="NewCtop.Photo" accept=".jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewCtop.Photo"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.ssa_code"></label>
+                            <input class="form-control" asp-for="NewCtop.ssa_code" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.csccode"></label>
+                            <select class="form-control" asp-for="NewCtop.csccode" id="NewCtop_csccode">
+                                <option value="">-- Select CSC Code --</option>
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewCtop.csccode"></span>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.circle_code"></label>
+                            <input class="form-control" asp-for="NewCtop.circle_code" readonly />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <input type="hidden" asp-for="NewCtop.attached_to" id="NewCtop_attached_to" />
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_code"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_code" />
+                        </div>
+                    </div>
+                    <input type="hidden" asp-for="NewCtop.ctop_type" value="INDIRECT" />
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Document download loader -->
+<div id="docLoader" class="d-none" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.7); z-index: 2000;">
+    <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <p class="mt-2" id="docLoaderMessage">Fetching document, please wait...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notification for download feedback -->
+<div id="docToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" style="position: fixed; top: 20px; right: 20px; z-index: 2100; min-width: 300px;">
+    <div class="toast-header">
+        <strong class="mr-auto" id="toastTitle">Notification</strong>
+        <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="toast-body" id="toastMessage"></div>
+</div>
+
+<partial name="_ValidationScriptsPartial" />
+<script>
+    (function () {
+        const circleSelect = document.getElementById('circleSelect');
+        const ssaSelect = document.getElementById('ssaSelect');
+        const posState = document.getElementById('NewCtop_pos_state');
+        const circleName = document.getElementById('NewCtop_circle_name');
+        const circleCode = document.getElementById('NewCtop_circle_code');
+        const zoneCode = document.getElementById('NewCtop_zone_code');
+        const ssaCode = document.getElementById('NewCtop_ssa_code');
+        const posDistrict = document.getElementById('NewCtop_pos_district');
+        const cscCodeSelect = document.getElementById('NewCtop_csccode');
+        const attachedToField = document.getElementById('NewCtop_attached_to');
+        const loggedInSsaCode = '@(Model.AdminCtop?.ssa_code ?? "")';
+        const docThumbButtons = document.querySelectorAll('.doc-thumb');
+        const docLoader = document.getElementById('docLoader');
+        const docLoaderMessage = document.getElementById('docLoaderMessage');
+        const docToast = document.getElementById('docToast');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        
+        // Helper function to show toast notification
+        function showToast(title, message, isError = false) {
+            if (toastTitle) toastTitle.textContent = title;
+            if (toastMessage) {
+                toastMessage.textContent = message;
+                // Add color class based on error/success
+                toastMessage.classList.remove('text-success', 'text-danger');
+                if (isError) {
+                    toastMessage.classList.add('text-danger');
+                } else {
+                    toastMessage.classList.add('text-success');
+                }
+            }
+            if (docToast) {
+                // Show toast using Bootstrap
+                if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+                    const toast = new bootstrap.Toast(docToast, { delay: 5000 });
+                    toast.show();
+                } else if (typeof $ !== 'undefined' && $.fn.toast) {
+                    $(docToast).toast({ delay: 5000 });
+                    $(docToast).toast('show');
+                } else {
+                    docToast.style.display = 'block';
+                    setTimeout(() => {
+                        docToast.style.display = 'none';
+                    }, 5000);
+                }
+            }
+        }
+        
+        // Form submission handler
+        const createCtopForm = document.getElementById('createCtopForm');
+        const formLoader = document.getElementById('formLoader');
+        const formErrorAlert = document.getElementById('formErrorAlert');
+        const formErrorText = document.getElementById('formErrorText');
+        const addCtopModal = document.getElementById('addCtopModal');
+
+        async function loadSsas(circleId) {
+
+            ssaSelect.innerHTML = '<option value="">-- Select SSA --</option>';
+            if (!circleId) return;
+            const resp = await fetch(`/Csc/GetSsas?circleId=${circleId}`);
+            if (!resp.ok) return;
+            const data = await resp.json();
+
+            console.log('loadSsas -> ', data);
+
+            data.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.ssa_name;
+                opt.dataset.code = s.ssa_code;
+                opt.dataset.name = s.ssa_name;
+                ssaSelect.appendChild(opt);
+            });
+        }
+
+        circleSelect.addEventListener('change', function () {
+            const selected = circleSelect.options[circleSelect.selectedIndex];
+            const name = selected.dataset.name || '';
+            const code = selected.dataset.code || '';
+            const zone = selected.dataset.zone || '';
+            circleName.value = name;
+            posState.value = name;
+            circleCode.value = code;
+            zoneCode.value = zone;
+            loadSsas(circleSelect.value);
+        });
+
+        ssaSelect.addEventListener('change', function () {
+            const selected = ssaSelect.options[ssaSelect.selectedIndex];
+            const name = selected ? selected.dataset.name : '';
+            const code = selected ? selected.dataset.code : '';
+            ssaCode.value = code || '';
+            posDistrict.value = name || '';
+        });
+
+        // Load CSC codes based on logged-in user's SSA code
+        async function loadCscCodesForLoggedInUser() {
+            if (!cscCodeSelect || !loggedInSsaCode) return;
+            cscCodeSelect.innerHTML = '<option value="">-- Select CSC Code --</option>';
+            
+            try {
+                const resp = await fetch(`/Csc/GetCscCodesBySsa?ssaCode=${encodeURIComponent(loggedInSsaCode)}`);
+                if (!resp.ok) {
+                    console.error('Failed to load CSC codes');
+                    return;
+                }
+                const data = await resp.json();
+                if (data.codes && Array.isArray(data.codes)) {
+                    data.codes.forEach(csc => {
+                        const opt = document.createElement('option');
+                        opt.value = csc.csccode;
+                        opt.textContent = `${csc.csccode}${csc.csc_name ? ' - ' + csc.csc_name : ''}`;
+                        cscCodeSelect.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                console.error('Load CSC codes error:', err);
+            }
+        }
+
+        // Update attached_to when CSC code is selected
+        if (cscCodeSelect) {
+            cscCodeSelect.addEventListener('change', function() {
+                if (attachedToField) {
+                    attachedToField.value = cscCodeSelect.value || '';
+                }
+            });
+        }
+
+        // Load CSC codes on page load
+        if (loggedInSsaCode) {
+            loadCscCodesForLoggedInUser();
+        }
+
+        // Form submission handler - show loader
+        if (createCtopForm) {
+            createCtopForm.addEventListener('submit', function (e) {
+                // Check if form is valid before showing loader
+                if (this.checkValidity()) {
+                    if (formLoader) {
+                        formLoader.classList.remove('d-none');
+                    }
+                    if (formErrorAlert) {
+                        formErrorAlert.classList.add('d-none');
+                    }
+                } else {
+                    // Hide loader if validation fails
+                    if (formLoader) {
+                        formLoader.classList.add('d-none');
+                    }
+                }
+            });
+        }
+
+        // Check for server-side errors when modal is shown or on page load
+        function checkForFormErrors() {
+            if (formLoader) {
+                formLoader.classList.add('d-none');
+            }
+            
+            // Check if there are validation errors from server
+            const validationErrors = document.querySelectorAll('.text-danger');
+            if (validationErrors.length > 0) {
+                const firstError = Array.from(validationErrors).find(el => {
+                    const text = el.textContent.trim();
+                    return text !== '' && !el.hasAttribute('asp-validation-for');
+                });
+                if (firstError && formErrorText) {
+                    formErrorText.textContent = firstError.textContent.trim();
+                    if (formErrorAlert) {
+                        formErrorAlert.classList.remove('d-none');
+                    }
+                } else {
+                    // Check for field-specific validation errors
+                    const fieldErrors = Array.from(validationErrors).filter(el => {
+                        const text = el.textContent.trim();
+                        return text !== '';
+                    });
+                    if (fieldErrors.length > 0 && formErrorText) {
+                        formErrorText.textContent = 'Please correct the errors in the form below.';
+                        if (formErrorAlert) {
+                            formErrorAlert.classList.remove('d-none');
+                        }
+                    }
+                }
+            }
+        }
+
+        if (addCtopModal) {
+            // Check errors when modal is shown
+            addCtopModal.addEventListener('shown.bs.modal', checkForFormErrors);
+            
+            // Also check on page load if modal is already open (due to validation errors)
+            if (addCtopModal.classList.contains('show')) {
+                checkForFormErrors();
+            }
+        }
+
+        // Hide loader on page load if it's showing
+        window.addEventListener('load', function() {
+            if (formLoader) {
+                formLoader.classList.add('d-none');
+            }
+            checkForFormErrors();
+        });
+
+        // Document thumbnail click handler - uses DownloadDocument (remote-first, local-fallback)
+        docThumbButtons.forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const username = this.getAttribute('data-username');
+                const category = this.getAttribute('data-category');
+
+                if (!username || !category) {
+                    return;
+                }
+
+                // Show loader while we resolve the document and let server handle remote/local fallback
+                if (docLoader) {
+                    docLoader.classList.remove('d-none');
+                }
+                if (docLoaderMessage) {
+                    docLoaderMessage.textContent = 'Fetching document information...';
+                }
+
+                try {
+                    // First, get the list of documents for this user and category to find the docId
+                    if (docLoaderMessage) {
+                        docLoaderMessage.textContent = 'Loading document list...';
+                    }
+                    const docsResp = await fetch(`/Csc/GetDocuments?username=${encodeURIComponent(username)}`);
+                    if (!docsResp.ok) {
+                        showToast('Error', 'Unable to load documents for this user.', true);
+                        return;
+                    }
+
+                    const docs = await docsResp.json();
+                    const matching = Array.isArray(docs)
+                        ? docs.find(d => d.file_category_code === category)
+                        : null;
+
+                    if (!matching || !matching.id) {
+                        showToast('Error', 'No document available for this category.', true);
+                        return;
+                    }
+
+                    // Now fetch the actual document as a blob to check for errors
+                    if (docLoaderMessage) {
+                        docLoaderMessage.textContent = 'Downloading document...';
+                    }
+                    const downloadUrl = `/Csc/DownloadDocument?docId=${matching.id}`;
+                    const fileResp = await fetch(downloadUrl);
+
+                    if (!fileResp.ok) {
+                        const errorText = await fileResp.text();
+                        showToast('Error', errorText || 'Failed to download document. Please try again.', true);
+                        return;
+                    }
+
+                    // Get the file as a blob
+                    const blob = await fileResp.blob();
+                    const fileName = matching.file_name || 'document';
+
+                    // Create a blob URL and trigger download
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Clean up blob URL after a short delay
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(blobUrl);
+                    }, 100);
+
+                    // Show success message
+                    showToast('Success', `Document "${fileName}" downloaded successfully.`, false);
+                } catch (e) {
+                    console.error('Document download error:', e);
+                    showToast('Error', 'Error loading document. Please try again.', true);
+                } finally {
+                    if (docLoader) {
+                        docLoader.classList.add('d-none');
+                    }
+                }
+            });
+        });
+    })();
+</script>

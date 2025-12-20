@@ -1,0 +1,46 @@
+﻿@{
+    ViewData["Title"] = "HTTP Test Page";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Or remove if no layout
+}
+
+<div class="container mt-5">
+
+    <h2>HTTP Connectivity Test</h2>
+    <hr />
+
+    <h4>1️⃣ Test Remote Server Connectivity</h4>
+
+    <a href="/test-http/ping" target="_blank" class="btn btn-primary mt-2">
+        Test Ping (Check if 10.201.222.68:9801 is reachable)
+    </a>
+
+    <br /><br />
+
+    <h4>2️⃣ Test Image Download</h4>
+
+    <button class="btn btn-success" onclick="loadImage()">Test Load Image</button>
+
+    <div id="imgResult" class="mt-3"></div>
+
+</div>
+
+<script>
+    function loadImage() {
+        const container = document.getElementById("imgResult");
+        container.innerHTML = "<b>Loading...</b>";
+
+        const img = new Image();
+        img.src = "/test-http/photo";
+
+        img.onload = function () {
+            container.innerHTML = "";
+            container.appendChild(img);
+            img.style.border = "2px solid black";
+            img.style.maxWidth = "300px";
+        };
+
+        img.onerror = function () {
+            container.innerHTML = "<b style='color:red;'>Failed to load image.</b>";
+        };
+    }
+</script>

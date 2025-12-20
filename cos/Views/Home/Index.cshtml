@@ -1,0 +1,99 @@
+﻿@model cos.ViewModels.LoginVM;
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Login Page";
+}
+
+<div class="app-content content">
+    <div class="content-header row">
+    </div>
+    <div class="content-overlay"></div>
+    <div class="content-wrapper">
+        <div class="content-body">
+            <section class="row flexbox-container">
+                <div class="col-12 d-flex align-items-center justify-content-center">
+                    <div class="col-lg-4 col-md-8 col-10 box-shadow-2 p-0">
+                        <div class="card border-grey border-lighten-3 px-1 py-1 m-0">
+                            <div class="card-header border-0">
+                                <div class="card-title text-center">
+                                    <img src="~/images/BSNL_LOGO.jpeg" alt="branding logo" class="img-responsive center-block" style="max-width: 100%; height: auto;">
+                                </div>
+                                <h3 class="card-subtitle line-on-side  text-center "><span>Customer Onboarding system (COS)</span></h3>
+                            </div>
+                            <div class="card-content">
+                                
+                                <div class="card-body">
+                                    <form class="form-horizontal" asp-action="Login" method="post" autocomplete="off" novalidate>
+                                        @Html.AntiForgeryToken()
+                                        <fieldset class="form-group position-relative has-icon-left">
+                                            <input input asp-for="username" class="form-control"  placeholder="Your Username" required>
+                                            <div class="form-control-position">
+                                                <i class="la la-user"></i>
+                                            </div>
+                                        </fieldset>
+                                        <fieldset class="form-group position-relative has-icon-left">
+                                            <input asp-for="password" type="password" class="form-control"  placeholder="Enter Password" required>
+                                            <div class="form-control-position">
+                                                <i class="la la-key"></i>
+                                            </div>
+                                        </fieldset>
+                                        <div class="form-group row">
+                                            <div class="col-sm-6 col-12 text-center text-sm-left pr-0">
+                                                <fieldset>
+                                                    <input type="checkbox" id="remember-me" class="chk-remember">
+                                                    <label for="remember-me"> Remember Me</label>
+                                                </fieldset>
+                                            </div>
+                                            <div class="col-sm-6 col-12 float-sm-left text-center text-sm-right"><a href="recover-password.html" class="card-link">Forgot Password?</a></div>
+                                        </div>
+
+                                        @* <div class="form-group row">
+                                            <div class="col-sm-4 col-12 text-center text-sm-left pr-0">
+                                            <label>Security Code</label>
+                                            
+                                            <dnt-captcha asp-captcha-generator-max="99"
+                                                         asp-captcha-generator-min="11"
+                                                         asp-captcha-generator-language="English"
+                                                         asp-captcha-generator-display-mode="SumOfTwoNumbers"
+                                                         asp-use-relative-urls="true"
+                                                         asp-placeholder="Enter Captcha"
+                                                         asp-validation-error-message="Please enter the security code."
+                                                         asp-font-name="Tahoma"
+                                                         asp-font-size="20"
+                                                         asp-fore-color="#333333"
+                                                         asp-back-color="#ccc"
+                                                         asp-text-box-class="text-box form-control"
+                                                         asp-text-box-template="<span class='input-group-prepend'><span class='form-group-text'></span></span>{0}"
+                                                         asp-validation-message-class="text-danger"
+                                                         asp-refresh-button-class="fas fa-redo btn-sm"
+                                                         asp-use-noise="false" >                                                                                                     
+
+                                            </dnt-captcha>
+                                            </div>
+                                        </div> *@
+
+                              
+                                        <button type="submit" class="btn btn-outline-info btn-block"><i class="ft-unlock"></i> Login</button>
+                                    </form>
+                                </div>
+                                @* <p class="card-subtitle line-on-side text-muted text-center font-small-3 mx-2 my-1">
+                                    <span>
+                                        New to Modern
+                                        ?
+                                    </span>
+                                </p>
+                                <div class="card-body">
+                                    <a href="register-with-bg-image.html" class="btn btn-outline-danger btn-block">
+                                        <i class="la la-user"></i>
+                                        Register
+                                    </a>
+                                </div> *@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>

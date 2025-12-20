@@ -1,0 +1,107 @@
+## =========================
+## .NET / Visual Studio
+## =========================
+
+# Build results
+bin/
+obj/
+out/
+
+# Visual Studio
+.vs/
+.vscode/
+*.user
+*.userosscache
+*.suo
+*.cache
+*.log
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# Mono
+.mono/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =========================
+# Publish output
+# =========================
+**/PublishProfiles/
+**/Properties/PublishProfiles/
+*.pubxml
+*.pubxml.user
+
+# =========================
+# Configuration files
+# =========================
+
+# App settings (keep template, ignore secrets)
+#appsettings.json
+#appsettings.*.json
+#!appsettings.Development.json
+
+# User secrets
+secrets.json
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# IIS / Hosting
+# =========================
+*.db
+*.mdf
+*.ldf
+App_Data/
+
+# =========================
+# NuGet
+# =========================
+packages/
+*.nupkg
+.nuget/
+project.lock.json
+
+# =========================
+# Node / Frontend (if used)
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# EF / Migrations
+# =========================
+__EFMigrationsHistory/
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# =========================
+# Coverage / Test
+# =========================
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+

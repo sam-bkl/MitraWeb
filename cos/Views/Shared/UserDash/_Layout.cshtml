@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>M2M Portal</title>
+
+    <partial name="UserDash/_Styles" />
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+     @if (User.IsInRole("customer")){
+        <partial name="UserDash/_TopNavigation" /> } else { <partial name="UserDash/_TopNavigationadmin" />}
+        <partial name="UserDash/_MainNavigation" />
+
+        <!-- Content Wrapper. Contains page content -->
+        <div class="content-wrapper">
+            <!-- Content Header (Page header) -->
+           
+            <!-- /.content-header -->
+            <!-- Main content -->
+            <div class="content">
+                <div class="container-fluid">
+                    @RenderBody()
+                </div><!-- /.container-fluid -->
+            </div>
+            <!-- /.content -->
+        </div>
+        <!-- /.content-wrapper -->
+    <!-- Control Sidebar -->
+        <aside class="control-sidebar control-sidebar-dark">
+            <!-- Control sidebar content goes here -->
+            <div class="p-3">
+                <img src="~/img/bsnlm2m.jpg" alt="m2m" width="210" height="140" />
+                <br />
+                
+            </div>
+               
+                    <div class="position-relative p-3 bg-gray" style="height: 180px">
+                      <div class="ribbon-wrapper">
+                        <div class="ribbon bg-primary">
+                          About
+                        </div>
+                      </div>
+                      This portal helps to create synergy between the various activities of eSim provisioning <br />
+                      
+                    </div>
+                  
+                 
+        </aside>
+        <!-- /.control-sidebar -->
+
+        <partial name="UserDash/_Footer" />
+    </div>
+    <partial name="UserDash/_Scripts" />
+     @RenderSection("Modals", required: false)
+      @RenderSection("Scripts", required: false)  <!--added for running my javascripts in layout page-->
+</body>
+</html>

@@ -1,0 +1,815 @@
+@model cos.ViewModels.MissingCscAdminOnboardPageVM
+@using System.Linq
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "Onboard Missing CSC Admin";
+}
+
+<div class="row">
+    <div class="col-12">
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">@TempData["Success"]</div>
+        }
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                <strong>Please correct the following errors:</strong>
+                <ul class="mb-0">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+        <h3>Onboard Missing CSC Admin</h3>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>Search Missing CTOP User</h5>
+                <div class="form-group">
+                    <label for="ctopupnoSearch">Enter CTOPUP No:</label>
+                    <input type="text" class="form-control" id="ctopupnoSearch" placeholder="Enter CTOPUP number" />
+                    <div id="searchResults" class="list-group mt-2" style="display:none; max-height: 300px; overflow-y: auto; position: absolute; z-index: 1000; width: 100%; background: white; border: 1px solid #ddd;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3" id="ctopDetailsSection" style="display:none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>CTOP Details</h5>
+                <div id="ctopDetails"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3" id="createAccountSection" style="display:none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>Create Missing CSC Admin Account</h5>
+                <form asp-controller="UserManagement" asp-action="CreateMissingCscAdmin" method="post" enctype="multipart/form-data" id="createAccountForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ctopupno" id="hiddenCtopupno" />
+                    
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.name">Name (As in Aadhar)</label>
+                            <input class="form-control" asp-for="NewCtop.name" id="NewCtop_name" />
+                            <span class="text-danger" asp-validation-for="NewCtop.name"></span>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.dealertype"></label>
+                            <input class="form-control" asp-for="NewCtop.dealertype" id="NewCtop_dealertype" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.designation"></label>
+                            <input class="form-control" asp-for="NewCtop.designation" id="NewCtop_designation" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.contact_number"></label>
+                            <input class="form-control" asp-for="NewCtop.contact_number" id="NewCtop_contact_number" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_owner_name"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_owner_name" id="NewCtop_pos_owner_name" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_name_ss"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_name_ss" id="NewCtop_pos_name_ss" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_hno"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_hno" id="NewCtop_pos_hno" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_street"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_street" id="NewCtop_pos_street" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_landmark"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_landmark" id="NewCtop_pos_landmark" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_locality"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_locality" id="NewCtop_pos_locality" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_city"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_city" id="NewCtop_pos_city" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_pincode"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_pincode" id="NewCtop_pos_pincode" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Circle</label>
+                            <select class="form-control" id="circleSelect" asp-for="NewCtop.circle_id">
+                                <option value="">-- Select Circle --</option>
+                                @foreach (var c in Model.Circles)
+                                {
+                                    <option value="@c.id" data-code="@c.circle_code" data-zone="@c.zone_code" data-name="@c.circle_name">@c.circle_name</option>
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewCtop.circle_id"></span>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>SSA</label>
+                            <select class="form-control" id="ssaSelect" asp-for="NewCtop.ssa_id">
+                                <option value="">-- Select SSA --</option>
+                                @foreach (var s in Model.Ssas)
+                                {
+                                    <option value="@s.id" data-name="@s.ssa_name" data-code="@s.ssa_code">@s.ssa_name</option>
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewCtop.ssa_id"></span>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_state"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_state" id="NewCtop_pos_state" readonly />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.circle_name"></label>
+                            <input class="form-control" asp-for="NewCtop.circle_name" id="NewCtop_circle_name" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.zone_code"></label>
+                            <input class="form-control" asp-for="NewCtop.zone_code" id="NewCtop_zone_code" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.pos_district"></label>
+                            <input class="form-control" asp-for="NewCtop.pos_district" id="NewCtop_pos_district" readonly />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.ssa_code"></label>
+                            <input class="form-control" asp-for="NewCtop.ssa_code" id="NewCtop_ssa_code" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.csccode"></label>
+                            <select class="form-control" asp-for="NewCtop.csccode" id="NewCtop_csccode">
+                                <option value="">-- Select CSC Code --</option>
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewCtop.csccode"></span>
+                        </div>
+                        <input type="hidden" asp-for="NewCtop.attached_to" id="NewCtop_attached_to" />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.circle_code"></label>
+                            <input class="form-control" asp-for="NewCtop.circle_code" id="NewCtop_circle_code" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.aadhaar_no"></label>
+                            <input class="form-control" asp-for="NewCtop.aadhaar_no" id="NewCtop_aadhaar_no" maxlength="12" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewCtop.aadhaar_issue_year">Year of Birth</label>
+                            <input class="form-control" asp-for="NewCtop.aadhaar_issue_year" id="NewCtop_aadhaar_issue_year" maxlength="4" />
+                            <span class="text-danger" asp-validation-for="NewCtop.aadhaar_issue_year"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewCtop.BaApprovalLetter"></label>
+                            <input type="file" class="form-control-file" asp-for="NewCtop.BaApprovalLetter" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewCtop.BaApprovalLetter"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewCtop.EmployeeIdCard"></label>
+                            <input type="file" class="form-control-file" asp-for="NewCtop.EmployeeIdCard" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewCtop.EmployeeIdCard"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewCtop.AadhaarCard"></label>
+                            <input type="file" class="form-control-file" asp-for="NewCtop.AadhaarCard" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewCtop.AadhaarCard"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewCtop.PanCard"></label>
+                            <input type="file" class="form-control-file" asp-for="NewCtop.PanCard" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewCtop.PanCard"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewCtop.Photo"></label>
+                            <input type="file" class="form-control-file" asp-for="NewCtop.Photo" accept=".jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewCtop.Photo"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-12">
+                            <button type="button" class="btn btn-primary" id="submitFormBtn">Create Account & Onboard</button>
+                            <button type="button" class="btn btn-secondary" onclick="resetForm()">Reset</button>
+                            <div id="submitStatus" class="mt-2"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<partial name="_ValidationScriptsPartial" />
+
+<script>
+    (function () {
+        let selectedCtopupno = '';
+        const searchInput = document.getElementById('ctopupnoSearch');
+        const searchResults = document.getElementById('searchResults');
+        const ctopDetailsSection = document.getElementById('ctopDetailsSection');
+        const createAccountSection = document.getElementById('createAccountSection');
+        const circleSelect = document.getElementById('circleSelect');
+        const ssaSelect = document.getElementById('ssaSelect');
+        const cscCodeSelect = document.getElementById('NewCtop_csccode');
+        const hiddenCtopupno = document.getElementById('hiddenCtopupno');
+        const zoneCode = '@Model.ZoneCode';
+        const showForm = @(ViewBag.ShowForm != null && ViewBag.ShowForm ? "true" : "false");
+        const preservedCtopupno = '@(ViewBag.Ctopupno ?? "")';
+
+        let searchTimeout = null;
+        let currentAbort = null;
+
+        // If there are errors and form should be shown, display it
+        if (showForm && preservedCtopupno) {
+            searchInput.value = preservedCtopupno;
+            if (hiddenCtopupno) {
+                hiddenCtopupno.value = preservedCtopupno;
+            }
+            selectedCtopupno = preservedCtopupno;
+            // Show form sections
+            if (createAccountSection) {
+                createAccountSection.style.display = 'block';
+            }
+            if (ctopDetailsSection) {
+                ctopDetailsSection.style.display = 'block';
+            }
+            // Try to fetch and display details
+            if (preservedCtopupno && zoneCode) {
+                fetchAndPrefillForm(preservedCtopupno);
+            }
+        }
+
+        if (!searchInput) {
+            console.error('searchInput element not found');
+            return;
+        }
+
+        searchInput.addEventListener('input', function (e) {
+            const query = (e.target.value || '').trim();
+
+            if (query.length < 3) {
+                searchResults.style.display = 'none';
+                if (searchTimeout) { clearTimeout(searchTimeout); searchTimeout = null; }
+                if (currentAbort) { currentAbort.abort(); currentAbort = null; }
+                return;
+            }
+
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+
+            searchTimeout = setTimeout(async () => {
+                if (currentAbort) { currentAbort.abort(); currentAbort = null; }
+                currentAbort = new AbortController();
+
+                try {
+                    const url = `/UserManagement/SearchMissingCscCtop?ctopupno=${encodeURIComponent(query)}&zoneCode=${encodeURIComponent(zoneCode)}`;
+                    const resp = await fetch(url, { signal: currentAbort.signal });
+
+                    if (!resp.ok) {
+                        console.warn('fetch not ok:', resp.status);
+                        return;
+                    }
+                    const data = await resp.json();
+
+                    if (data.results && data.results.length > 0) {
+                        searchResults.innerHTML = '';
+                        data.results.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'list-group-item list-group-item-action';
+                            div.style.cursor = 'pointer';
+                            div.innerHTML = `<strong>${item.ctopupno}</strong> - ${item.name || ''} (${item.contact_number || ''})`;
+                            div.addEventListener('click', async () => {
+                                selectedCtopupno = item.ctopupno;
+                                searchInput.value = item.ctopupno;
+                                if (hiddenCtopupno) hiddenCtopupno.value = item.ctopupno;
+                                searchResults.style.display = 'none';
+                                
+                                // Fetch full details and prefill form
+                                await fetchAndPrefillForm(item.ctopupno);
+                            });
+                            searchResults.appendChild(div);
+                        });
+                        searchResults.style.display = 'block';
+                    } else {
+                        searchResults.style.display = 'none';
+                    }
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.error('Search error:', err);
+                    }
+                } finally {
+                    searchTimeout = null;
+                    currentAbort = null;
+                }
+            }, 300);
+        });
+
+        async function fetchAndPrefillForm(ctopupno) {
+            try {
+                const resp = await fetch('/UserManagement/GetMissingCscCtopDetails', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ctopupno: ctopupno,
+                        zoneCode: zoneCode
+                    })
+                });
+
+                if (!resp.ok) {
+                    const error = await resp.json();
+                    // Don't show alert if form is being restored after error
+                    if (!showForm) {
+                        alert(error.error || 'Error fetching CTOP details');
+                    }
+                    return;
+                }
+
+                const ctopData = await resp.json();
+                prefillForm(ctopData);
+                displayCtopDetails(ctopData);
+                
+                if (ctopDetailsSection) {
+                    ctopDetailsSection.style.display = 'block';
+                }
+                if (createAccountSection) {
+                    createAccountSection.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error fetching details:', err);
+                // Don't show alert if form is being restored after error
+                if (!showForm) {
+                    alert('Error fetching CTOP details');
+                }
+            }
+        }
+
+        function prefillForm(ctopData) {
+            // Basic info
+            const nameField = document.getElementById('NewCtop_name');
+            if (nameField) {
+                const fullName = [ctopData.name, ctopData.second_name, ctopData.last_name]
+                    .filter(x => x).join(' ').trim();
+                nameField.value = fullName || ctopData.name || '';
+            }
+
+            const dealertypeField = document.getElementById('NewCtop_dealertype');
+            if (dealertypeField) {
+                dealertypeField.value = ctopData.dealertype || '';
+            }
+
+            const contactField = document.getElementById('NewCtop_contact_number');
+            if (contactField) {
+                contactField.value = ctopData.contact_number || '';
+            }
+
+            // CSC code will be populated when SSA is selected via dropdown
+            // Store the CSC code to set it after SSA dropdown is populated
+            if (ctopData.csccode) {
+                window.pendingCscCode = ctopData.csccode;
+            }
+
+            // attached_to will be synced with csccode when CSC code is selected
+
+            // Aadhaar
+            const aadhaarField = document.getElementById('NewCtop_aadhaar_no');
+            if (aadhaarField && ctopData.aadhaar_no) {
+                aadhaarField.value = ctopData.aadhaar_no || '';
+            }
+
+            // Address
+            if (ctopData.dealer_address) {
+                const streetField = document.getElementById('NewCtop_pos_street');
+                if (streetField) {
+                    streetField.value = ctopData.dealer_address || '';
+                }
+            }
+
+            if (ctopData.ssa_city) {
+                const cityField = document.getElementById('NewCtop_pos_city');
+                if (cityField) {
+                    cityField.value = ctopData.ssa_city || '';
+                }
+            }
+
+            // Circle and SSA selection
+            if (ctopData.circle_code) {
+                selectCircleByCode(ctopData.circle_code);
+            }
+
+            if (ctopData.ssa_code) {
+                setTimeout(() => {
+                    selectSsaByCode(ctopData.ssa_code);
+                    // CSC codes will be loaded when SSA is selected
+                    // The pending CSC code will be set after dropdown is populated
+                }, 500);
+            }
+        }
+
+        function selectCircleByCode(circleCode) {
+            if (!circleSelect) return;
+            
+            for (let option of circleSelect.options) {
+                if (option.dataset.code === circleCode) {
+                    circleSelect.value = option.value;
+                    circleSelect.dispatchEvent(new Event('change'));
+                    break;
+                }
+            }
+        }
+
+        function selectSsaByCode(ssaCode) {
+            if (!ssaSelect) return;
+            
+            for (let option of ssaSelect.options) {
+                if (option.dataset.code === ssaCode) {
+                    ssaSelect.value = option.value;
+                    ssaSelect.dispatchEvent(new Event('change'));
+                    break;
+                }
+            }
+        }
+
+        function displayCtopDetails(ctopData) {
+            const detailsDiv = document.getElementById('ctopDetails');
+            if (!detailsDiv) return;
+            
+            const fullName = [ctopData.name, ctopData.second_name, ctopData.last_name]
+                .filter(x => x).join(' ') || ctopData.name || '';
+            
+            detailsDiv.innerHTML = `
+                <p><strong>CTOPUP No:</strong> ${ctopData.ctopupno || ''}</p>
+                <p><strong>Name:</strong> ${fullName}</p>
+                <p><strong>Contact:</strong> ${ctopData.contact_number || ''}</p>
+                <p><strong>Dealer Type:</strong> ${ctopData.dealertype || ''}</p>
+                <p><strong>SSA Code:</strong> ${ctopData.ssa_code || ''}</p>
+                <p><strong>Circle Code:</strong> ${ctopData.circle_code || ''}</p>
+                <p><strong>CSC Code:</strong> ${ctopData.csccode || ''}</p>
+            `;
+        }
+
+        async function loadSsas(circleId) {
+            ssaSelect.innerHTML = '<option value="">-- Select SSA --</option>';
+            if (!circleId) return;
+            try {
+                const resp = await fetch(`/UserManagement/GetSsas?circleId=${circleId}`);
+                if (!resp.ok) return;
+                const data = await resp.json();
+                data.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.ssa_name;
+                    opt.dataset.code = s.ssa_code;
+                    opt.dataset.name = s.ssa_name;
+                    ssaSelect.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('Load SSAs error:', err);
+            }
+        }
+
+        // Load CSC codes when SSA is selected
+        async function loadCscCodes(ssaCode) {
+            if (!cscCodeSelect) return;
+            cscCodeSelect.innerHTML = '<option value="">-- Select CSC Code --</option>';
+            if (!ssaCode) return;
+            
+            try {
+                const resp = await fetch(`/Csc/GetCscCodesBySsa?ssaCode=${encodeURIComponent(ssaCode)}`);
+                if (!resp.ok) {
+                    console.error('Failed to load CSC codes');
+                    return;
+                }
+                const data = await resp.json();
+                if (data.codes && Array.isArray(data.codes)) {
+                    data.codes.forEach(csc => {
+                        const opt = document.createElement('option');
+                        opt.value = csc.csccode;
+                        opt.textContent = `${csc.csccode}${csc.csc_name ? ' - ' + csc.csc_name : ''}`;
+                        cscCodeSelect.appendChild(opt);
+                    });
+                    
+                    // If there's a pending CSC code to set, set it now
+                    if (window.pendingCscCode) {
+                        const pendingCode = window.pendingCscCode;
+                        cscCodeSelect.value = pendingCode;
+                        window.pendingCscCode = null;
+                        // Also set attached_to to the same value
+                        const attachedToField = document.getElementById('NewCtop_attached_to');
+                        if (attachedToField) {
+                            attachedToField.value = pendingCode;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Load CSC codes error:', err);
+            }
+        }
+        
+        // Update attached_to when CSC code is selected
+        if (cscCodeSelect) {
+            cscCodeSelect.addEventListener('change', function() {
+                const attachedToField = document.getElementById('NewCtop_attached_to');
+                if (attachedToField) {
+                    attachedToField.value = cscCodeSelect.value || '';
+                }
+            });
+        }
+
+        circleSelect.addEventListener('change', function () {
+            const selected = circleSelect.options[circleSelect.selectedIndex];
+            const code = selected.dataset.code || '';
+            const zone = selected.dataset.zone || '';
+            const circleName = selected.dataset.name || '';
+            
+            const circleCodeField = document.getElementById('NewCtop_circle_code');
+            if (circleCodeField) circleCodeField.value = code;
+            
+            const zoneCodeField = document.getElementById('NewCtop_zone_code');
+            if (zoneCodeField) zoneCodeField.value = zone;
+            
+            const circleNameField = document.getElementById('NewCtop_circle_name');
+            if (circleNameField) circleNameField.value = circleName;
+            
+            const posStateField = document.getElementById('NewCtop_pos_state');
+            if (posStateField) posStateField.value = circleName;
+            
+            loadSsas(circleSelect.value);
+        });
+
+        ssaSelect.addEventListener('change', function () {
+            const selected = ssaSelect.options[ssaSelect.selectedIndex];
+            const code = selected ? selected.dataset.code : '';
+            const name = selected ? selected.dataset.name : '';
+            
+            const ssaCodeField = document.getElementById('NewCtop_ssa_code');
+            if (ssaCodeField) ssaCodeField.value = code || '';
+            
+            // Load CSC codes for the selected SSA
+            loadCscCodes(code);
+            
+            const posDistrictField = document.getElementById('NewCtop_pos_district');
+            if (posDistrictField) posDistrictField.value = name || '';
+        });
+
+        function resetForm() {
+            document.getElementById('createAccountForm').reset();
+            searchInput.value = '';
+            selectedCtopupno = '';
+            if (hiddenCtopupno) hiddenCtopupno.value = '';
+            ctopDetailsSection.style.display = 'none';
+            createAccountSection.style.display = 'none';
+            const statusDiv = document.getElementById('submitStatus');
+            if (statusDiv) statusDiv.innerHTML = '';
+        }
+
+        // AJAX form submission to preserve file inputs
+        const submitFormBtn = document.getElementById('submitFormBtn');
+        const submitStatus = document.getElementById('submitStatus');
+        const createAccountForm = document.getElementById('createAccountForm');
+
+        if (submitFormBtn && createAccountForm) {
+            submitFormBtn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                
+                // Clear previous status
+                if (submitStatus) {
+                    submitStatus.innerHTML = '';
+                }
+
+                // Validate required fields
+                const ctopupno = hiddenCtopupno ? hiddenCtopupno.value : '';
+                if (!ctopupno) {
+                    showError('Please select a CTOP number first.');
+                    return;
+                }
+
+                // Disable submit button
+                submitFormBtn.disabled = true;
+                submitFormBtn.textContent = 'Submitting...';
+
+                try {
+                    // Create FormData from form
+                    const formData = new FormData(createAccountForm);
+                    
+                    // Get anti-forgery token - ASP.NET Core expects it as header XSRF-TOKEN for AJAX
+                    // First try to get from form field
+                    const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                    let tokenValue = tokenInput ? tokenInput.value : null;
+                    
+                    // If not in form, try to get from cookie (for AJAX requests)
+                    if (!tokenValue) {
+                        const cookies = document.cookie.split(';');
+                        for (let cookie of cookies) {
+                            const [name, value] = cookie.trim().split('=');
+                            if (name === 'XSRF-TOKEN' || name === '__RequestVerificationToken') {
+                                tokenValue = decodeURIComponent(value);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Add token to form data AND as header
+                    if (tokenValue) {
+                        formData.append('__RequestVerificationToken', tokenValue);
+                        console.log('Anti-forgery token found and added');
+                    } else {
+                        console.warn('Anti-forgery token not found! This may cause issues.');
+                    }
+
+                    // Submit via fetch - use the form's action URL directly
+                    // The form should have the action set by asp-action
+                    let formAction = createAccountForm.action;
+                    
+                    // If form action is not set properly, construct it
+                    if (!formAction || formAction === '' || formAction === window.location.pathname || formAction === '#') {
+                        // Use relative URL to avoid HTTPS/HTTP issues
+                        formAction = '@Url.Action("CreateMissingCscAdmin", "UserManagement")';
+                        // Fallback to hardcoded if URL helper doesn't work
+                        if (!formAction || formAction === '') {
+                            formAction = '/UserManagement/CreateMissingCscAdmin';
+                        }
+                    }
+                    
+                    // Ensure we're using a relative URL (not absolute with protocol)
+                    // This will use the same protocol (HTTP/HTTPS) as the current page
+                    if (formAction.startsWith('http://') || formAction.startsWith('https://')) {
+                        // Extract just the path to use relative URL
+                        try {
+                            const url = new URL(formAction);
+                            formAction = url.pathname;
+                            console.log('Converted absolute URL to relative path:', formAction);
+                        } catch (e) {
+                            // If URL parsing fails, use hardcoded path
+                            formAction = '/UserManagement/CreateMissingCscAdmin';
+                        }
+                    }
+                    
+                    // If you want to force HTTP (for development), uncomment the line below:
+                    // formAction = formAction.replace('https://', 'http://');
+                    
+                    console.log('Submitting to:', formAction);
+                    console.log('Form action property:', createAccountForm.action);
+                    console.log('Form action attribute:', createAccountForm.getAttribute('action'));
+                    
+                    // Prepare headers - include XSRF-TOKEN if available
+                    const headers = {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                        // Don't set Content-Type - let browser set it with boundary for multipart/form-data
+                    };
+                    
+                    // Add XSRF-TOKEN header if we have the token value
+                    if (tokenValue) {
+                        headers['XSRF-TOKEN'] = tokenValue;
+                    }
+                    
+                    const response = await fetch(formAction, {
+                        method: 'POST',
+                        body: formData,
+                        headers: headers
+                    });
+                    
+                    console.log('Response status:', response.status, response.statusText);
+
+                    // Check if response is HTML (error page) or JSON
+                    const contentType = response.headers.get('content-type');
+                    
+                    if (!response.ok && response.status === 404) {
+                        const errorText = await response.text();
+                        console.error('404 Error:', errorText);
+                        showError('The requested page was not found (404). Please check the URL: ' + formAction);
+                        submitFormBtn.disabled = false;
+                        submitFormBtn.textContent = 'Create Account & Onboard';
+                        return;
+                    }
+                    
+                    if (contentType && contentType.includes('application/json')) {
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            showSuccess(result.message || 'Missing CSC admin onboarded successfully.');
+                            // Reset form after success
+                            setTimeout(() => {
+                                resetForm();
+                                // Optionally redirect or reload
+                                window.location.href = '/UserManagement/MissingCSCAdminOnboard';
+                            }, 2000);
+                        } else {
+                            showErrors(result.errors || [result.error || 'An error occurred']);
+                            submitFormBtn.disabled = false;
+                            submitFormBtn.textContent = 'Create Account & Onboard';
+                        }
+                    } else {
+                        // Response is HTML - parse for errors
+                        const html = await response.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        
+                        // Check for validation errors
+                        const errorAlerts = doc.querySelectorAll('.alert-danger, .text-danger');
+                        const errors = [];
+                        errorAlerts.forEach(alert => {
+                            const text = alert.textContent.trim();
+                            if (text) errors.push(text);
+                        });
+
+                        if (errors.length > 0) {
+                            showErrors(errors);
+                        } else if (response.ok) {
+                            showSuccess('Missing CSC admin onboarded successfully.');
+                            setTimeout(() => {
+                                window.location.href = '/UserManagement/MissingCSCAdminOnboard';
+                            }, 2000);
+                        } else {
+                            showError('An error occurred while submitting the form.');
+                        }
+                        
+                        submitFormBtn.disabled = false;
+                        submitFormBtn.textContent = 'Create Account & Onboard';
+                    }
+                } catch (error) {
+                    console.error('Form submission error:', error);
+                    showError('An error occurred while submitting the form: ' + error.message);
+                    submitFormBtn.disabled = false;
+                    submitFormBtn.textContent = 'Create Account & Onboard';
+                }
+            });
+        }
+
+        function showError(message) {
+            if (submitStatus) {
+                submitStatus.innerHTML = `<div class="alert alert-danger">${escapeHtml(message)}</div>`;
+                submitStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function showErrors(errors) {
+            if (submitStatus && errors && errors.length > 0) {
+                const errorList = errors.map(e => `<li>${escapeHtml(e)}</li>`).join('');
+                submitStatus.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Please correct the following errors:</strong>
+                        <ul class="mb-0">${errorList}</ul>
+                    </div>
+                `;
+                submitStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function showSuccess(message) {
+            if (submitStatus) {
+                submitStatus.innerHTML = `<div class="alert alert-success">${escapeHtml(message)}</div>`;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    })();
+</script>
+

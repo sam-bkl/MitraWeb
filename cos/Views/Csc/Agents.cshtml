@@ -1,0 +1,740 @@
+@model cos.ViewModels.AgentsPageVM
+@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "Agents Management";
+}
+
+<div class="row">
+    <div class="col-12">
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">@TempData["Success"]</div>
+        }
+        <h3>Agents Management</h3>
+    </div>
+</div>
+
+<!-- Retailer Search Section -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>Search Retailer</h5>
+                <div class="form-group">
+                    <label for="retailerCtopupnoSearch">Enter Retailer CTOPUP No:</label>
+                    <input type="text" class="form-control" id="retailerCtopupnoSearch" placeholder="Enter CTOPUP number" />
+                    <div id="retailerSearchResults" class="list-group mt-2" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Retailer Details Section -->
+<div class="row mt-3" id="retailerDetailsSection" style="display:none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>Retailer Details</h5>
+                <div id="retailerDetails"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Agents Table Section -->
+<div class="row mt-3" id="agentsSection" style="display:none;">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5>Agents</h5>
+            <button class="btn btn-primary" data-toggle="modal" data-target="#addAgentModal" id="addAgentBtn">Add Agent</button>
+        </div>
+        <table class="table table-striped table-bordered" id="agentsTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Contact</th>
+                    <th>BA Letter</th>
+                    <th>ID Card</th>
+                    <th>Aadhaar</th>
+                    <th>PAN</th>
+                    <th>Photo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="8" class="text-center">No retailer selected</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Agent Modal -->
+<div class="modal fade" id="addAgentModal" tabindex="-1" role="dialog" aria-labelledby="addAgentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" style="position: relative;">
+            <!-- Loading Overlay -->
+            <div id="formLoader" class="d-none" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.8); z-index: 1050;">
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="mt-2">Processing, please wait...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAgentModalLabel">Add Agent</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Error Alert Area -->
+                <div id="formErrorAlert" class="alert alert-danger d-none" role="alert">
+                    <strong>Error:</strong> <span id="formErrorText"></span>
+                </div>
+                <form asp-action="CreateAgent" method="post" enctype="multipart/form-data" id="createAgentForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="RetailerCtopupno" id="hiddenRetailerCtopupno" />
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewAgent.name">Name (As in Aadhar)</label>
+                            <input class="form-control" asp-for="NewAgent.name" />
+                            <span class="text-danger" asp-validation-for="NewAgent.name"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewAgent.dealertype"></label>
+                            <input class="form-control" asp-for="NewAgent.dealertype" value="AGENT" readonly/>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.contact_number"></label>
+                            <input class="form-control" asp-for="NewAgent.contact_number" />
+                            <span class="text-danger" asp-validation-for="NewAgent.contact_number"></span>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.pos_owner_name"></label>
+                            <input class="form-control" asp-for="NewAgent.pos_owner_name" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.pos_name_ss"></label>
+                            <input class="form-control" asp-for="NewAgent.pos_name_ss" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.pos_hno"></label>
+                            <input class="form-control" asp-for="NewAgent.pos_hno" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.pos_street"></label>
+                            <input class="form-control" asp-for="NewAgent.pos_street" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.pos_landmark"></label>
+                            <input class="form-control" asp-for="NewAgent.pos_landmark" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.pos_locality"></label>
+                            <input class="form-control" asp-for="NewAgent.pos_locality" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.pos_city"></label>
+                            <input class="form-control" asp-for="NewAgent.pos_city" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.pos_pincode"></label>
+                            <input class="form-control" asp-for="NewAgent.pos_pincode" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Circle</label>
+                            <select class="form-control" id="circleSelect" asp-for="NewAgent.circle_id">
+                                <option value="">-- Select Circle --</option>
+                                @foreach (var c in Model.Circles)
+                                {
+                                    <option value="@c.id" data-code="@c.circle_code" data-zone="@c.zone_code" data-name="@c.circle_name">@c.circle_name</option>
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewAgent.circle_id"></span>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>SSA</label>
+                            <select class="form-control" id="ssaSelect" asp-for="NewAgent.ssa_id">
+                                <option value="">-- Select SSA --</option>
+                                @foreach (var s in Model.Ssas)
+                                {
+                                    <option value="@s.id" data-name="@s.ssa_name" data-code="@s.ssa_code">@s.ssa_name</option>
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewAgent.ssa_id"></span>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.pos_state"></label>
+                            <input class="form-control" asp-for="NewAgent.pos_state" readonly />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.circle_name"></label>
+                            <input class="form-control" asp-for="NewAgent.circle_name" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.zone_code"></label>
+                            <input class="form-control" asp-for="NewAgent.zone_code" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.pos_district"></label>
+                            <input class="form-control" asp-for="NewAgent.pos_district" readonly />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.aadhaar_no"></label>
+                            <input class="form-control" asp-for="NewAgent.aadhaar_no" maxlength="12" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.aadhaar_issue_year">Year of Birth</label>
+                            <input class="form-control" asp-for="NewAgent.aadhaar_issue_year" maxlength="4" />
+                            <span class="text-danger" asp-validation-for="NewAgent.aadhaar_issue_year"></span>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.circle_code"></label>
+                            <input class="form-control" asp-for="NewAgent.circle_code" readonly />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewAgent.BaApprovalLetter"></label>
+                            <input type="file" class="form-control-file" asp-for="NewAgent.BaApprovalLetter" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewAgent.BaApprovalLetter"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewAgent.EmployeeIdCard"></label>
+                            <input type="file" class="form-control-file" asp-for="NewAgent.EmployeeIdCard" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewAgent.EmployeeIdCard"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewAgent.AadhaarCard"></label>
+                            <input type="file" class="form-control-file" asp-for="NewAgent.AadhaarCard" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewAgent.AadhaarCard"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewAgent.PanCard"></label>
+                            <input type="file" class="form-control-file" asp-for="NewAgent.PanCard" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewAgent.PanCard"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewAgent.Photo"></label>
+                            <input type="file" class="form-control-file" asp-for="NewAgent.Photo" accept=".jpg,.jpeg,.png" />
+                            <span class="text-danger" asp-validation-for="NewAgent.Photo"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.ssa_code"></label>
+                            <input class="form-control" asp-for="NewAgent.ssa_code" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.csccode"></label>
+                            <input class="form-control" asp-for="NewAgent.csccode" id="NewAgent_csccode" readonly />
+                            <span class="text-danger" asp-validation-for="NewAgent.csccode"></span>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label asp-for="NewAgent.pos_code"></label>
+                            <input class="form-control" asp-for="NewAgent.pos_code" />
+                        </div>
+                    </div>
+                    <input type="hidden" asp-for="NewAgent.attached_to" id="NewAgent_attached_to" />
+                    <input type="hidden" asp-for="NewAgent.ctop_type" value="INDIRECT" />
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<partial name="_ValidationScriptsPartial" />
+
+@section Scripts {
+<script>
+    // Wait for jQuery to be available
+    (function() {
+        function initAgentsPage() {
+            if (typeof jQuery === 'undefined' || typeof jQuery.fn.DataTable === 'undefined') {
+                setTimeout(initAgentsPage, 100);
+                return;
+            }
+            
+            // Use jQuery from global scope
+            const $ = jQuery;
+            
+            (function ($) {
+        const retailerSearchInput = document.getElementById('retailerCtopupnoSearch');
+        const retailerSearchResults = document.getElementById('retailerSearchResults');
+        const retailerDetailsSection = document.getElementById('retailerDetailsSection');
+        const retailerDetails = document.getElementById('retailerDetails');
+        const agentsSection = document.getElementById('agentsSection');
+        const hiddenRetailerCtopupno = document.getElementById('hiddenRetailerCtopupno');
+        const addAgentBtn = document.getElementById('addAgentBtn');
+        let selectedRetailerCtopupno = null;
+        let agentsTable = null;
+        let searchTimeout = null;
+        let currentAbort = null;
+
+        // Retailer search autosuggest
+        retailerSearchInput.addEventListener('input', function () {
+            const query = this.value.trim();
+            
+            if (query.length < 3) {
+                retailerSearchResults.style.display = 'none';
+                if (searchTimeout) { clearTimeout(searchTimeout); searchTimeout = null; }
+                if (currentAbort) { currentAbort.abort(); currentAbort = null; }
+                return;
+            }
+
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+
+            searchTimeout = setTimeout(async () => {
+                if (currentAbort) {
+                    currentAbort.abort();
+                }
+                currentAbort = new AbortController();
+
+                try {
+                    const url = `/Csc/SearchRetailerCtop?ctopupno=${encodeURIComponent(query)}`;
+                    const resp = await fetch(url, { signal: currentAbort.signal });
+
+                    if (!resp.ok) {
+                        return;
+                    }
+                    const data = await resp.json();
+
+                    if (data.results && data.results.length > 0) {
+                        retailerSearchResults.innerHTML = '';
+                        data.results.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'list-group-item list-group-item-action';
+                            div.style.cursor = 'pointer';
+                            div.innerHTML = `<strong>${item.ctopupno}</strong> - ${item.name || ''} (${item.contact_number || ''})`;
+                            div.addEventListener('click', () => {
+                                selectedRetailerCtopupno = item.ctopupno;
+                                retailerSearchInput.value = item.ctopupno;
+                                if (hiddenRetailerCtopupno) hiddenRetailerCtopupno.value = item.ctopupno;
+                                retailerSearchResults.style.display = 'none';
+                                loadRetailerDetails(item.ctopupno);
+                            });
+                            retailerSearchResults.appendChild(div);
+                        });
+                        retailerSearchResults.style.display = 'block';
+                    } else {
+                        retailerSearchResults.style.display = 'none';
+                    }
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.error('Search error:', err);
+                    }
+                } finally {
+                    searchTimeout = null;
+                    currentAbort = null;
+                }
+            }, 300);
+        });
+
+        // Load retailer details
+        async function loadRetailerDetails(ctopupno) {
+            try {
+                const resp = await fetch(`/Csc/GetRetailerDetails?ctopupno=${encodeURIComponent(ctopupno)}`);
+                if (!resp.ok) {
+                    alert('Error loading retailer details');
+                    return;
+                }
+                const data = await resp.json();
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                const retailer = data.retailer;
+                retailerDetails.innerHTML = `
+                    <p><strong>CTOPUP No:</strong> ${retailer.ctopupno || ''}</p>
+                    <p><strong>Name:</strong> ${retailer.name || ''}</p>
+                    <p><strong>Contact:</strong> ${retailer.contact_number || ''}</p>
+                    <p><strong>SSA Code:</strong> ${retailer.ssa_code || ''}</p>
+                    <p><strong>Circle Code:</strong> ${retailer.circle_code || ''}</p>
+                    <p><strong>CSC Code:</strong> ${retailer.csccode || ''}</p>
+                `;
+                retailerDetailsSection.style.display = 'block';
+                agentsSection.style.display = 'block';
+                
+                // Set CSC code from retailer to the form
+                const csccodeField = document.getElementById('NewAgent_csccode');
+                const attachedToField = document.getElementById('NewAgent_attached_to');
+                if (csccodeField && retailer.csccode) {
+                    csccodeField.value = retailer.csccode;
+                }
+                if (attachedToField && retailer.csccode) {
+                    attachedToField.value = retailer.csccode;
+                }
+                
+                // Initialize or reload agents table
+                loadAgentsTable(ctopupno);
+            } catch (err) {
+                console.error('Error loading retailer details:', err);
+            }
+        }
+
+        // Load agents table with server-side DataTable
+        function loadAgentsTable(retailerCtopupno) {
+            if (agentsTable) {
+                agentsTable.destroy();
+            }
+
+            agentsTable = $('#agentsTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/Csc/GetAgentsByRetailer',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: function (d) {
+                        return JSON.stringify({
+                            retailerCtopupno: retailerCtopupno,
+                            draw: d.draw,
+                            start: d.start,
+                            length: d.length,
+                            search: {
+                                value: d.search.value,
+                                regex: d.search.regex
+                            }
+                        });
+                    },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    }
+                },
+                columns: [
+                    { data: 'name', name: 'name' },
+                    { data: 'username', name: 'username' },
+                    { data: 'contact_number', name: 'contact_number' },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            return `<button type="button" class="btn btn-link p-0 doc-thumb" data-username="${row.username}" data-category="BA_APPROVAL" data-title="BA Head Approved Letter - ${row.name}"><span class="badge badge-light">BA</span></button>`;
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            return `<button type="button" class="btn btn-link p-0 doc-thumb" data-username="${row.username}" data-category="ID_CARD" data-title="Employee ID Card - ${row.name}"><span class="badge badge-light">ID</span></button>`;
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            return `<button type="button" class="btn btn-link p-0 doc-thumb" data-username="${row.username}" data-category="AADHAR" data-title="Aadhaar Card - ${row.name}"><span class="badge badge-light">AAD</span></button>`;
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            return `<button type="button" class="btn btn-link p-0 doc-thumb" data-username="${row.username}" data-category="PAN_CARD" data-title="PAN Card - ${row.name}"><span class="badge badge-light">PAN</span></button>`;
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            return `<button type="button" class="btn btn-link p-0 doc-thumb" data-username="${row.username}" data-category="PHOTO" data-title="Photo - ${row.name}"><span class="badge badge-light">PH</span></button>`;
+                        }
+                    }
+                ],
+                order: [[2, 'desc']],
+                pageLength: 10
+            });
+        }
+
+        // Circle and SSA dropdown handlers (similar to CtopUsers.cshtml)
+        const circleSelect = document.getElementById('circleSelect');
+        const ssaSelect = document.getElementById('ssaSelect');
+        const attachedToField = document.getElementById('NewAgent_attached_to');
+
+        async function loadSsas(circleId) {
+            ssaSelect.innerHTML = '<option value="">-- Select SSA --</option>';
+            if (!circleId) return;
+            const resp = await fetch(`/Csc/GetSsas?circleId=${circleId}`);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            data.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.ssa_name;
+                opt.dataset.code = s.ssa_code;
+                opt.dataset.name = s.ssa_name;
+                ssaSelect.appendChild(opt);
+            });
+        }
+
+        circleSelect.addEventListener('change', function () {
+            const selected = circleSelect.options[circleSelect.selectedIndex];
+            const name = selected.dataset.name || '';
+            const code = selected.dataset.code || '';
+            const zone = selected.dataset.zone || '';
+            document.getElementById('NewAgent_circle_name').value = name;
+            document.getElementById('NewAgent_pos_state').value = name;
+            document.getElementById('NewAgent_circle_code').value = code;
+            document.getElementById('NewAgent_zone_code').value = zone;
+            loadSsas(circleSelect.value);
+        });
+
+        ssaSelect.addEventListener('change', function () {
+            const selected = ssaSelect.options[ssaSelect.selectedIndex];
+            const name = selected ? selected.dataset.name : '';
+            const code = selected ? selected.dataset.code : '';
+            document.getElementById('NewAgent_ssa_code').value = code || '';
+            document.getElementById('NewAgent_pos_district').value = name || '';
+        });
+
+        // Form submission handler
+        const createAgentForm = document.getElementById('createAgentForm');
+        const formLoader = document.getElementById('formLoader');
+        const formErrorAlert = document.getElementById('formErrorAlert');
+        const formErrorText = document.getElementById('formErrorText');
+        const addAgentModal = document.getElementById('addAgentModal');
+
+        if (createAgentForm) {
+            createAgentForm.addEventListener('submit', function (e) {
+                if (this.checkValidity()) {
+                    if (formLoader) {
+                        formLoader.classList.remove('d-none');
+                    }
+                    if (formErrorAlert) {
+                        formErrorAlert.classList.add('d-none');
+                    }
+                } else {
+                    if (formLoader) {
+                        formLoader.classList.add('d-none');
+                    }
+                }
+            });
+        }
+
+        // Refresh table after successful form submission
+        if (createAgentForm) {
+            createAgentForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const formAction = this.action;
+                
+                try {
+                    if (formLoader) {
+                        formLoader.classList.remove('d-none');
+                    }
+                    if (formErrorAlert) {
+                        formErrorAlert.classList.add('d-none');
+                    }
+                    
+                    // Get anti-forgery token
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                    if (token) {
+                        formData.append('__RequestVerificationToken', token);
+                    }
+                    
+                    const response = await fetch(formAction, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    // Try to parse as JSON first
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            // Success - close modal and refresh table
+                            // Use jQuery modal (Bootstrap 4) or native Bootstrap 5
+                            if (typeof $ !== 'undefined' && $.fn.modal) {
+                                $(addAgentModal).modal('hide');
+                            } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                                // Bootstrap 5
+                                try {
+                                    const modal = bootstrap.Modal.getInstance(addAgentModal);
+                                    if (modal) {
+                                        modal.hide();
+                                    } else {
+                                        // Create new instance if doesn't exist
+                                        new bootstrap.Modal(addAgentModal).hide();
+                                    }
+                                } catch (e) {
+                                    // Fallback: just hide it
+                                    addAgentModal.style.display = 'none';
+                                    document.body.classList.remove('modal-open');
+                                    const backdrop = document.querySelector('.modal-backdrop');
+                                    if (backdrop) backdrop.remove();
+                                }
+                            } else {
+                                // Fallback: manual hide
+                                addAgentModal.style.display = 'none';
+                                document.body.classList.remove('modal-open');
+                                const backdrop = document.querySelector('.modal-backdrop');
+                                if (backdrop) backdrop.remove();
+                            }
+                            
+                            // Reload table if retailer is selected
+                            if (selectedRetailerCtopupno && agentsTable) {
+                                agentsTable.ajax.reload(null, false); // Reload without resetting pagination
+                            }
+                            
+                            // Show success message
+                            alert(result.message || 'Agent created successfully!');
+                            
+                            // Reset form
+                            this.reset();
+                            
+                            // Show success message at top of page if possible
+                            if (result.errors && result.errors.length > 0) {
+                                console.warn('Warnings:', result.errors);
+                            }
+                        } else {
+                            // Error from server
+                            let errorMessage = result.message || 'Error creating agent.';
+                            if (result.errors && result.errors.length > 0) {
+                                errorMessage += '\n' + result.errors.join('\n');
+                            }
+                            
+                            if (formErrorText) {
+                                formErrorText.textContent = errorMessage;
+                            }
+                            if (formErrorAlert) {
+                                formErrorAlert.classList.remove('d-none');
+                            }
+                        }
+                        return;
+                    }
+                    
+                    // If not JSON, it might be HTML (redirect response)
+                    if (response.ok) {
+                        // Success but got HTML - reload page
+                        // Use jQuery modal (Bootstrap 4)
+                        if (typeof $ !== 'undefined' && $.fn.modal) {
+                            $(addAgentModal).modal('hide');
+                        } else {
+                            // Fallback: manual hide
+                            addAgentModal.style.display = 'none';
+                            document.body.classList.remove('modal-open');
+                            const backdrop = document.querySelector('.modal-backdrop');
+                            if (backdrop) backdrop.remove();
+                        }
+                        window.location.reload();
+                        return;
+                    }
+                    
+                    // Error response
+                    let errorMessage = 'Error creating agent. Please check the form for errors.';
+                    try {
+                        const errorText = await response.text();
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            if (errorJson.message) {
+                                errorMessage = errorJson.message;
+                            }
+                            if (errorJson.errors && errorJson.errors.length > 0) {
+                                errorMessage += '\n' + errorJson.errors.join('\n');
+                            }
+                        } catch {
+                            // Not JSON
+                        }
+                    } catch {
+                        // Couldn't read error text
+                    }
+                    
+                    if (formErrorText) {
+                        formErrorText.textContent = errorMessage;
+                    }
+                    if (formErrorAlert) {
+                        formErrorAlert.classList.remove('d-none');
+                    }
+                } catch (err) {
+                    console.error('Form submission error:', err);
+                    if (formErrorText) {
+                        formErrorText.textContent = 'An error occurred while submitting the form. Please try again.';
+                    }
+                    if (formErrorAlert) {
+                        formErrorAlert.classList.remove('d-none');
+                    }
+                } finally {
+                    if (formLoader) {
+                        formLoader.classList.add('d-none');
+                    }
+                }
+            });
+        }
+
+        // Document download handlers (similar to CtopUsers.cshtml)
+        $(document).on('click', '.doc-thumb', async function () {
+            const username = $(this).data('username');
+            const category = $(this).data('category');
+            const title = $(this).data('title');
+
+            if (!username || !category) return;
+
+            try {
+                const docsResp = await fetch(`/Csc/GetDocuments?username=${encodeURIComponent(username)}`);
+                if (!docsResp.ok) {
+                    alert('Unable to load documents');
+                    return;
+                }
+
+                const docs = await docsResp.json();
+                const matching = Array.isArray(docs) ? docs.find(d => d.file_category_code === category) : null;
+
+                if (!matching || !matching.id) {
+                    alert('No document available for this category');
+                    return;
+                }
+
+                const downloadUrl = `/Csc/DownloadDocument?docId=${matching.id}`;
+                window.open(downloadUrl, '_blank');
+            } catch (e) {
+                console.error('Document download error:', e);
+                alert('Error loading document');
+            }
+        });
+            })($);
+        }
+        
+        // Start initialization
+        initAgentsPage();
+    })();
+</script>
+}
+

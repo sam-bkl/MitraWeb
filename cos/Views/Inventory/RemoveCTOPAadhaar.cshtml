@@ -1,0 +1,137 @@
+﻿@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "Login Page";
+}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">Push Inventory</h4>
+                <a class="heading-elements-toggle"><i class="la la-ellipsis-v font-medium-3"></i></a>
+                <div class="heading-elements">
+                    <ul class="list-inline mb-0">
+                        <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                        <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                        <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                        <li><a data-action="close"><i class="ft-x"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Enter CTOP Number</label>
+                                <input id="ctopupno" class="form-control" name="ctopupno"/>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer  bg-gray-light">
+                <button type="submit" class="btn btn-secondary" onclick="getCTOPDetails(); return false;">Get Details</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row" id="ctop_details_div" style="display: none;">
+    <div class="col-12">
+        <div class="card-header">
+            <h4 class="card-header">Details</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Aadhaar No</label>
+                        <label id="aadhaar_no"></label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Attached To</label>
+                        <label id="attached_to"></label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Circle Code</label>
+                        <label id="circle_code"></label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Circle Name</label>
+                        <label id="circle_name"></label>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>CTOP UP NO</label>
+                        <label id="ctopupno1"></label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>CSC Code</label>
+                        <label id="csccode"></label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <label id="name"></label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>POS Owner Name</label>
+                        <label id="pos_owner_name"></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer  bg-gray-light">
+            <button type="submit" class="btn btn-secondary" onclick="setAadhaarToNull(); return false;">Submit</button>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        function getCTOPDetails(){
+           data = {};
+           data.ctopupno = $('#ctopupno').val();
+           $.ajax({
+                type: 'POST',
+                url: '/Inventory/GetCtopDetails',
+                data: data,
+                success: function (data) {
+                    console.log(data);
+                    $('#aadhaar_no').text(data["aadhaar_no"] === null ? '': data["aadhaar_no"]);
+                    $('#attached_to').text(data["attached_to"]);
+                    $('#circle_code').text(data["circle_code"]);
+                    $('#circle_name').text(data["circle_name"]);
+                    $('#ctopupno1').text(data["ctopupno"]);
+                    $('#csccode').text(data["csccode"]);
+                    $('#name').text(data["name"]);
+                    $('#pos_owner_name').text(data["pos_owner_name"]);
+                    $('#ctop_details_div').show();
+                }
+            });
+        }
+        function setAadhaarToNull(){
+            data.ctopupno = $('#ctopupno').val();
+           $.ajax({
+                type: 'POST',
+                url: '/Inventory/SetAadhaarToNull',
+                data: data,
+                success: function (data) {
+                    alert(data);
+                }
+            });
+        }
+    </script>
+}

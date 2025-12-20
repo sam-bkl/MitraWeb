@@ -1,0 +1,135 @@
+﻿@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "SSA Admin";
+}
+
+SSA ADMIN DASHBOARD
+<div class="row">
+    <div class="col-lg-3 col-12">
+        <div class="card pull-up">
+            <div class="card-content">
+                <div class="card-body">
+                    <div class="media d-flex">
+                        <div class="media-body text-left">
+                            <h6 class="text-muted">Total ekyc requests </h6>
+                            <h3 id="info-box-total">25</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="la la-inbox font-large-2 float-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-12">
+        <div class="card pull-up">
+            <div class="card-content">
+                <div class="card-body">
+                    <div class="media d-flex">
+                        <div class="media-body text-left">
+                            <h6 class="text-muted">ekyc requests completed</h6>
+                            <h3 id="info-box-completed">10</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="la la-check-circle text-success font-large-2 float-right"></i>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-12">
+        <div class="card pull-up">
+            <div class="card-content">
+                <div class="card-body">
+                    <div class="media d-flex">
+                        <div class="media-body text-left">
+                            <h6 class="text-muted">See Later</h6>
+                            <h3 id="info-box-pending">0</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="la la-clock-o text-warning font-large-2 float-right"></i>
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-12">
+        <div class="card pull-up">
+            <div class="card-content">
+                <div class="card-body">
+                    <div class="media d-flex">
+                        <div class="media-body text-left">
+                            <h6 class="text-muted">Rejected CAFs</h6>
+                            <h3 id="info-box-rejected">0</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="la la-times-circle text-danger font-large-2 float-right"></i>
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+         $(document).ready(function () {
+
+
+            GetInventory();
+           // GetkycSummary();
+            //GetUsg();
+            //GetMsg();
+            //GetData();
+            //GetBarData();
+            //GetLastupd();
+            //GetLastupdSim();
+
+        });
+
+        function GetInventory() {
+
+
+            var data = {
+
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: "/UserDash/GetInventory",
+
+                headers: {
+                    "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: data,
+                success: function (data) {
+
+                    console.log(data);
+
+
+                    $('#info-box-total').html(data.total_kyc);
+                    $('#info-box-completed').html(data.comp_kyc);
+                    $('#info-box-pending').html(data.seelater);
+                    $('#info-box-rejected').html(data.rejected);
+
+
+                },
+                failure: function (data) {
+                    console.log(data);
+                }
+
+            });
+
+        }
+
+    </script>
+}

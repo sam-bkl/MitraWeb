@@ -1,0 +1,956 @@
+﻿@{
+    @* Layout = "~/Views/Shared/_Layout_vue_rp.cshtml"; *@
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "Summary";
+}
+
+
+
+@section header {
+    <!-- Bootstrap 5 CSS -->
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    @* <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .last-updated {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Cards Section */
+        .cards-section {
+            margin-bottom: 40px;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 5px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-left: 2px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-completed {
+            border-left-color: #10b981;
+        }
+
+        .card-seelater {
+            border-left-color: #f59e0b;
+        }
+
+        .card-total {
+            border-left-color: #6366f1;
+        }
+
+        .card-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+
+        .card-completed .card-value {
+            color: #10b981;
+        }
+
+        .card-seelater .card-value {
+            color: #f59e0b;
+        }
+
+        .card-total .card-value {
+            color: #6366f1;
+        }
+
+        .card-subtitle {
+            font-size: 0.813rem;
+            color: #9ca3af;
+        }
+
+        /* Table Section */
+        .table-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow-x: auto;
+        }
+
+        .table-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        thead {
+            background: #f9fafb;
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        th.text-right {
+            text-align: right;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background-color 0.15s;
+        }
+
+        tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        td {
+            padding: 12px 16px;
+            font-size: 0.938rem;
+            color: #4b5563;
+        }
+
+        td.text-right {
+            text-align: right;
+        }
+
+        td.font-bold {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .table-compact th,
+        .table-compact td {
+            border-right: 1px solid #e5e7eb; /* light gray */
+        }
+
+        .table-compact th:last-child,
+        .table-compact td:last-child {
+            border-right: none;
+        }
+        .group-end {
+            border-right: 2px solid #9ca3af; /* visible separator */
+        }
+        .row-group-end td {
+             border-bottom: 2px solid #9ca3af;
+        }
+        /* Loading Spinner */
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            flex-direction: column;
+        }
+
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            margin-top: 16px;
+            color: #6b7280;
+            font-size: 0.938rem;
+        }
+
+        /* Error Message */
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-left: 4px solid #ef4444;
+            color: #991b1b;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .error-message strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 8px;
+            color: #374151;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-value {
+                font-size: 2rem;
+            }
+
+            .table-section {
+                padding: 16px;
+            }
+        }
+    </style> *@
+
+}
+
+
+<div id="app">
+    <div class="row">
+        <div class="col-12">
+            <div class="col-lg-4 col-12">
+                <!-- Error Message -->
+                <div v-if="error" class="error-message">
+                    <strong>Error:</strong> {{ error }}
+                </div>
+
+                <!-- Loading State -->
+                <div v-if="loading" class="loading-container">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Loading KYC data...</div>
+                </div>
+            </div>
+
+
+
+            <!-- Content -->
+            <template v-if="!loading && !error">
+                <div class=" col-12">
+                    <!-- Summary Cards -->
+                    <div class="d-flex flex-wrap d-flex justify-content-between">
+                        <div class="card-wrapper p-1  " style="min-width:15rem; flex:1;">
+                            <div class="card pull-up">
+                                <div class="card-content">
+                                    <div class="card-body">
+                                        <div class="media d-flex ">
+                                            <div class="media-body text-left green">
+                                                <h6 class="text-muted">Onboarded </h6>
+                                                <h3 id="info-box-total">{{ tableData.grandTotals?.total?.total }}</h3>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="la la-check-circle  font-large-1 text-primary float-righ"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-wrapper p-1 " style="min-width:15rem; flex:1;">
+                            <div class="card pull-up">
+                                <div class="card-content">
+                                    <div class="card-body">
+                                        <div class="media d-flex">
+                                            <div class="media-body text-left">
+                                                <h6 class="text-muted">Approved/Onboarded</h6>
+
+                                                <span class="d-flex">
+                                                    <h3 id="info-box-total" class="font-weight-bold">
+                                                        {{ tableData.grandTotals?.total?.completed || 0 }}
+
+                                                    </h3>
+                                                    <h6 id="info-box-total" class="">
+
+                                                        / {{ tableData.grandTotals?.total?.total || 0 }}
+                                                    </h6>
+                                                </span>
+
+                                            </div>
+
+                                            <div class="align-self-center text-right ml-2  d-flex flex-column">
+                                                <i class="la la-check-circle font-large-1 text-success float-right"></i>
+
+                                                <h5 class="text-success" v-if="tableData.grandTotals?.total?.total>0">
+                                                    {{
+                                                    (tableData.grandTotals?.total?.completed * 100 /
+                                                    tableData.grandTotals?.total?.total ).toFixed(2)
+                                                    }}%
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-wrapper p-1" style="min-width:15rem; flex:1;">
+                            <div class="card pull-up">
+                                <div class="card-content">
+                                    <div class="card-body">
+
+
+                                        <div class="media d-flex">
+                                            <div class="media-body text-left">
+                                                <h6 class="text-muted">See Later / Onboarded</h6>
+
+                                                <span class="d-flex">
+                                                    <h3 id="info-box-total" class="font-weight-bold">
+                                                        {{ tableData.grandTotals?.total?.pending || 0 }}
+
+                                                    </h3>
+                                                    <h6 id="info-box-total" class="font-weight-bold">
+
+                                                        / {{ tableData.grandTotals?.total?.total || 0 }}
+                                                    </h6>
+                                                </span>
+                                            </div>
+
+                                            <div class="align-self-center text-right ml-2  d-flex flex-column">
+                                                <i class="la la-bookmark font-large-1 text-warning   float-right"></i>
+
+                                                <h5 class="text-warning" v-if="tableData.grandTotals?.total?.total>0">
+                                                    {{
+                                                    (tableData.grandTotals?.total?.pending * 100 /
+                                                    tableData.grandTotals?.total?.total ).toFixed(2)
+                                                    }}%
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-wrapper p-1 " style="min-width:15rem; flex:1;">
+                            <div class="card pull-up">
+                                <div class="card-content">
+                                    <div class="card-body">
+                                        <div class="media d-flex">
+
+                                            <div class="media-body text-left">
+                                                <h6 class="text-muted">Rejected / Onboarded</h6>
+                                                <span class="d-flex">
+                                                    <h3 id="info-box-total" class="font-weight-bold">
+                                                        {{ tableData.grandTotals?.total?.rejected || 0 }}
+
+                                                    </h3>
+                                                    <h6 id="info-box-total" class="font-weight-bold">
+
+                                                        / {{ tableData.grandTotals?.total?.total || 0 }}
+                                                    </h6>
+                                                </span>
+
+                                            </div>
+
+                                            <div class="align-self-center text-right ml-2  d-flex flex-column">
+                                                <i class="la la-ban font-large-1 text-danger   float-right"></i>
+
+                                                <h5 class="text-danger" v-if="tableData.grandTotals?.total?.total>0">
+                                                    {{
+                                                    (tableData.grandTotals?.total?.rejected * 100 /
+                                                    tableData.grandTotals?.total?.total ).toFixed(2)
+                                                    }}%
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-wrapper p-1 " style="min-width:15rem; flex:1;">
+                            <div class="card pull-up">
+                                <div class="card-content">
+                                    <div class="card-body">
+                                           
+                                        <div class="media d-flex">
+                                            <div class="media-body text-left">
+                                                <h6 class="text-muted">Pending / Onboarded</h6>
+                                                <span class="d-flex">
+                                                    <h3 id="info-box-total" class="font-weight-bold">
+                                                        {{ tableData.grandTotals?.total?.not_verified || 0 }}
+
+                                                    </h3>
+                                                    <h6 id="info-box-total" class="font-weight-bold">
+
+                                                        / {{ tableData.grandTotals?.total?.total || 0 }}
+                                                    </h6>
+                                                </span>
+                                            </div>
+
+                                            <div class="align-self-center text-right ml-2 d-flex flex-column">
+
+                                                <i class="la la-hourglass-half font-large-1 text-primary float-right"></i>
+
+                                                <h5 class="text-primary" v-if="tableData.grandTotals?.total?.total>0">
+                                                    {{
+                                                    (tableData.grandTotals?.total?.not_verified * 100 /
+                                                    tableData.grandTotals?.total?.completed ).toFixed(2)
+                                                    }}%
+                                                </h5>
+                                            </div>
+
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="card-wrapper p-1" style="min-width:15rem; flex:1;">
+                            <div class="card pull-up">
+                                <div class="card-content">
+                                    <div class="card-body">
+
+                                        <div class="media d-flex">
+                                            <div class="media-body text-left">
+                                                <h6 class="text-muted">Activated / Approved</h6>
+                                                <span class="d-flex">
+                                                    <h3 id="info-box-total" class="font-weight-bold">
+                                                        {{ tableData.grandTotals?.total?.activated || 0 }}
+
+                                                    </h3>
+                                                    <h6 id="info-box-total" class="font-weight-bold">
+
+                                                        / {{ tableData.grandTotals?.total?.completed || 0 }}
+                                                    </h6>
+                                                </span>
+                                            </div>
+
+                                            <div class="align-self-center text-right ml-2 d-flex flex-column">
+
+                                                <i class="la la-bolt font-large-1 text-success float-right"></i>
+
+                                                <h5 class="text-success" v-if="tableData.grandTotals?.total?.total>0">
+                                                    {{
+                                                    (tableData.grandTotals?.total?.activated * 100 /
+                                                    tableData.grandTotals?.total?.completed ).toFixed(2)
+                                                    }}%
+                                                </h5>
+                                            </div>
+
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+                <div class="col-12">
+                    <!-- Data Table -->
+                    <div class="card">
+                        <div class="card-header">
+                            Detailed KYC Breakdown
+                            <template v-if="lastUpdated">
+                                updated: {{ lastUpdated }}
+                            </template>
+                             <template v-if="tableData.length !== 0"> <h6>zoom out for visibility</h6> </template>
+                           
+
+                        </div>
+                        <div class="card-content collapse show">
+                            <div class="card-body card-dashboard">
+                                
+                                <div class="table-responsive " v-if="tableData.length !== 0">
+
+
+                                    <table  class="table table-striped table-bordered table-sm small zero-configuration ">
+                                        <thead>
+                                            <!-- First row: CAF Types -->
+                                            <tr>
+                                                <th rowspan="2">Zone</th>
+                                                <th rowspan="2" class="group-end">Circle</th>
+                                                <th colspan="5" class="group-end" v-for="item in distinctCafTypes"
+                                                    :key="index">{{ item || 'unknown' }}</th>
+
+                                            </tr>
+                                            <!-- Second row: Metrics -->
+                                            <tr>
+
+                                                <template v-for="item in distinctCafTypes" :key="index">
+                                                    <th>boarded</th>
+                                                    <th>approved</th>
+                                                    <th>Reject</th>
+                                                    <th>see later</th>
+                                                    <th>pending</th>
+                                                    <th class="group-end">Activated</th>
+                                                </template>
+
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            <tr class="grand-total">
+                                                <td colspan="2" class="group-end ">GRAND TOTAL</td>
+
+
+                                                <template v-for="caf in distinctCafTypes" :key="caf">
+                                                    <td>{{ tableData.grandTotals[caf]?.total ?? 0 }}</td>
+                                                    <td>{{ tableData.grandTotals[caf]?.completed ?? 0 }}</td>
+                                                    <td>{{ tableData.grandTotals[caf]?.rejected ?? 0 }}</td>
+                                                    <td>{{ tableData.grandTotals[caf]?.pending ?? 0 }}</td>
+                                                    <td>{{ tableData.grandTotals[caf]?.not_verified ?? 0 }}</td>
+                                                    <td class="group-end ">{{ tableData.grandTotals[caf]?.activated ?? 0
+                                                        }}
+                                                    </td>
+                                                </template>
+                                            </tr>
+
+                                            <template v-for="(zoneData, zIndex) in tableData.zones"
+                                                :key="zoneData.zone">
+
+                                                <!-- Zone TOTAL row (optional, above circles) -->
+
+                                                <tr class="zone-total">
+                                                    <td colspan="2" style="font-weight:600;color:blue;"> {{
+                                                        zoneData.zone }}
+                                                        TOTAL</td>
+                                                    <template v-for="caf in distinctCafTypes"
+                                                        :key="zoneData.zone + '-' + caf">
+
+                                                        <td class="text-right " style="font-weight:600;color:blue;">{{
+                                                            zoneData.zoneTotals[caf]?.total ?? 0 }}</td>
+                                                        <td class="text-right" style="font-weight:600;color:blue;">{{
+                                                            zoneData.zoneTotals[caf]?.completed ?? 0 }}</td>
+                                                        <td class="text-right" style="font-weight:600;color:blue;">{{
+                                                            zoneData.zoneTotals[caf]?.rejected ?? 0 }}</td>
+                                                        <td class="text-right " style="font-weight:600;color:blue;">{{
+                                                            zoneData.zoneTotals[caf]?.pending ?? 0 }}</td>
+       <td class="text-right " style="font-weight:600;color:blue;">{{
+                                                            zoneData.zoneTotals[caf]?.not_verified ?? 0 }}</td>                                                            
+                                                        <td class="text-right group-end"
+                                                            style="font-weight:600;color:blue;">{{
+                                                            zoneData.zoneTotals[caf]?.activated ?? 0 }}</td>
+                                                    </template>
+
+                                                </tr>
+
+                                                <!-- Circle rows -->
+                                                <template v-for="(circleData, circleCode) in zoneData.circles"
+                                                    :key="circleCode">
+                                                    <tr>
+                                                        <td>{{ zoneData.zone }}</td>
+                                                        <td class="group-end ">{{ circleData.circle }}</td>
+
+                                                        <!-- CAF type columns -->
+                                                        <template v-for="caf in distinctCafTypes"
+                                                            :key="circleData.circle + '-' + caf">
+                                                            <td class="text-right">{{ circleData.cafTypes[caf]?.total ??
+                                                                0
+                                                                }}</td>
+                                                            <td class="text-right font-bold">{{
+                                                                circleData.cafTypes[caf]?.completed ?? 0 }}</td>
+                                                            <td class="text-right">{{ circleData.cafTypes[caf]?.rejected
+                                                                ??
+                                                                0 }}</td>
+                                                            <td class="text-right">{{ circleData.cafTypes[caf]?.pending
+                                                                ?? 0
+                                                                }}</td>
+    <td class="text-right">{{ circleData.cafTypes[caf]?.not_verified
+                                                                ?? 0
+                                                                }}</td>                                                                
+                                                            <td class="text-right group-end">{{
+                                                                circleData.cafTypes[caf]?.activated ?? 0 }}</td>
+                                                        </template>
+                                                    </tr>
+                                                </template>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Empty State -->
+                                <div v-if="tableData.length === 0" class="empty-state">
+                                    <div class="empty-state-icon">📊</div>
+                                    <h3>No Data Available</h3>
+                                    <p>There are no KYC records to display at this time.</p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+            </template>
+        </div>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+    <script>
+        const { createApp, ref, reactive, onMounted, computed } = Vue;
+
+        let raw_data = [{ "zone_code": "WZ", "short_code": "MH", "circle_code": 1, "caf_type": "cymn", "total_request": 3178, "completedkyc": 2339, "rejected": 151, "seelater": 674 }, { "zone_code": "WZ", "short_code": "MH", "circle_code": 1, "caf_type": "mnp", "total_request": 884, "completedkyc": 665, "rejected": 47, "seelater": 140 }, { "zone_code": "WZ", "short_code": "MH", "circle_code": 1, "caf_type": null, "total_request": 35, "completedkyc": 26, "rejected": 0, "seelater": 9 }, { "zone_code": "NZ", "short_code": "DL", "circle_code": 2, "caf_type": "mnp", "total_request": 3, "completedkyc": 1, "rejected": 0, "seelater": 2 }, { "zone_code": "WZ", "short_code": "CG", "circle_code": 3, "caf_type": "cymn", "total_request": 688, "completedkyc": 171, "rejected": 43, "seelater": 374 }, { "zone_code": "WZ", "short_code": "CG", "circle_code": 3, "caf_type": "mnp", "total_request": 222, "completedkyc": 75, "rejected": 19, "seelater": 83 }, { "zone_code": "WZ", "short_code": "CG", "circle_code": 3, "caf_type": null, "total_request": 12, "completedkyc": 0, "rejected": 0, "seelater": 12 }, { "zone_code": "WZ", "short_code": "MP", "circle_code": 4, "caf_type": "cymn", "total_request": 759, "completedkyc": 378, "rejected": 41, "seelater": 218 }, { "zone_code": "WZ", "short_code": "MP", "circle_code": 4, "caf_type": "mnp", "total_request": 119, "completedkyc": 70, "rejected": 10, "seelater": 35 }, { "zone_code": "WZ", "short_code": "MP", "circle_code": 4, "caf_type": null, "total_request": 7, "completedkyc": 6, "rejected": 0, "seelater": 1 }, { "zone_code": "WZ", "short_code": "GJ", "circle_code": 10, "caf_type": "cymn", "total_request": 1657, "completedkyc": 1017, "rejected": 33, "seelater": 443 }, { "zone_code": "WZ", "short_code": "GJ", "circle_code": 10, "caf_type": "mnp", "total_request": 523, "completedkyc": 339, "rejected": 13, "seelater": 110 }, { "zone_code": "WZ", "short_code": "GJ", "circle_code": 10, "caf_type": null, "total_request": 24, "completedkyc": 17, "rejected": 0, "seelater": 7 }, { "zone_code": "WZ", "short_code": "MU", "circle_code": 12, "caf_type": "cymn", "total_request": 30, "completedkyc": 21, "rejected": 1, "seelater": 3 }, { "zone_code": "WZ", "short_code": "MU", "circle_code": 12, "caf_type": "mnp", "total_request": 43, "completedkyc": 27, "rejected": 1, "seelater": 12 }, { "zone_code": "SZ", "short_code": "CH", "circle_code": 40, "caf_type": "cymn", "total_request": 616, "completedkyc": 371, "rejected": 18, "seelater": 186 }, { "zone_code": "SZ", "short_code": "CH", "circle_code": 40, "caf_type": "mnp", "total_request": 230, "completedkyc": 115, "rejected": 9, "seelater": 87 }, { "zone_code": "SZ", "short_code": "CH", "circle_code": 40, "caf_type": null, "total_request": 7, "completedkyc": 6, "rejected": 0, "seelater": 1 }, { "zone_code": "SZ", "short_code": "TS", "circle_code": 41, "caf_type": "cymn", "total_request": 2973, "completedkyc": 2106, "rejected": 41, "seelater": 673 }, { "zone_code": "SZ", "short_code": "TS", "circle_code": 41, "caf_type": "mnp", "total_request": 747, "completedkyc": 560, "rejected": 7, "seelater": 137 }, { "zone_code": "SZ", "short_code": "TS", "circle_code": 41, "caf_type": null, "total_request": 43, "completedkyc": 31, "rejected": 1, "seelater": 11 }, { "zone_code": "SZ", "short_code": "KE", "circle_code": 50, "caf_type": "cymn", "total_request": 3752, "completedkyc": 2890, "rejected": 121, "seelater": 465 }, { "zone_code": "SZ", "short_code": "KE", "circle_code": 50, "caf_type": "mnp", "total_request": 1727, "completedkyc": 1320, "rejected": 42, "seelater": 183 }, { "zone_code": "SZ", "short_code": "KE", "circle_code": 50, "caf_type": null, "total_request": 26, "completedkyc": 15, "rejected": 0, "seelater": 11 }, { "zone_code": "SZ", "short_code": "AP", "circle_code": 51, "caf_type": "cymn", "total_request": 3249, "completedkyc": 1922, "rejected": 254, "seelater": 646 }, { "zone_code": "SZ", "short_code": "AP", "circle_code": 51, "caf_type": "mnp", "total_request": 1051, "completedkyc": 616, "rejected": 82, "seelater": 192 }, { "zone_code": "SZ", "short_code": "AP", "circle_code": 51, "caf_type": null, "total_request": 29, "completedkyc": 16, "rejected": 0, "seelater": 13 }, { "zone_code": "SZ", "short_code": "KA", "circle_code": 53, "caf_type": "cymn", "total_request": 4000, "completedkyc": 2637, "rejected": 297, "seelater": 819 }, { "zone_code": "SZ", "short_code": "KA", "circle_code": 53, "caf_type": "mnp", "total_request": 987, "completedkyc": 674, "rejected": 65, "seelater": 140 }, { "zone_code": "SZ", "short_code": "KA", "circle_code": 53, "caf_type": null, "total_request": 37, "completedkyc": 24, "rejected": 0, "seelater": 13 }, { "zone_code": "SZ", "short_code": "TN", "circle_code": 54, "caf_type": "cymn", "total_request": 2681, "completedkyc": 1136, "rejected": 255, "seelater": 687 }, { "zone_code": "SZ", "short_code": "TN", "circle_code": 54, "caf_type": "mnp", "total_request": 966, "completedkyc": 457, "rejected": 84, "seelater": 184 }, { "zone_code": "SZ", "short_code": "TN", "circle_code": 54, "caf_type": null, "total_request": 26, "completedkyc": 8, "rejected": 0, "seelater": 18 }, { "zone_code": "NZ", "short_code": "HP", "circle_code": 55, "caf_type": "cymn", "total_request": 582, "completedkyc": 235, "rejected": 110, "seelater": 226 }, { "zone_code": "NZ", "short_code": "HP", "circle_code": 55, "caf_type": "mnp", "total_request": 107, "completedkyc": 50, "rejected": 22, "seelater": 24 }, { "zone_code": "NZ", "short_code": "HP", "circle_code": 55, "caf_type": null, "total_request": 16, "completedkyc": 7, "rejected": 6, "seelater": 3 }, { "zone_code": "NZ", "short_code": "PB", "circle_code": 56, "caf_type": "cymn", "total_request": 816, "completedkyc": 321, "rejected": 25, "seelater": 293 }, { "zone_code": "NZ", "short_code": "PB", "circle_code": 56, "caf_type": "mnp", "total_request": 267, "completedkyc": 134, "rejected": 13, "seelater": 65 }, { "zone_code": "NZ", "short_code": "PB", "circle_code": 56, "caf_type": null, "total_request": 12, "completedkyc": 7, "rejected": 2, "seelater": 3 }, { "zone_code": "NZ", "short_code": "RJ", "circle_code": 59, "caf_type": "cymn", "total_request": 665, "completedkyc": 260, "rejected": 25, "seelater": 238 }, { "zone_code": "NZ", "short_code": "RJ", "circle_code": 59, "caf_type": "mnp", "total_request": 195, "completedkyc": 79, "rejected": 1, "seelater": 39 }, { "zone_code": "NZ", "short_code": "RJ", "circle_code": 59, "caf_type": null, "total_request": 32, "completedkyc": 18, "rejected": 2, "seelater": 10 }, { "zone_code": "NZ", "short_code": "UE", "circle_code": 60, "caf_type": "cymn", "total_request": 2382, "completedkyc": 1229, "rejected": 534, "seelater": 541 }, { "zone_code": "NZ", "short_code": "UE", "circle_code": 60, "caf_type": "mnp", "total_request": 530, "completedkyc": 313, "rejected": 57, "seelater": 110 }, { "zone_code": "NZ", "short_code": "UE", "circle_code": 60, "caf_type": null, "total_request": 39, "completedkyc": 24, "rejected": 4, "seelater": 11 }, { "zone_code": "NZ", "short_code": "HR", "circle_code": 61, "caf_type": "cymn", "total_request": 795, "completedkyc": 439, "rejected": 105, "seelater": 94 }, { "zone_code": "NZ", "short_code": "HR", "circle_code": 61, "caf_type": "mnp", "total_request": 203, "completedkyc": 118, "rejected": 15, "seelater": 15 }, { "zone_code": "NZ", "short_code": "HR", "circle_code": 61, "caf_type": null, "total_request": 18, "completedkyc": 15, "rejected": 1, "seelater": 2 }, { "zone_code": "NZ", "short_code": "UW", "circle_code": 62, "caf_type": "cymn", "total_request": 902, "completedkyc": 236, "rejected": 298, "seelater": 200 }, { "zone_code": "NZ", "short_code": "UW", "circle_code": 62, "caf_type": "mnp", "total_request": 141, "completedkyc": 43, "rejected": 51, "seelater": 7 }, { "zone_code": "NZ", "short_code": "UW", "circle_code": 62, "caf_type": null, "total_request": 18, "completedkyc": 5, "rejected": 12, "seelater": 1 }, { "zone_code": "NZ", "short_code": "UL", "circle_code": 64, "caf_type": "cymn", "total_request": 260, "completedkyc": 158, "rejected": 40, "seelater": 38 }, { "zone_code": "NZ", "short_code": "UL", "circle_code": 64, "caf_type": "mnp", "total_request": 56, "completedkyc": 31, "rejected": 11, "seelater": 3 }, { "zone_code": "NZ", "short_code": "UL", "circle_code": 64, "caf_type": null, "total_request": 3, "completedkyc": 3, "rejected": 0, "seelater": 0 }, { "zone_code": "NZ", "short_code": "JK", "circle_code": 65, "caf_type": "cymn", "total_request": 131, "completedkyc": 0, "rejected": 0, "seelater": 0 }, { "zone_code": "NZ", "short_code": "JK", "circle_code": 65, "caf_type": "mnp", "total_request": 10, "completedkyc": 0, "rejected": 0, "seelater": 0 }, { "zone_code": "NZ", "short_code": "JK", "circle_code": 65, "caf_type": null, "total_request": 1, "completedkyc": 0, "rejected": 0, "seelater": 0 }, { "zone_code": "EZ", "short_code": "WB", "circle_code": 70, "caf_type": "cymn", "total_request": 614, "completedkyc": 132, "rejected": 68, "seelater": 137 }, { "zone_code": "EZ", "short_code": "WB", "circle_code": 70, "caf_type": "mnp", "total_request": 213, "completedkyc": 43, "rejected": 24, "seelater": 15 }, { "zone_code": "EZ", "short_code": "WB", "circle_code": 70, "caf_type": null, "total_request": 15, "completedkyc": 3, "rejected": 11, "seelater": 1 }, { "zone_code": "EZ", "short_code": "AS", "circle_code": 71, "caf_type": "cymn", "total_request": 269, "completedkyc": 198, "rejected": 4, "seelater": 33 }, { "zone_code": "EZ", "short_code": "AS", "circle_code": 71, "caf_type": "mnp", "total_request": 48, "completedkyc": 35, "rejected": 1, "seelater": 0 }, { "zone_code": "EZ", "short_code": "AS", "circle_code": 71, "caf_type": null, "total_request": 6, "completedkyc": 5, "rejected": 0, "seelater": 1 }, { "zone_code": "EZ", "short_code": "OR", "circle_code": 72, "caf_type": "cymn", "total_request": 1024, "completedkyc": 688, "rejected": 150, "seelater": 85 }, { "zone_code": "EZ", "short_code": "OR", "circle_code": 72, "caf_type": "mnp", "total_request": 24, "completedkyc": 15, "rejected": 5, "seelater": 2 }, { "zone_code": "EZ", "short_code": "OR", "circle_code": 72, "caf_type": null, "total_request": 10, "completedkyc": 7, "rejected": 3, "seelater": 0 }, { "zone_code": "EZ", "short_code": "BH", "circle_code": 73, "caf_type": "cymn", "total_request": 493, "completedkyc": 55, "rejected": 51, "seelater": 14 }, { "zone_code": "EZ", "short_code": "BH", "circle_code": 73, "caf_type": "mnp", "total_request": 132, "completedkyc": 30, "rejected": 14, "seelater": 5 }, { "zone_code": "EZ", "short_code": "BH", "circle_code": 73, "caf_type": null, "total_request": 11, "completedkyc": 0, "rejected": 0, "seelater": 0 }, { "zone_code": "EZ", "short_code": "NE1", "circle_code": 74, "caf_type": "cymn", "total_request": 20, "completedkyc": 15, "rejected": 3, "seelater": 1 }, { "zone_code": "EZ", "short_code": "NE1", "circle_code": 74, "caf_type": "mnp", "total_request": 4, "completedkyc": 2, "rejected": 1, "seelater": 0 }, { "zone_code": "EZ", "short_code": "NE1", "circle_code": 74, "caf_type": null, "total_request": 1, "completedkyc": 1, "rejected": 0, "seelater": 0 }, { "zone_code": "EZ", "short_code": "NE2", "circle_code": 75, "caf_type": "cymn", "total_request": 309, "completedkyc": 272, "rejected": 22, "seelater": 3 }, { "zone_code": "EZ", "short_code": "NE2", "circle_code": 75, "caf_type": "mnp", "total_request": 19, "completedkyc": 16, "rejected": 0, "seelater": 1 }, { "zone_code": "EZ", "short_code": "NE2", "circle_code": 75, "caf_type": null, "total_request": 2, "completedkyc": 2, "rejected": 0, "seelater": 0 }, { "zone_code": "EZ", "short_code": "JH", "circle_code": 76, "caf_type": "cymn", "total_request": 609, "completedkyc": 501, "rejected": 32, "seelater": 49 }, { "zone_code": "EZ", "short_code": "JH", "circle_code": 76, "caf_type": "mnp", "total_request": 155, "completedkyc": 124, "rejected": 8, "seelater": 10 }, { "zone_code": "EZ", "short_code": "JH", "circle_code": 76, "caf_type": null, "total_request": 7, "completedkyc": 5, "rejected": 0, "seelater": 2 }, { "zone_code": "EZ", "short_code": "AN", "circle_code": 77, "caf_type": "cymn", "total_request": 13, "completedkyc": 11, "rejected": 1, "seelater": 0 }, { "zone_code": "EZ", "short_code": "AN", "circle_code": 77, "caf_type": "mnp", "total_request": 1, "completedkyc": 1, "rejected": 0, "seelater": 0 }, { "zone_code": "EZ", "short_code": "CTD", "circle_code": 78, "caf_type": "cymn", "total_request": 190, "completedkyc": 67, "rejected": 58, "seelater": 57 }, { "zone_code": "EZ", "short_code": "CTD", "circle_code": 78, "caf_type": "mnp", "total_request": 31, "completedkyc": 15, "rejected": 5, "seelater": 11 }, { "zone_code": "EZ", "short_code": "CTD", "circle_code": 78, "caf_type": null, "total_request": 1, "completedkyc": 1, "rejected": 0, "seelater": 0 }, { "zone_code": "EZ", "short_code": "SK", "circle_code": 79, "caf_type": "mnp", "total_request": 1, "completedkyc": 0, "rejected": 0, "seelater": 0 }]
+
+
+        createApp({
+            setup() {
+                // Reactive state
+                const kycData = ref([]);
+                const ActData = ref([]);
+                const loading = ref(false);
+                const error = ref(null);
+                const lastUpdated = ref(null);
+
+                // Methods
+                const fetchKycData = async () => {
+                    loading.value = true;
+                    error.value = null;
+
+                    try {
+                        const response = await fetch('/Summary/GetKycDetails');
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            kycData.value = result.data || [];
+                            lastUpdated.value = new Date().toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit'
+                            });
+                        } else {
+                            throw new Error('API returned success: false');
+                        }
+
+                    } catch (err) {
+                        error.value = `Failed to fetch KYC data: ${err.message}`;
+                        console.error('Error fetching KYC data:', err);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const fetchActData = async () => {
+                    loading.value = true;
+                    error.value = null;
+
+                    try {
+                        const response = await fetch('/Summary/GetActivationDetails');
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            ActData.value = result.data || [];
+
+                        } else {
+                            throw new Error('API returned success: false');
+                        }
+
+                    } catch (err) {
+                        error.value = `Failed to fetch ACT data: ${err.message}`;
+                        console.error('Error fetching ACT data:', err);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+
+
+                const distinctCafTypes = computed(() => {
+                    return ["total", ...new Set(kycData.value.map(x => x.caf_type || 'UNKNOWN'))];
+                });
+
+                const tableData = computed(() => {
+
+                    const actMap = ActData.value.reduce((map, a) => {
+                        const caf = (a.ACT_TYPE ?? 'UNKNOWN').toLowerCase();
+                        map[`${a.CIRCLE_CODE}_${caf}`] = a.ACTIVATED;
+                        return map;
+                    }, {});
+                    console.log(actMap);
+                    const mergedData = kycData.value.map(item => {
+                        const caf = (item.caf_type ?? 'UNKNOWN').toLowerCase();
+                        const key = `${item.circle_code}_${caf}`;
+
+                        return {
+                            ...item,
+                            activated: actMap[key] ?? 0
+                        };
+                    });
+
+
+                    const initial = {
+                        grandTotals: {},
+                        zones: {}
+                    };
+
+
+                    const result = mergedData.reduce((acc, item) => {
+                        const zone = item.zone_code;
+                        const circle = item.short_code;
+                        const circle_code = item.circle_code;
+                        const caf = item.caf_type ?? 'UNKNOWN';
+                        console.log(item);
+                        /* ---------------- GRAND TOTAL ---------------- */
+
+                        if (!acc.grandTotals[caf]) {
+                            acc.grandTotals[caf] = {
+                                total: 0,
+                                completed: 0,
+                                rejected: 0,
+                                pending: 0,
+                                activated: 0,
+                                not_verified:0
+                            };
+                        }
+
+                        acc.grandTotals[caf].total += item.total_request;
+                        acc.grandTotals[caf].completed += item.completedkyc;
+                        acc.grandTotals[caf].rejected += item.rejected;
+                        acc.grandTotals[caf].pending += item.seelater;
+                        acc.grandTotals[caf].activated += item.activated;
+                        acc.grandTotals[caf].not_verified += item.not_verified;
+
+                        // Grand Overall Total
+                        if (!acc.grandTotals.total) {
+                            acc.grandTotals.total = {
+                                total: 0,
+                                completed: 0,
+                                rejected: 0,
+                                pending: 0,
+                                activated: 0,
+                                not_verified:0
+                            };
+                        }
+
+                        acc.grandTotals.total.total += item.total_request;
+                        acc.grandTotals.total.completed += item.completedkyc;
+                        acc.grandTotals.total.rejected += item.rejected;
+                        acc.grandTotals.total.pending += item.seelater;
+                        acc.grandTotals.total.activated += item.activated;
+                        acc.grandTotals.total.not_verified += item.not_verified;
+
+                        /* ---------------- ZONE ---------------- */
+
+                        if (!acc.zones[zone]) {
+                            acc.zones[zone] = {
+                                zone,
+                                zoneTotals: {},
+                                circles: {}
+                            };
+                        }
+
+                        if (!acc.zones[zone].zoneTotals[caf]) {
+                            acc.zones[zone].zoneTotals[caf] = {
+                                total: 0,
+                                completed: 0,
+                                rejected: 0,
+                                pending: 0,
+                                activated: 0,
+                                not_verified:0
+                            };
+                        }
+
+                        const zc = acc.zones[zone].zoneTotals[caf];
+                        zc.total += item.total_request;
+                        zc.completed += item.completedkyc;
+                        zc.rejected += item.rejected;
+                        zc.pending += item.seelater;
+                        zc.activated += item.activated;
+                        zc.not_verified += item.not_verified;
+                        // Zone overall
+                        if (!acc.zones[zone].zoneTotals.total) {
+                            acc.zones[zone].zoneTotals.total = {
+                                total: 0,
+                                completed: 0,
+                                rejected: 0,
+                                pending: 0,
+                                activated: 0,
+                                not_verified:0
+                            };
+                        }
+
+                        const zt = acc.zones[zone].zoneTotals.total;
+                        zt.total += item.total_request;
+                        zt.completed += item.completedkyc;
+                        zt.rejected += item.rejected;
+                        zt.pending += item.seelater;
+                        zt.activated += item.activated;
+                        zt.not_verified += item.not_verified;
+
+                        /* ---------------- CIRCLE ---------------- */
+
+                        if (!acc.zones[zone].circles[circle]) {
+                            acc.zones[zone].circles[circle] = {
+                                circle,
+                                cafTypes: {}
+                            };
+                        }
+
+                        if (!acc.zones[zone].circles[circle].cafTypes[caf]) {
+                            acc.zones[zone].circles[circle].cafTypes[caf] = {
+                                total: 0,
+                                completed: 0,
+                                rejected: 0,
+                                pending: 0,
+                                activated: 0,
+                                not_verified:0
+                            };
+                        }
+
+                        const cc = acc.zones[zone].circles[circle].cafTypes[caf];
+                        cc.total += item.total_request;
+                        cc.completed += item.completedkyc;
+                        cc.rejected += item.rejected;
+                        cc.pending += item.seelater;
+                        cc.activated += item.activated;
+                        cc.not_verified += item.not_verified;
+
+
+                        // Ensure TOTAL CAF exists at circle level
+                        if (!acc.zones[zone].circles[circle].cafTypes.total) {
+                            acc.zones[zone].circles[circle].cafTypes.total = {
+                                total: 0,
+                                completed: 0,
+                                rejected: 0,
+                                pending: 0,
+                                activated: 0,
+                                not_verified:0
+                            };
+                        }
+
+                        const totalRef = acc.zones[zone].circles[circle].cafTypes.total;
+
+                        totalRef.total += item.total_request;
+                        totalRef.completed += item.completedkyc;
+                        totalRef.rejected += item.rejected;
+                        totalRef.pending += item.seelater;
+                        totalRef.activated += item.activated;
+                        totalRef.not_verified += item.not_verified;
+
+                        return acc;
+                    }, initial);
+                    return result;
+
+                });
+
+
+                // Lifecycle hook
+                onMounted(() => {
+                    fetchKycData();
+                    fetchActData();
+   
+                    });
+
+                // Return all reactive data and methods to template
+                return {
+                    loading,
+                    error,
+                    lastUpdated,
+                    fetchKycData,
+                    distinctCafTypes,
+                    tableData
+                };
+            }
+        }).mount('#app');
+    </script>
+}

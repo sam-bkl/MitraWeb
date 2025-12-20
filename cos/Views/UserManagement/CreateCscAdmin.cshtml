@@ -1,0 +1,365 @@
+@model cos.ViewModels.CreateCscAdminPageVM
+@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "Create CSC Admin User";
+}
+
+<div class="row">
+    <div class="col-12">
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">@TempData["Success"]</div>
+        }
+        <h3>Create CSC Admin User Test</h3>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>Search CTOP User</h5>
+                <div class="form-group">
+                    <label for="ctopupnoSearch">Enter CTOPUP No:</label>
+                    <input type="text" class="form-control" id="ctopupnoSearch" placeholder="Enter CTOPUP number" />
+                    <div id="searchResults" class="list-group mt-2" style="display:none;"></div>
+                </div>
+                <button type="button" class="btn btn-primary" id="checkAccountBtn" style="display:none;">Check Account</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3" id="ctopDetailsSection" style="display:none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>CTOP Details</h5>
+                <div id="ctopDetails"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3" id="existingUserSection" style="display:none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>Account Already Exists!</strong>
+                </div>
+                <h5>User Details</h5>
+                <table class="table table-striped table-bordered" id="existingUserTable">
+                    <thead>
+                        <tr>
+                            <th>Staff Name</th>
+                            <th>Mobile</th>
+                            <th>Email</th>
+                            <th>HR No</th>
+                            <th>Designation Code</th>
+                            <th>SSA Code</th>
+                            <th>Circle Name</th>
+                            <th>Record Status</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3" id="createAccountSection" style="display:none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>Create New Account</h5>
+                <button type="button" class="btn btn-success" data-toggle="modal" data-target="#createAccountModal">Add Account</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Account Modal -->
+<div class="modal fade" id="createAccountModal" tabindex="-1" role="dialog" aria-labelledby="createAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createAccountModalLabel">Create CSC Admin Account</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form asp-action="CreateCscAdmin" method="post" id="createAccountForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="NewUser.ctopupno" id="hiddenCtopupno" />
+                    
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewUser.staff_name"></label>
+                            <input class="form-control" asp-for="NewUser.staff_name" required />
+                            <span class="text-danger" asp-validation-for="NewUser.staff_name"></span>
+                        </div>
+                        <input type="hidden" asp-for="NewUser.mobile" id="mobileHidden" />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewUser.email"></label>
+                            <input type="email" class="form-control" asp-for="NewUser.email" required />
+                            <span class="text-danger" asp-validation-for="NewUser.email"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewUser.hrno"></label>
+                            <input type="number" class="form-control" asp-for="NewUser.hrno" required />
+                            <span class="text-danger" asp-validation-for="NewUser.hrno"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewUser.designation_code"></label>
+                            <input class="form-control" asp-for="NewUser.designation_code" />
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Circle</label>
+                            <select class="form-control" id="circleSelect" asp-for="NewUser.circle_id" required>
+                                <option value="">-- Select Circle --</option>
+                                @foreach (var c in Model.Circles)
+                                {
+                                    <option value="@c.id" data-code="@c.circle_code">@c.circle_name</option>
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewUser.circle_id"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>SSA</label>
+                            <select class="form-control" id="ssaSelect" asp-for="NewUser.ssa_id" required>
+                                <option value="">-- Select SSA --</option>
+                                @foreach (var s in Model.Ssas)
+                                {
+                                    <option value="@s.id" data-code="@s.ssa_code">@s.ssa_name</option>
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewUser.ssa_id"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewUser.ssa_code"></label>
+                            <input class="form-control" asp-for="NewUser.ssa_code" readonly />
+                        </div>
+                    </div>
+                    <input type="hidden" asp-for="NewUser.circle" id="hiddenCircle" />
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Create Account</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<partial name="_ValidationScriptsPartial" />
+
+<script>
+    (function () {
+        let selectedCtopupno = '';
+        const searchInput = document.getElementById('ctopupnoSearch');
+        const searchResults = document.getElementById('searchResults');
+        const checkAccountBtn = document.getElementById('checkAccountBtn');
+        const ctopDetailsSection = document.getElementById('ctopDetailsSection');
+        const existingUserSection = document.getElementById('existingUserSection');
+        const createAccountSection = document.getElementById('createAccountSection');
+        const circleSelect = document.getElementById('circleSelect');
+        const ssaSelect = document.getElementById('ssaSelect');
+        const hiddenCircle = document.getElementById('hiddenCircle');
+        const hiddenCtopupno = document.getElementById('hiddenCtopupno');
+        const mobileHidden = document.getElementById('mobileHidden');
+        const ssaCodeInput = document.getElementById('NewUser_ssa_code');
+
+        // Put these at a top-level scope (not inside another function)
+        let searchTimeout = null;
+        let currentAbort = null;
+
+        console.log('elements:', { searchInput, searchResults, checkAccountBtn, hiddenCtopupno });
+
+        if (!searchInput) {
+            console.error('searchInput element not found - check selector or DOM timing');
+            return;
+        }
+
+
+        searchInput.addEventListener('input', function (e) {
+            const query = (e.target.value || '').trim();
+            console.log('input event. value:', query, 'len:', query.length);
+
+            // hide when short
+            if (query.length < 3) {
+                searchResults && (searchResults.style.display = 'none');
+                checkAccountBtn && (checkAccountBtn.style.display = 'none');
+                // cancel any pending work
+                if (searchTimeout) { clearTimeout(searchTimeout); searchTimeout = null; }
+                if (currentAbort) { currentAbort.abort(); currentAbort = null; }
+                return;
+            }
+
+            // debounce timer
+            if (searchTimeout) {
+                console.log('clearing previous timeout');
+                clearTimeout(searchTimeout);
+            }
+
+            searchTimeout = setTimeout(async () => {
+                console.log('debounced callback fired for:', query);
+                // abort previous fetch if any
+                if (currentAbort) { currentAbort.abort(); currentAbort = null; }
+                currentAbort = new AbortController();
+
+                try {
+                    const url = `/UserManagement/SearchCtop?ctopupno=${encodeURIComponent(query)}`;
+                    console.log('fetching:', url);
+                    const resp = await fetch(url, { signal: currentAbort.signal });
+
+                    if (!resp.ok) {
+                        console.warn('fetch not ok:', resp.status);
+                        return;
+                    }
+                    const data = await resp.json();
+                    console.log('suggest ->', data);
+
+                    if (data.results && data.results.length > 0) {
+                        searchResults.innerHTML = '';
+                        data.results.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'list-group-item list-group-item-action';
+                            div.style.cursor = 'pointer';
+                            div.innerHTML = `<strong>${item.ctopupno}</strong> - ${item.name || ''} (${item.contact_number || ''})`;
+                            div.addEventListener('click', () => {
+                                selectedCtopupno = item.ctopupno;
+                                searchInput.value = item.ctopupno;
+                                if (hiddenCtopupno) hiddenCtopupno.value = item.ctopupno;
+                                if (mobileHidden) mobileHidden.value = item.ctopupno;
+                                searchResults.style.display = 'none';
+                                if (checkAccountBtn) checkAccountBtn.style.display = 'inline-block';
+                            });
+                            searchResults.appendChild(div);
+                        });
+                        searchResults.style.display = 'block';
+                    } else {
+                        searchResults.style.display = 'none';
+                        checkAccountBtn && (checkAccountBtn.style.display = 'none');
+                    }
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        console.log('fetch aborted for:', query);
+                    } else {
+                        console.error('Search error:', err);
+                    }
+                } finally {
+                    searchTimeout = null;
+                    currentAbort = null;
+                }
+            }, 300);
+        });
+
+        checkAccountBtn.addEventListener('click', async function () {
+            // Get ctopupno from selected value or input field
+            const ctopupno = selectedCtopupno || searchInput.value.trim();
+            if (!ctopupno) {
+                alert('Please select or enter a CTOP number');
+                return;
+            }
+            if (hiddenCtopupno) hiddenCtopupno.value = ctopupno;
+            if (mobileHidden) mobileHidden.value = ctopupno;
+
+            try {
+                const formData = new FormData();
+                formData.append('ctopupno', ctopupno);
+                const resp = await fetch('/UserManagement/CheckAccount', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!resp.ok) {
+                    const error = await resp.json();
+                    alert(error.error || 'Error checking account');
+                    return;
+                }
+                const data = await resp.json();
+                
+                // Show CTOP details
+                document.getElementById('ctopDetails').innerHTML = `
+                    <p><strong>CTOPUP No:</strong> ${data.ctop.ctopupno}</p>
+                    <p><strong>Name:</strong> ${data.ctop.name || ''}</p>
+                    <p><strong>Contact:</strong> ${data.ctop.contact_number || ''}</p>
+                `;
+                ctopDetailsSection.style.display = 'block';
+
+                if (data.accountExists) {
+                    // Show existing user
+                    const tbody = document.querySelector('#existingUserTable tbody');
+                    tbody.innerHTML = `
+                        <tr>
+                            <td>${data.user.staff_name || ''}</td>
+                            <td>${data.user.mobile || ''}</td>
+                            <td>${data.user.email || ''}</td>
+                            <td>${data.user.hrno || ''}</td>
+                            <td>${data.user.designation_code || ''}</td>
+                            <td>${data.user.ssa_code || ''}</td>
+                            <td>${data.user.circle_name || ''}</td>
+                            <td>${data.user.record_status || ''}</td>
+                        </tr>
+                    `;
+                    existingUserSection.style.display = 'block';
+                    createAccountSection.style.display = 'none';
+                } else {
+                    // Show create account button
+                    existingUserSection.style.display = 'none';
+                    createAccountSection.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Check account error:', err);
+                alert('Error checking account');
+            }
+        });
+
+        async function loadSsas(circleId) {
+            ssaSelect.innerHTML = '<option value="">-- Select SSA --</option>';
+            if (!circleId) return;
+            try {
+                const resp = await fetch(`/UserManagement/GetSsas?circleId=${circleId}`);
+                if (!resp.ok) return;
+                const data = await resp.json();
+                data.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.ssa_name;
+                    opt.dataset.code = s.ssa_code;
+                    ssaSelect.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('Load SSAs error:', err);
+            }
+        }
+
+        circleSelect.addEventListener('change', function () {
+            const selected = circleSelect.options[circleSelect.selectedIndex];
+            const code = selected.dataset.code || '';
+            hiddenCircle.value = code;
+            loadSsas(circleSelect.value);
+        });
+
+        ssaSelect.addEventListener('change', function () {
+            const selected = ssaSelect.options[ssaSelect.selectedIndex];
+            const code = selected ? selected.dataset.code : '';
+            if (ssaCodeInput) {
+                ssaCodeInput.value = code || '';
+            }
+        });
+    })();
+</script>
+

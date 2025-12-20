@@ -1,0 +1,776 @@
+﻿@model cos.ViewModels.CafModel
+@{
+    ViewData["Title"] = "CAF Application Form";
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+}
+
+<style>
+    body {
+    font-size: 13px;
+    background: white;
+    }
+
+    .caf-section-title {
+    font-weight: bold;
+    font-size: 15px;
+    background: #e6e6e6;
+    padding: 6px;
+    border: 1px solid #000;
+    margin-top: 20px;
+    }
+
+    .caf-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+    }
+
+    .caf-table td, .caf-table th {
+    border: 1px solid black;
+    padding: 5px;
+    vertical-align: top;
+    }
+
+    .serial-no {
+    width: 45px;
+    text-align: center;
+    font-weight: bold;
+    background: #f5f5f5;
+    }
+
+    input[readonly], textarea[readonly] {
+    background: #fafafa !important;
+    border: none;
+    width: 100%;
+    }
+
+    .editable-field {
+    background: #fffedb !important;
+    font-weight: bold;
+    }
+
+    .no-print {
+    display: block;
+    }
+
+    @@media print {
+    .no-print {
+    display: none;
+    }
+    }
+</style>
+
+<style>
+    .bsnl-photo-table td {
+    vertical-align: top;
+    text-align: center;
+    padding: 8px;
+    }
+
+    .photo-cell {
+    width: 25%;
+    }
+
+    .photo-title {
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    }
+
+    .caf-photo {
+    width: 140px;
+    height: 180px;
+    object-fit: contain;
+    border: 1px solid black;
+    background: #f3f3f3;
+    cursor: pointer;
+    }
+</style>
+
+<style>
+    .zoom-close {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: #fff;
+    font-size: 45px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 4000;
+    transition: 0.2s;
+    }
+
+    .zoom-close:hover {
+    color: #ff4444;
+    }
+</style>
+
+
+
+<div class="container mt-3">
+
+    <div class="d-flex justify-content-between no-print">
+        <h4>BSNL Customer Application Form (CAF)</h4>
+        <div>
+            <button onclick="window.print()" class="btn btn-primary btn-sm">Print</button>
+            <a href="@Url.Action("pendingkycrequests","UserDash")" class="btn btn-secondary btn-sm">Back</a>
+        </div>
+    </div>
+
+    <form method="post" asp-action="SubmitCAF">
+        @Html.AntiForgeryToken()
+
+        <!-- SECTION 1: GENERAL -->
+        <div class="caf-section-title">Customer Basic Details</div>
+        <table class="caf-table">
+            <!-- Row 1 -->
+            <tr>
+                <td class="serial-no">1</td>
+                <td>Mobile Number Allotted</td>
+                <td><input value="@Model.Gsmnumber" readonly /></td>
+
+                <td class="serial-no">1A</td>
+                <td>Persons with Disability (PWD)</td>
+                <td><input value="@Model.Pwd" readonly /></td>
+            </tr>
+
+            <!-- Row 2 -->
+            <tr>
+                <td class="serial-no">2</td>
+                <td>Unique CAF Serial No</td>
+                <td><input value="@Model.Caf_Serial_No" readonly /></td>
+
+                <td class="serial-no">3A</td>
+                <td>Connection Type</td>
+                <td>
+                    <input value="@(Model.Connection_Type == "1" ? "Prepaid" : "Postpaid")" readonly />
+                </td>
+            </tr>
+
+            <!-- Row 3 : Full width -->
+            <tr>
+                <td class="serial-no">4</td>
+                <td>Name of Customer (As received from UIDAI)</td>
+                <td colspan="4">
+                    <input style="width:100%;" value="@Model.Name" readonly />
+                </td>
+            </tr>
+
+            <!-- Row 4 -->
+            <tr>
+                <td class="serial-no">5A</td>
+                <td>POS Unique Response Code (UIDAI)</td>
+                <td><input value="@Model.Pos_Unique_Response_Code" readonly /></td>
+
+                <td class="serial-no">5B</td>
+                <td>POS Response Date & Time</td>
+                <td><input value="@Model.Pos_Unique_Response_Code_date" readonly /></td>
+            </tr>
+
+            <!-- Row 5 -->
+            <tr>
+                <td class="serial-no">6A</td>
+                <td>Customer Unique Response Code (UIDAI)</td>
+                <td><input value="@Model.Customer_Unique_Response_Code" readonly /></td>
+
+                <td class="serial-no">6B</td>
+                <td>Customer Response Date & Time</td>
+                <td><input value="@Model.Customer_Unique_Response_Code_date" readonly /></td>
+            </tr>
+
+            <!-- Row 6 -->
+            <tr>
+                <td class="serial-no">7</td>
+                <td>Father / Husband Name</td>
+                <td colspan="4"><input value="@Model.F_H_Name" readonly /></td>
+
+                @* <td class="serial-no">7A</td>
+                <td>Father Name (As per UIDAI)</td>
+                <td><input value="@Model.father_name_adh" readonly /></td> *@
+            </tr>
+
+            <!-- Row 7 -->
+            <tr>
+                <td class="serial-no">8</td>
+                <td>Gender (As received from UIDAI)</td>
+                <td><input value="@Model.Gender" readonly /></td>
+
+                <td class="serial-no">9</td>
+                <td>Date of Birth</td>
+                <td>
+                    <input value="@(Model.Date_Of_Birth?.ToString("dd-MM-yyyy"))" readonly />
+                </td>
+            </tr>
+
+            <tr>
+                <td class="serial-no">10</td>
+                <td>Customer Type< (Individual/oustation)/td>
+                <td>
+                    <input value="@(Model.subscriber_type == "local" ? "INDIVIDUAL" : Model.subscriber_type)" readonly />
+                </td>
+
+                <td class="serial-no">10A</td>
+                <td>Latitude / Longitude</td>
+                <td>
+                    <input style="width:45%;" value="@Model.latitude" readonly />
+                    /
+                    <input style="width:45%;" value="@Model.longitude" readonly />
+                </td>
+            </tr>
+
+        </table>
+
+
+        @*   @if (!string.IsNullOrEmpty(Model.PhotoBase64))
+                    {
+                        <img src="data:image/jpeg;base64,@Model.PhotoBase64"
+                             onclick="zoomPhoto(this.src)"
+                             style="width:150px; height:auto; border:1px solid #000; cursor:pointer;" />
+                    }
+                    else
+                    {
+                        <div style="width:150px; height:180px; border:1px solid #000;
+                                    display:flex; align-items:center; justify-content:center;
+                                    font-size:14px; font-weight:bold; color:#555;">
+                            Photo Not Available
+                        </div>
+                    } *@
+        <!-- PHOTO SECTION -->
+
+        <div class="caf-section-title">Identity Verification Photos</div>
+
+        <table class="caf-table bsnl-photo-table">
+            <tr>
+                <!-- 10A Customer Aadhaar -->
+                <td class="serial-no">1</td>
+                <td class="photo-cell">
+                    <div class="photo-title">Customer Aadhaar</div>
+                    <img src="@Url.Action("GetCAFPhoto", "UserDash",
+                    new { cafno = Model.Caf_Serial_No + "a", date = Model.LivePhotoTime?.ToString("yyyy-MM-dd") })"
+                    onerror="this.src='/images/nophoto.png'"
+                    class="caf-photo" onclick="zoomPhoto(this.src)" />
+                </td>
+
+                <!-- 10B Customer Live -->
+                <td class="serial-no">2</td>
+                <td class="photo-cell">
+                    <div class="photo-title">Customer Live</div>
+                    <img src="@Url.Action("GetCAFPhoto", "UserDash",
+                    new { cafno = Model.Caf_Serial_No + "l", date = Model.LivePhotoTime?.ToString("yyyy-MM-dd") })"
+                    onerror="this.src='/images/nophoto.png'"
+                    class="caf-photo" onclick="zoomPhoto(this.src)" />
+                </td>
+
+                @*    <!-- 10C POS Live -->
+                <td class="serial-no">10C</td>
+                <td class="photo-cell">
+                    <div class="photo-title">POS Live</div>
+                    <img src="@Url.Action("GetCAFPhoto", "UserDash",
+                    new { cafno = Model.Caf_Serial_No + "p", date = Model.LivePhotoTime?.ToString("yyyy-MM-dd") })"
+                    onerror="this.src='/images/nophoto.png'"
+                    class="caf-photo" onclick="zoomPhoto(this.src)" />
+                </td> *@
+
+                <!-- 10D POS Aadhaar -->
+                <td class="serial-no">3</td>
+                <td class="photo-cell">
+                    <div class="photo-title">POS Aadhaar</div>
+                    <img src="@Url.Action("GetCAFPhoto", "UserDash",
+                    new { cafno = Model.Caf_Serial_No + "pa", date = Model.LivePhotoTime?.ToString("yyyy-MM-dd") })"
+                    onerror="this.src='/images/nophoto.png'"
+                    class="caf-photo" onclick="zoomPhoto(this.src)" />
+                </td>
+            </tr>
+        </table>
+
+
+
+        <!-- SECTION 11: ADDRESSES -->
+
+
+
+        <div class="caf-section-title"> Complete local residential address of Customer* (As received from UIDAI):</div>
+        <table class="caf-table">
+            <tr>
+                <td class="serial-no">11</td>
+                <td>Local Address</td>
+                <td colspan="4">
+                    <b> (C/o)/(D/o)/(S/o)/(W/o)/(H/o)</b> <input value="@Model.father_name_adh" readonly />
+                    <b>House No:</b> <input value="@Model.Local_Addr_Hno" readonly />
+                    <b>Street:</b> <input value="@Model.Local_Addr_Street" readonly />
+                    <b>Locality:</b> <input value="@Model.Local_Addr_Locality" readonly />
+                    <b>City:</b> <input value="@Model.Local_Addr_City" readonly />
+                    <b>State:</b> <input value="@Model.Local_Addr_State" readonly />
+                    <b>PIN:</b> <input value="@Model.Local_Addr_Pin" readonly />
+                </td>
+            </tr>
+        </table> 
+        
+
+        <div class="caf-section-title"> Complete permanent residential address of Customer * (As received from UIDAI): (For outstation customer only}(Only those fields are mandatory  as received from UIDAI)</div>
+        <table class="caf-table">
+            <tr>
+                <td class="serial-no">11D</td>
+                <td>Address</td>
+                <td colspan="4">
+                    <b> (C/o)/(D/o)/(S/o)/(W/o)/(H/o)</b> <input value="@Model.father_name_adh" readonly />
+                    <b>House No:</b> <input value="@Model.Perm_Addr_Hno" readonly />
+                    <b>Street:</b> <input value="@Model.Perm_Addr_Street" readonly />
+                    <b>Locality:</b> <input value="@Model.Perm_Addr_Locality" readonly />
+                    <b>City:</b> <input value="@Model.Perm_Addr_City" readonly />
+                    <b>State:</b> <input value="@Model.Perm_Addr_State" readonly />
+                    <b>PIN:</b> <input value="@Model.Perm_Addr_Pin" readonly />
+                </td>
+            </tr>
+        </table>
+        @if (Model.subscriber_type == "outstation")
+        {
+            <div class="caf-section-title">  Complete local residential address of Customer. i.e. the address within the service area) (For outstation customer only)</div>
+            <table class="caf-table">
+                <tr>
+                <td class="serial-no">11E</td>
+                <td>Address</td>
+                <td colspan="4">
+                    <b>House No:</b> <input value="@Model.Local_Addr_Hno" readonly />
+                    <b>Street:</b> <input value="@Model.Local_Addr_Street" readonly />
+                    <b>Locality:</b> <input value="@Model.Local_Addr_Locality" readonly />
+                    <b>City:</b> <input value="@Model.Local_Addr_City" readonly />
+                    <b>State:</b> <input value="@Model.Local_Addr_State" readonly />
+                    <b>PIN:</b> <input value="@Model.Local_Addr_Pin" readonly />
+                </td>
+            </tr>
+        </table>
+        }
+        <!-- OTHER DETAILS -->
+        <div class="caf-section-title">Other Details</div>
+        <table class="caf-table">
+            <tr>
+                <td class="serial-no">12</td>
+                <td>Nationality</td>
+                <td><input value="@Model.Nationality" readonly /></td>
+
+                <td class="serial-no">13</td>
+                <td>
+                    Number of Mobile connections held in name of Individual/Outstation
+                    customer(Includlng all TSPs)
+                </td>
+                <td><input value="@Model.Distinct_Operators" readonly /></td>
+            </tr>
+
+            <tr>
+                <td class="serial-no">15</td>
+                <td>SIM State</td>
+                <td><input value="@Model.Simstate" readonly /></td>
+
+                <td class="serial-no">17</td>
+                <td>Email</td>
+                <td><input value="@Model.Email" readonly /></td>
+            </tr>
+
+            <tr>
+                <td class="serial-no">18</td>
+                <td>Alternate Contact</td>
+                <td><input value="@Model.Alternate_Contact_No" readonly /></td>
+
+                <td class="serial-no">19</td>
+                <td>Profession</td>
+                <td><input value="@Model.Profession" readonly /></td>
+            </tr>
+        </table>
+
+        <!-- EDITABLE -->
+        <div class="caf-section-title">Details (Name, address and phone number) of Local reference*(For Outstation customer)</div>
+        <table class="caf-table">
+            <tr>
+                <td class="serial-no">21</td>
+                <td>Name</td>
+                <td><input class="editable-field" name="Local_Ref" value="@Model.local_ref_name" /></td>
+
+                <td>Contact</td>
+                <td><input class="editable-field" name="Local_Ref_Contact" value="@Model.Local_Ref_Contact" /></td>
+            </tr>
+
+            <tr>
+                <td class="serial-no">B</td>
+                <td> Address</td>
+                <td><input value="@Model.Local_Ref" /></td>
+                
+            </tr>
+
+            <tr>
+                <td class="serial-no"> d</td>
+                <td> Local reference number OTP value</td>
+                <td><input value="@Model.ref_otp" readonly /></td>
+
+                <td class="serial-no">19</td>
+                <td>OTP validation Date and Time *</td>
+                <td><input value="@Model.ref_otp_time" readonly /></td>
+            </tr>
+        </table>
+
+        <!-- MNP / SIM / BANK -->
+        <div class="caf-section-title">MNP / Banking / SIM Details ( To be filled in cases of Post-paid connections)</div>
+        <table class="caf-table">
+            <tr>
+                <td class="serial-no">22A</td>
+                <td>UPC Code</td>
+                <td><input value="@Model.Upc_Code" readonly /></td>
+
+                <td class="serial-no">22B</td>
+                <td>Previous Operator</td>
+                <td><input value="@Model.Prev_Optr" readonly /></td>
+            </tr>
+
+            <tr>
+                <td class="serial-no">23</td>
+                <td>Payment Type</td>
+                <td><input value="@Model.PaymentType" readonly /></td>
+
+                <td class="serial-no">23B</td>
+                <td>Bank Details</td>
+                <td><textarea readonly>@Model.Bank_Details</textarea></td>
+            </tr>
+            <tr>
+                <td class="serial-no">24A</td>
+                <td>Unique Customer Response Code  received from UIDAI in respect of customer*</td>
+                <td><input value="@Model.Customer_Unique_Response_Code" readonly /></td>
+
+                <td class="serial-no">24B</td>
+                <td>Response Code Date & Time  received from UIDAI in respect of customer*</td>
+                <td><input value="@Model.Customer_Unique_Response_Code_date" readonly /></td>
+            </tr>
+           
+
+            <tr>
+                <td class="serial-no">25</td>
+                <td>IMSI</td>
+                <td><input value="@Model.Imsi" readonly /></td>
+
+                <td class="serial-no">26</td>
+                <td>Point of Sale Code</td>
+                <td><input value="@Model.Pos_Code" readonly /></td>
+            </tr>
+
+            <tr>
+                <td class="serial-no">27</td>
+                <td>Point of Sale Name</td>
+                <td><input value="@Model.Pos_Sale_Name" readonly /></td>
+
+                <td class="serial-no">28</td>
+                <td> Point of sale agent name (As received from UIDAI)</td>
+                <td><input value="@Model.Pos_Agent_Name" readonly /></td>
+            </tr>
+
+           
+        </table>
+
+        <!-- SECTION 29 -->
+        <div class="caf-section-title">Complete Address of Point of Sale</div>
+
+        <table class="caf-table">
+            <tr>
+                <td class="serial-no">29A</td>
+                <td>House No</td>
+                <td><input value="@Model.Pos_Hno" readonly /></td>
+
+                <td class="serial-no">29B</td>
+                <td>Street</td>
+                <td><input value="@Model.Pos_Street" readonly /></td>
+            </tr>
+
+            <tr>
+                <td class="serial-no">29C</td>
+                <td>Landmark</td>
+                <td><input value="@Model.Pos_Landmark" readonly /></td>
+
+                <td class="serial-no">29D</td>
+                <td>Locality</td>
+                <td><input value="@Model.Pos_Locality" readonly /></td>
+            </tr>
+
+            <tr>
+                <td class="serial-no">29E</td>
+                <td>City</td>
+                <td><input value="@Model.Pos_City" readonly /></td>
+
+                <td class="serial-no">29F</td>
+                <td>District</td>
+                <td><input value="@Model.Pos_District" readonly /></td>
+            </tr>
+
+            <tr>
+                <td class="serial-no">29G</td>
+                <td>State</td>
+                <td><input value="@Model.Pos_State" readonly /></td>
+
+                <td class="serial-no">29H</td>
+                <td>Pincode</td>
+                <td><input value="@Model.Pos_Pincode" readonly /></td>
+            </tr>
+
+            <tr>
+                <td class="serial-no">31A</td>
+                <td>Unique POS Response Code  received from UIDAI in respect of POS agent*</td>
+                <td><input value="@Model.Pos_Unique_Response_Code" readonly /></td>
+
+                <td class="serial-no">31B</td>
+                <td>POS Response Code Date & Time  received from UIDAI in respect of POS agent*</td>
+                <td><input value="@Model.Pos_Unique_Response_Code_date" readonly /></td>
+            </tr>
+
+           
+        </table>
+
+        <!-- CSC Activation Code -->
+        <div class="caf-section-title">CSC Activation Code</div>
+
+        <table class="caf-table">
+            <tr>
+                <td class="serial-no">33</td>
+                <td>Services</td>
+                <td><input value="@Model.Services" readonly /></td>
+
+                <td class="serial-no">34A</td>
+                <td>SIM activation</td>
+                <td>Manually</td>
+
+                <td class="serial-no">34B</td>
+                <td>Name & designation of the authorized representative of the Licensee or the IT- system activating the SIM on behalf of the licens</td>
+                <td ><input value="@Model.Activation_CscCode" readonly /></td>
+            </tr>
+        </table>
+
+        <!-- HIDDEN FIELDS -->
+        @foreach (var prop in typeof(cos.ViewModels.CafModel).GetProperties())
+        {
+            if (prop.Name != "Local_Ref" && prop.Name != "Local_Ref_Contact"
+            && prop.Name != "Photo" && prop.Name != "PhotoBase64")
+            {
+                <input type="hidden" name="@prop.Name" value="@prop.GetValue(Model)" />
+            }
+        }
+
+        <!-- BUTTONS -->
+        <div class="no-print mt-3 d-flex justify-content-between">
+            <div>
+
+                <button type="button" class="btn btn-warning" onclick="openSeeLaterModal()">
+                    See Later
+                </button>
+
+                <button type="button" class="btn btn-danger me-2" onclick="openRejectModal()">
+                    Reject
+                </button>
+
+                
+            </div>
+
+            <button type="submit" class="btn btn-success">
+                Save & Approve CAF
+            </button>
+        </div>
+
+
+    </form>
+</div>
+
+
+<!-- ZOOM MODAL -->
+<div id="photoZoomModal" class="zoom-modal">
+    <span class="zoom-close" onclick="closeZoom()">&times;</span>
+    <img id="zoomedPhoto" class="zoom-modal-content" />
+</div>
+
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Reject CAF</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+               @*  <label><b>Select Rejection Reason</b></label>
+                <select id="rejectReason" class="form-control">
+                    <option value="">-- Select Reason --</option>
+                    <option>Customer Aadhaar photo and live photo are different</option>
+                    <option>POS Aadhaar photo and live photo are different</option>
+                    <option>Local reference address and Present address cannot be same in outstation CAF</option>
+                    <option>Local address / pincode should not contain outstation address / pincode</option>
+                    <option>Local reference contact number should be a local number</option>
+                    <option>Non-white background in customer photo</option>
+                    <option>Customer and POS cannot be the same person</option>
+                </select> *@
+
+                <label><b>Enter Remark</b></label>
+<textarea id="rejectReason" class="form-control" rows="3" placeholder="Enter reason..."></textarea>
+
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                &nbsp;
+                <button class="btn btn-danger" onclick="submitRejection()">Reject</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- see later Modal -->
+<div class="modal fade" id="seeLaterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">See Later</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <label><b>Enter Remark</b></label>
+                <textarea id="seeLaterRemark"
+                          class="form-control"
+                          rows="3"
+                          placeholder="Enter remark..."></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-warning" onclick="submitSeeLater()">
+                    See Later
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+    .zoom-modal {
+        display: none;
+        position: fixed;
+        z-index: 3000;
+        padding-top: 40px;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.85);
+        text-align: center;
+    }
+
+    .zoom-modal-content {
+        margin: auto;
+        display: block;
+        max-width: 90%;
+        max-height: 85%;
+        border: 4px solid white;
+        cursor: grab;
+        transition: 0.3s;
+    }
+</style>
+
+<script>
+    function zoomPhoto(src) {
+        document.getElementById("zoomedPhoto").src = src;
+        document.getElementById("photoZoomModal").style.display = "block";
+    }
+
+    function closeZoom() {
+        document.getElementById("photoZoomModal").style.display = "none";
+    }
+
+    // Close when clicking outside image
+    document.getElementById("photoZoomModal").addEventListener("click", function (e) {
+        if (e.target.id === "photoZoomModal") {
+            closeZoom();
+        }
+    });
+</script>
+
+
+
+<script>
+    function openRejectModal() {
+        var modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+        modal.show();
+    }
+
+    function submitRejection() {
+        let reason = document.getElementById("rejectReason").value.trim();
+
+        if (reason === "") {
+            alert("Please enter a remark");
+            return;
+        }
+
+        fetch('/UserDash/RejectCAF', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken':
+                    document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({
+                gsmnumber: '@Model.Gsmnumber',
+                reason: reason
+            })
+        })
+        .then(res => {
+            if (res.ok) {
+                alert("CAF Updated Successfully");
+                window.location.href = "/UserDash/pendingkycrequests";
+            } else {
+                alert("Error updating CAF");
+            }
+        });
+    }
+</script>
+
+<script>
+    function openSeeLaterModal() {
+        var modal = new bootstrap.Modal(
+            document.getElementById('seeLaterModal')
+        );
+        modal.show();
+    }
+
+    function submitSeeLater() {
+
+        let remark = document.getElementById("seeLaterRemark").value.trim();
+
+        if (remark === "") {
+            alert("Please enter a remark");
+            return;
+        }
+
+        fetch('/UserDash/SeelaterCAF', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken':
+                    document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({
+                gsmnumber: '@Model.Gsmnumber',
+                remark: remark
+            })
+        })
+        .then(res => {
+            if (res.ok) {
+                alert("CAF marked as See Later");
+                window.location.href = "/UserDash/pendingkycrequests";
+            } else {
+                alert("Error updating CAF");
+            }
+        });
+    }
+</script>

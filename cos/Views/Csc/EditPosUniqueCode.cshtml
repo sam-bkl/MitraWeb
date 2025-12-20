@@ -1,0 +1,402 @@
+@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "Edit POS Unique Code";
+}
+
+<div class="row">
+    <div class="col-12">
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["Error"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["Success"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+        <h3>Edit POS Unique Code</h3>
+    </div>
+</div>
+
+<!-- Warning Section -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="alert alert-warning" role="alert">
+            <h5 class="alert-heading" style="font-weight: bold; color: black;"><i class="material-icons">warning</i> Important Warning</h5>
+            <p style="font-weight: bold; color: black;"><strong>The POS Unique Code is critical data and must be edited with utmost care.</strong></p>
+            <p style="font-weight: bold; color: black;">Any changes made will overwrite the existing code and is the responsibility of the user making the change.</p>
+            <p class="mb-0" style="font-weight: bold; color: black;">Please ensure you have verified the CTOPUP number and the new code before proceeding.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Search Section -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>Search CTOP Record</h5>
+                <div class="form-group">
+                    <label for="ctopupnoSearch">Enter CTOPUP No:</label>
+                    <input type="text" class="form-control" id="ctopupnoSearch" placeholder="Enter CTOPUP number" />
+                    <small class="form-text text-muted">Enter the CTOPUP number to search for the record</small>
+                </div>
+                <button type="button" class="btn btn-primary" id="searchBtn">Search</button>
+                <div id="searchError" class="alert alert-danger mt-2" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTOP Details and Edit Section -->
+<div class="row mt-3" id="ctopDetailsSection" style="display:none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>CTOP Details</h5>
+                <div id="ctopDetails"></div>
+                
+                <hr />
+                
+                <h5>Edit POS Unique Code</h5>
+                <form id="editPosUniqueCodeForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="ctopupno" name="ctopupno" />
+                    
+                    <div class="form-group">
+                        <label for="currentPosUniqueCode">Current POS Unique Code:</label>
+                        <input type="text" class="form-control" id="currentPosUniqueCode" readonly />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="generatedPosUniqueCode">Generated POS Unique Code:</label>
+                        <input type="text" class="form-control" id="generatedPosUniqueCode" readonly style="font-weight: bold; color: red; font-size: 1.1em;" />
+                        <small class="form-text text-muted">This code will be generated automatically from the fields below</small>
+                    </div>
+                    
+                    <hr />
+                    <h6>Enter Details to Generate New POS Unique Code</h6>
+                    
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="aadharName">Name (As in Aadhar Card): <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="aadharName" name="aadharName" required />
+                            <small class="form-text text-muted">Enter the name as it appears on the Aadhar card</small>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="aadharNo">Aadhar No: <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="aadharNo" name="aadharNo" required maxlength="12" />
+                            <small class="form-text text-muted">Enter the 12-digit Aadhar number</small>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="yearOfBirth">Year of Birth: <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="yearOfBirth" name="yearOfBirth" required maxlength="4" />
+                            <small class="form-text text-muted">Enter the year of birth (YYYY)</small>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="button" class="btn btn-info" id="generateCodeBtn">
+                            <i class="material-icons">refresh</i> Generate POS Unique Code
+                        </button>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-warning" id="updateBtn" disabled>
+                        <i class="material-icons">edit</i> Update POS Unique Code
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                </form>
+                
+                <div id="updateError" class="alert alert-danger mt-2" style="display:none;"></div>
+                <div id="updateSuccess" class="alert alert-success mt-2" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            let selectedCtop = null;
+            
+            // Search button click
+            $('#searchBtn').on('click', function() {
+                const ctopupno = $('#ctopupnoSearch').val().trim();
+                if (!ctopupno) {
+                    showSearchError('Please enter a CTOPUP number');
+                    return;
+                }
+                
+                searchCtop(ctopupno);
+            });
+            
+            // Enter key in search field
+            $('#ctopupnoSearch').on('keypress', function(e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    $('#searchBtn').click();
+                }
+            });
+            
+            // Cancel button
+            $('#cancelBtn').on('click', function() {
+                resetForm();
+            });
+            
+            // Form submission
+            $('#editPosUniqueCodeForm').on('submit', function(e) {
+                e.preventDefault();
+                updatePosUniqueCode();
+            });
+            
+            function searchCtop(ctopupno) {
+                $('#searchError').hide();
+                $('#searchBtn').prop('disabled', true).text('Searching...');
+                
+                $.ajax({
+                    url: '/Csc/SearchCtopForEdit',
+                    type: 'GET',
+                    data: { ctopupno: ctopupno },
+                    success: function(response) {
+                        if (response.error) {
+                            showSearchError(response.error);
+                            $('#ctopDetailsSection').hide();
+                        } else if (response.success && response.ctop) {
+                            selectedCtop = response.ctop;
+                            displayCtopDetails(response.ctop);
+                            $('#ctopDetailsSection').show();
+                        } else {
+                            showSearchError('CTOP record not found');
+                            $('#ctopDetailsSection').hide();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        showSearchError('Error searching for CTOP: ' + (xhr.responseJSON?.error || error));
+                        $('#ctopDetailsSection').hide();
+                    },
+                    complete: function() {
+                        $('#searchBtn').prop('disabled', false).text('Search');
+                    }
+                });
+            }
+            
+            function displayCtopDetails(ctop) {
+                const detailsHtml = `
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tr>
+                                <th>CTOPUP No:</th>
+                                <td>${escapeHtml(ctop.ctopupno || 'N/A')}</td>
+                                <th>Name:</th>
+                                <td>${escapeHtml(ctop.name || 'N/A')}</td>
+                            </tr>
+                            <tr>
+                                <th>Username:</th>
+                                <td>${escapeHtml(ctop.username || 'N/A')}</td>
+                                <th>Contact Number:</th>
+                                <td>${escapeHtml(ctop.contact_number || 'N/A')}</td>
+                            </tr>
+                            <tr>
+                                <th>Dealer Type:</th>
+                                <td>${escapeHtml(ctop.dealertype || 'N/A')}</td>
+                                <th>SSA Code:</th>
+                                <td>${escapeHtml(ctop.ssa_code || 'N/A')}</td>
+                            </tr>
+                            <tr>
+                                <th>CSC Code:</th>
+                                <td>${escapeHtml(ctop.csccode || 'N/A')}</td>
+                                <th>Circle Code:</th>
+                                <td>${escapeHtml(ctop.circle_code || 'N/A')}</td>
+                            </tr>
+                            <tr>
+                                <th>POS Unique Code:</th>
+                                <td><strong>${escapeHtml(ctop.pos_unique_code || 'N/A')}</strong></td>
+                                <th>Created Date:</th>
+                                <td>${ctop.created_date ? new Date(ctop.created_date).toLocaleString() : 'N/A'}</td>
+                            </tr>
+                        </table>
+                    </div>
+                `;
+                
+                $('#ctopDetails').html(detailsHtml);
+                $('#ctopupno').val(ctop.ctopupno);
+                $('#currentPosUniqueCode').val(ctop.pos_unique_code || '');
+                $('#generatedPosUniqueCode').val('');
+                $('#aadharName').val('');
+                $('#aadharNo').val('');
+                $('#yearOfBirth').val('');
+                $('#updateBtn').prop('disabled', true);
+                $('#updateError').hide();
+                $('#updateSuccess').hide();
+            }
+            
+            // Generate POS Unique Code button
+            $('#generateCodeBtn').on('click', function() {
+                generatePosUniqueCode();
+            });
+            
+            // Auto-generate when fields change
+            $('#aadharName, #aadharNo, #yearOfBirth').on('input', function() {
+                if ($('#aadharName').val().trim() && $('#aadharNo').val().trim() && $('#yearOfBirth').val().trim()) {
+                    generatePosUniqueCode();
+                } else {
+                    $('#generatedPosUniqueCode').val('');
+                    $('#updateBtn').prop('disabled', true);
+                }
+            });
+            
+            function generatePosUniqueCode() {
+                const aadharName = $('#aadharName').val().trim();
+                const aadharNo = $('#aadharNo').val().trim();
+                const yearOfBirth = $('#yearOfBirth').val().trim();
+                
+                if (!aadharName || !aadharNo || !yearOfBirth) {
+                    showUpdateError('Please fill in all three fields to generate the POS unique code');
+                    $('#generatedPosUniqueCode').val('');
+                    $('#updateBtn').prop('disabled', true);
+                    return;
+                }
+                
+                // Call server to generate the code (using the same logic as C#)
+                $.ajax({
+                    url: '/Csc/GeneratePosUniqueCode',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        aadhaarNo: aadharNo,
+                        aadhaarIssueYear: yearOfBirth,
+                        aadhaarName: aadharName
+                    }),
+                    success: function(response) {
+                        if (response.success && response.posUniqueCode) {
+                            $('#generatedPosUniqueCode').val(response.posUniqueCode);
+                            $('#updateBtn').prop('disabled', false);
+                            $('#updateError').hide();
+                        } else {
+                            showUpdateError(response.message || 'Failed to generate POS unique code');
+                            $('#generatedPosUniqueCode').val('');
+                            $('#updateBtn').prop('disabled', true);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        showUpdateError('Error generating POS unique code: ' + (xhr.responseJSON?.message || error));
+                        $('#generatedPosUniqueCode').val('');
+                        $('#updateBtn').prop('disabled', true);
+                    }
+                });
+            }
+            
+            function updatePosUniqueCode() {
+                const ctopupno = $('#ctopupno').val();
+                const newPosUniqueCode = $('#generatedPosUniqueCode').val().trim();
+                
+                if (!newPosUniqueCode) {
+                    showUpdateError('Please generate the POS unique code first');
+                    return;
+                }
+                
+                // Confirm before updating
+                if (!confirm('Are you sure you want to update the POS Unique Code? This action cannot be undone.')) {
+                    return;
+                }
+                
+                $('#updateBtn').prop('disabled', true).html('<i class="material-icons">hourglass_empty</i> Updating...');
+                $('#updateError').hide();
+                $('#updateSuccess').hide();
+                
+                // Get anti-forgery token
+                const token = $('input[name="__RequestVerificationToken"]').val();
+                
+                $.ajax({
+                    url: '/Csc/UpdatePosUniqueCode',
+                    type: 'POST',
+                    data: {
+                        ctopupno: ctopupno,
+                        newPosUniqueCode: newPosUniqueCode,
+                        __RequestVerificationToken: token
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showUpdateSuccess(response.message || 'POS unique code updated successfully');
+                            // Refresh the search to show updated data
+                            setTimeout(function() {
+                                searchCtop(ctopupno);
+                            }, 1000);
+                        } else {
+                            showUpdateError(response.message || 'Failed to update POS unique code');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        let errorMsg = 'Error updating POS unique code';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.responseText) {
+                            try {
+                                const json = JSON.parse(xhr.responseText);
+                                errorMsg = json.message || errorMsg;
+                            } catch (e) {
+                                errorMsg = error;
+                            }
+                        }
+                        showUpdateError(errorMsg);
+                    },
+                    complete: function() {
+                        $('#updateBtn').prop('disabled', false).html('<i class="material-icons">edit</i> Update POS Unique Code');
+                    }
+                });
+            }
+            
+            function showSearchError(message) {
+                $('#searchError').text(message).show();
+            }
+            
+            function showUpdateError(message) {
+                $('#updateError').text(message).show();
+            }
+            
+            function showUpdateSuccess(message) {
+                $('#updateSuccess').text(message).show();
+            }
+            
+            function resetForm() {
+                $('#ctopDetailsSection').hide();
+                $('#ctopupnoSearch').val('');
+                $('#searchError').hide();
+                $('#updateError').hide();
+                $('#updateSuccess').hide();
+                $('#generatedPosUniqueCode').val('');
+                $('#aadharName').val('');
+                $('#aadharNo').val('');
+                $('#yearOfBirth').val('');
+                $('#updateBtn').prop('disabled', true);
+                selectedCtop = null;
+            }
+            
+            function escapeHtml(text) {
+                if (!text) return '';
+                const map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
+            }
+        });
+    </script>
+}
+
+

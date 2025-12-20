@@ -1,0 +1,88 @@
+/*================================================================================
+	Item Name: Modern Admin - Clean Bootstrap 4 Dashboard HTML Template
+	Author: PIXINVENT
+	Author URL: http://www.themeforest.net/user/pixinvent
+================================================================================
+
+NOTE:
+------
+PLACE HERE YOUR OWN SCSS CODES AND IF NEEDED, OVERRIDE THE STYLES FROM THE OTHER STYLESHEETS.
+WE WILL RELEASE FUTURE UPDATES SO IN ORDER TO NOT OVERWRITE YOUR STYLES IT'S BETTER LIKE THIS.  */
+
+/* Modal Footer Button Text Color Fix - Make all button text white by default */
+.modal-footer .btn,
+.modal-footer .btn-primary,
+.modal-footer .btn-secondary,
+.modal-footer .btn-success,
+.modal-footer .btn-danger,
+.modal-footer .btn-warning,
+.modal-footer .btn-info,
+.modal-footer .btn-light,
+.modal-footer .btn-dark {
+    color: #fff !important;
+}
+
+.modal-footer .btn:hover,
+.modal-footer .btn:focus,
+.modal-footer .btn:active,
+.modal-footer .btn-primary:hover,
+.modal-footer .btn-primary:focus,
+.modal-footer .btn-primary:active,
+.modal-footer .btn-secondary:hover,
+.modal-footer .btn-secondary:focus,
+.modal-footer .btn-secondary:active,
+.modal-footer .btn-success:hover,
+.modal-footer .btn-success:focus,
+.modal-footer .btn-success:active,
+.modal-footer .btn-danger:hover,
+.modal-footer .btn-danger:focus,
+.modal-footer .btn-danger:active,
+.modal-footer .btn-warning:hover,
+.modal-footer .btn-warning:focus,
+.modal-footer .btn-warning:active,
+.modal-footer .btn-info:hover,
+.modal-footer .btn-info:focus,
+.modal-footer .btn-info:active,
+.modal-footer .btn-light:hover,
+.modal-footer .btn-light:focus,
+.modal-footer .btn-light:active,
+.modal-footer .btn-dark:hover,
+.modal-footer .btn-dark:focus,
+.modal-footer .btn-dark:active {
+    color: #fff !important;
+}
+
+/* Also fix buttons inside modal body if they're used in forms */
+.modal-body .btn,
+.modal-body .btn-primary,
+.modal-body .btn-secondary,
+.modal-body .btn-success,
+.modal-body .btn-danger,
+.modal-body .btn-warning,
+.modal-body .btn-info {
+    color: #fff !important;
+}
+
+.modal-body .btn:hover,
+.modal-body .btn:focus,
+.modal-body .btn:active,
+.modal-body .btn-primary:hover,
+.modal-body .btn-primary:focus,
+.modal-body .btn-primary:active,
+.modal-body .btn-secondary:hover,
+.modal-body .btn-secondary:focus,
+.modal-body .btn-secondary:active,
+.modal-body .btn-success:hover,
+.modal-body .btn-success:focus,
+.modal-body .btn-success:active,
+.modal-body .btn-danger:hover,
+.modal-body .btn-danger:focus,
+.modal-body .btn-danger:active,
+.modal-body .btn-warning:hover,
+.modal-body .btn-warning:focus,
+.modal-body .btn-warning:active,
+.modal-body .btn-info:hover,
+.modal-body .btn-info:focus,
+.modal-body .btn-info:active {
+    color: #fff !important;
+}

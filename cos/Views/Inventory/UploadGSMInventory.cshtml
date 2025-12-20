@@ -1,0 +1,129 @@
+﻿@{
+	Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+	ViewData["Title"] = "Login Page";
+}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">Push Inventory</h4>
+                <a class="heading-elements-toggle"><i class="la la-ellipsis-v font-medium-3"></i></a>
+                <div class="heading-elements">
+                    <ul class="list-inline mb-0">
+                        <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                        <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                        <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                        <li><a data-action="close"><i class="ft-x"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Please upload CSV file containing only the number in each line</label><br />
+                            <label>File must contain no characters other than 0-9</label><br />
+                            <label>By uploading these numbers, you are agreeing that these numbers are complete in all respects and they are not created in billing</label>
+                        </div>
+                    </div>
+                </div>
+                <form>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Upload File</label>
+                                <input type="file" id="uploaded_file" />
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer  bg-gray-light">
+                <button type="submit" class="btn btn-secondary" onclick="uploadSpareGSMNumbers(); return false;">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-6" id="bulk_upload_results" style="display: none;">
+        <div class="card">
+            <div class="card-header bg-gradient-gray">
+                <h3 class="card-title">Result</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive p-1 mt-2">
+                    <table id="bulk_upload_details" class="table table-striped table-head-fixed text-nowrap">
+                        <thead id="bulk_upload_details_header" class="uk-text-uppercase">
+                            <tr>
+                                <th>GSMNO</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulk_upload_details_body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        function uploadSpareGSMNumbers() {
+            var csvfile = $('#uploaded_file')[0].files[0];
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                data = {};
+                filedata = e.target.result;
+                filedata = filedata.replace(/\r/g, '\n');
+                numbers = filedata.split("\n");
+                data_to_send = "";
+                for (i = 0; i < numbers.length; i++){
+                    numbers[i] = numbers[i].replace(/\D/g, '');
+                    if (/^\d{10}$/.test(numbers[i])) {
+                        data_to_send += (numbers[i] + "\n");
+                    }
+                }
+                data.filedata = data_to_send;
+                $.ajax({
+                    type: 'POST',
+                    url: '/Inventory/UploadSpareGSMNumbers',
+                    data: data,
+                    success: function (data) {
+                        console.log(data);
+                        if ($.fn.DataTable.isDataTable('#bulk_upload_details')) {
+                            $('#bulk_upload_details').DataTable().destroy();
+                        }
+                        $('#bulk_upload_details_body tr').remove();
+                        tableData = '';
+                        for (i = 0; i < data.length; i++) {
+                            tableData += '<tr>';
+                            tableData += '<td>' + data[i]["key"] + '</td>';
+                            tableData += '<td>' + data[i]["value"] + '</td>';
+                            tableData += '</tr>';
+                        }
+                        console.log(tableData);
+                        $('#bulk_upload_details_body').append(tableData);
+                        $('#bulk_upload_details').dataTable({
+                            retrieve: true,
+                            paging: true,
+                            responsive: false,
+                            searching: false,
+                            dom: '<"bottom" B>frtip',
+                            buttons: [
+                                {
+                                    extend: 'csv',
+                                    text: 'Download CSV',
+                                    filename: 'BulkUploadOutput',
+                                    title: 'Exported DataTable'
+                                }
+                            ]
+                        });
+                        $('#bulk_upload_results').show();
+                    }
+                });
+            }
+            reader.readAsText(csvfile);
+            return false;
+        }
+    </script>
+}

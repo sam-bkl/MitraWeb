@@ -1,0 +1,21 @@
+﻿@page
+@model cos.Views.BCD.TestConnectionModel
+@{
+}
+@{
+    ViewData["Title"] = ViewData["Title"].ToString();
+}
+
+<h3>Oracle Connection Test</h3>
+
+<button id="btnTest" class="btn btn-primary">Test Connection</button>
+
+<div id="result" style="margin-top:15px; font-weight:bold;"></div>
+
+<script>
+    $("#btnTest").click(function () {
+        $.get("/Bcd/TestConnection", function (response) {
+            $("#result").text(response.message);
+        });
+    });
+</script>

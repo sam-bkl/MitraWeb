@@ -1,0 +1,213 @@
+@model cos.ViewModels.CreateSsaAdminPageVM
+@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "Create SSA Admin";
+}
+
+<div class="row">
+    <div class="col-12">
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">@TempData["Success"]</div>
+        }
+        <h3>SSA Admin Management</h3>
+        <p><strong>Circle:</strong> @Model.CircleAdminCircle</p>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5>SSA Admins in Circle: @Model.CircleAdminCircle</h5>
+            <button class="btn btn-primary" data-toggle="modal" data-target="#addSsaAdminModal">Add SSA Admin</button>
+        </div>
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Staff Name</th>
+                    <th>Mobile</th>
+                    <th>Email</th>
+                    <th>HR No</th>
+                    <th>Designation</th>
+                    <th>SSA Code</th>
+                    <th>Circle</th>
+                    <th>Status</th>
+                    <th>Created On</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.SsaAdmins != null && Model.SsaAdmins.Any())
+                {
+                    @foreach (var admin in Model.SsaAdmins)
+                    {
+                        <tr>
+                            <td>@admin.staff_name</td>
+                            <td>@admin.mobile</td>
+                            <td>@admin.email</td>
+                            <td>@admin.hrno</td>
+                            <td>@admin.designation_code</td>
+                            <td>@admin.ssa_code</td>
+                            <td>@admin.circle_name</td>
+                            <td>@admin.record_status</td>
+                            <td>@(admin.created_on?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="9" class="text-center">No SSA admins found</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add SSA Admin Modal -->
+<div class="modal fade" id="addSsaAdminModal" tabindex="-1" role="dialog" aria-labelledby="addSsaAdminModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSsaAdminModalLabel">Add SSA Admin</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form asp-action="CreateSsaAdmin" method="post" id="ssaAdminForm">
+                    @Html.AntiForgeryToken()
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewUser.staff_name"></label>
+                            <input class="form-control" asp-for="NewUser.staff_name" required />
+                            <span class="text-danger" asp-validation-for="NewUser.staff_name"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewUser.mobile"></label>
+                            <input class="form-control" asp-for="NewUser.mobile" maxlength="10" pattern="[0-9]{10}" required />
+                            <span class="text-danger" asp-validation-for="NewUser.mobile"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewUser.email"></label>
+                            <input type="email" class="form-control" asp-for="NewUser.email" required />
+                            <span class="text-danger" asp-validation-for="NewUser.email"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewUser.hrno"></label>
+                            <input type="number" class="form-control" asp-for="NewUser.hrno" required />
+                            <span class="text-danger" asp-validation-for="NewUser.hrno"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="NewUser.designation_code"></label>
+                            <input class="form-control" asp-for="NewUser.designation_code" />
+                            <span class="text-danger" asp-validation-for="NewUser.designation_code"></span>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Circle</label>
+                            <select class="form-control" id="circleSelect" asp-for="NewUser.circle_id" required>
+                                <option value="">-- Select Circle --</option>
+                                @foreach (var c in Model.Circles)
+                                {
+                                    @if (c.circle_code == Model.CircleAdminCircle)
+                                    {
+                                        <option value="@c.id" data-code="@c.circle_code" selected>@c.circle_name</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@c.id" data-code="@c.circle_code">@c.circle_name</option>
+                                    }
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewUser.circle_id"></span>
+                            <input type="hidden" asp-for="NewUser.circle" id="hiddenCircle" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>SSA</label>
+                            <select class="form-control" id="ssaSelect" asp-for="NewUser.ssa_id" required>
+                                <option value="">-- Select SSA --</option>
+                                @foreach (var s in Model.Ssas)
+                                {
+                                    <option value="@s.id" data-code="@s.ssa_code">@s.ssa_name</option>
+                                }
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewUser.ssa_id"></span>
+                            <input type="hidden" asp-for="NewUser.ssa_code" id="hiddenSsaCode" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<partial name="_ValidationScriptsPartial" />
+<script>
+    (function () {
+        const circleSelect = document.getElementById('circleSelect');
+        const ssaSelect = document.getElementById('ssaSelect');
+        const hiddenCircle = document.getElementById('hiddenCircle');
+        const hiddenSsaCode = document.getElementById('hiddenSsaCode');
+
+        // Disable circle selection - circle_admin can only create for their own circle
+        if (circleSelect) {
+            circleSelect.disabled = true;
+        }
+
+        async function loadSsas(circleId) {
+            ssaSelect.innerHTML = '<option value="">-- Select SSA --</option>';
+            if (!circleId) return;
+            
+            try {
+                const resp = await fetch(`/UserManagement/GetSsasForSsaAdmin?circleId=${circleId}`);
+                if (!resp.ok) return;
+                const data = await resp.json();
+
+                data.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.ssa_name;
+                    opt.dataset.code = s.ssa_code;
+                    ssaSelect.appendChild(opt);
+                });
+            } catch (error) {
+                console.error('Error loading SSAs:', error);
+            }
+        }
+
+        circleSelect.addEventListener('change', function () {
+            const selected = circleSelect.options[circleSelect.selectedIndex];
+            const code = selected.dataset.code || '';
+            hiddenCircle.value = code;
+            loadSsas(circleSelect.value);
+        });
+
+        ssaSelect.addEventListener('change', function () {
+            const selected = ssaSelect.options[ssaSelect.selectedIndex];
+            const code = selected ? selected.dataset.code : '';
+            hiddenSsaCode.value = code || '';
+        });
+
+        // Initialize on page load
+        if (circleSelect.value) {
+            const selected = circleSelect.options[circleSelect.selectedIndex];
+            if (selected) {
+                hiddenCircle.value = selected.dataset.code || '';
+            }
+            loadSsas(circleSelect.value);
+        }
+    })();
+</script>
+

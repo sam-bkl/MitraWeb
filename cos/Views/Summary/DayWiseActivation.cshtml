@@ -1,0 +1,264 @@
+﻿@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "DayWiseActivation";
+}
+
+
+@section header {
+    <!-- Bootstrap 5 CSS -->
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+
+}
+
+@* <div class="card">
+                        <div class="card-header">
+    
+                        </div>
+                        <div class="card-content collapse show">
+                            <div class="card-body card-dashboard">
+                                
+                                <div class="table-responsive " v-if="tableData.length !== 0">
+
+
+                                </div>
+
+                            </div>
+                        </div>
+
+
+                    </div> *@
+
+<div id="app">
+    <div class="row">
+        <div class="col-12">
+            @* header and filter *@
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Daily Activation Summary</h3>
+                        </div>
+                        <div class="card-content collapse show p-2">
+          
+                            <div class="row g-3 align-items-end mb-4">
+                                <div class="col-md-3 col-sm-6">
+                                    <label for="startDate" class="form-label fw-bold">Start Date</label>
+                                    <input type="date" id="startDate" v-model="startDate" class="form-control" />
+                                </div>
+
+                                <div class="col-md-3 col-sm-6">
+                                    <label for="endDate" class="form-label fw-bold">End Date</label>
+                                    <input type="date" id="endDate" v-model="endDate" class="form-control" />
+                                </div>
+
+                                <div class="col-md-6 col-sm-12">
+                                    <div class="d-flex gap-2 flex-wrap p-2">
+                                        <button @@click="fetchData" :disabled="loading" class="btn btn-success m-1">
+                                            <span class="spinner-border spinner-border-sm me-1" v-if="loading"></span>
+                                            <i class="icon-reload me-1" v-if="!loading"></i>
+                                            {{ loading ? 'Loading...' : 'Fetch Data' }}
+                                        </button>
+
+                                        <button @@click="downloadCSV" :disabled="data.length === 0"
+                                            v-if="data.length > 0" class="btn btn-primary m-1">
+                                            <i class="icon-download me-1"></i>
+                                            Download CSV
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                </div>
+            </div>
+            @* table and data *@
+            <div class="row">
+                <div class="col-12">
+
+                    <div class="card">
+                        <div class="card-header">
+
+                        </div>
+                        <div class="card-content collapse show">
+                            <div class="card-body card-dashboard">
+
+                                <div class="table-responsive " v-if="data.length !== 0">
+
+                                    <div v-if="error" class="error">
+                                        {{ error }}
+                                    </div>
+
+                                    <div v-if="loading" class="loading">
+                                        Loading data...
+                                    </div>
+
+                                    <div v-else-if="!loading && data.length === 0" class="no-data">
+                                        No data available. Click "Fetch Data" to load activation summary.
+                                    </div>
+
+                                    <table v-else class="table table-striped table-bordered table-sm small zero-configuration ">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Circle</th>
+                                                <th>Activations</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="text-danger fw-bold">{{ GetTotalData.ACTIVATION_DATE }}</td>
+                                                <td class="text-danger fw-bold">{{ GetTotalData.CIRCLE_NAME }}</td>
+                                                <td class="text-danger fw-bold">{{ GetTotalData.TOTAL_C_ACTIVATIONS }}
+                                                </td>
+                                            </tr>
+                                            <tr v-for="(row, index) in data" :key="index"
+                                                :class="{ 'total-row': row.region === 'total' }">
+
+                                                <td :class = "{'text-danger fw-bold' :  row.CIRCLE_NAME === 'Total'}">{{ row.ACTIVATION_DATE }}</td>
+                                                <td :class = "{'text-danger fw-bold' :  row.CIRCLE_NAME === 'Total'}">{{ row.CIRCLE_NAME }}</td>
+                                                <td :class = "{'text-danger fw-bold' :  row.CIRCLE_NAME === 'Total'}">{{ row.TOTAL_C_ACTIVATIONS }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+</div>
+
+
+
+@section Scripts {
+    <script>
+        const { createApp, ref, reactive, onMounted, computed } = Vue;
+
+        createApp({
+            setup() {
+                const startDate = ref('');
+                const endDate = ref('');
+                const data = ref([]);
+                const loading = ref(false);
+                const error = ref('');
+
+                @* const submit = async () =>{
+                    fetchData();
+                } *@
+                        const fetchData = async () => {
+                    loading.value = true;
+                    error.value = '';
+
+                    try {
+                        const params = new URLSearchParams();
+                        if (startDate.value) params.append('startDate', startDate.value);
+                        if (endDate.value) params.append('endDate', endDate.value);
+
+                        const url = `/summary/GetActivationDaily${params.toString() ? '?' + params.toString() : ''}`;
+                        const response = await fetch(url);
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+
+                        // Parse the data - adjust this based on your actual API response format
+                        // Assuming the API returns an array of objects or raw data
+                        @* console.log(result.data); *@
+                        data.value = result.data;
+
+                    } catch (err) {
+                        error.value = `Failed to fetch data: ${err.message}`;
+                        console.error('Error fetching data:', err);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                // Helper function to parse data if needed
+                const parseData = (result) => {
+                    // If your API returns the data in a different format, adjust this
+                    if (result.data && Array.isArray(result.data)) {
+                        return result.data;
+                    }
+                    return [];
+                };
+                const GetTotalData = computed(() =>{
+                    return data.value.find(x=> x.ACTIVATION_DATE == 'Total');
+                });
+                const downloadCSV = () => {
+                    if (data.value.length === 0) return;
+
+
+                    // Create CSV content
+                    const headers = ['ACTIVATION_DATE', 'CIRCLE_NAME', 'ACTIVATIONS'];
+                    const csvRows = [headers.join(',')];
+
+                    data.value.forEach(row => {
+                        const values = [
+                            row.ACTIVATION_DATE,
+                            `"${row.CIRCLE_NAME}"`, // Wrap in quotes to handle commas in region names
+                            row.TOTAL_C_ACTIVATIONS
+                        ];
+                        csvRows.push(values.join(','));
+                    });
+
+                    const csvContent = csvRows.join('\n');
+
+                    // Create blob and download
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', `activation_summary_${startDate.value}_to_${endDate.value}.csv`);
+                    link.style.visibility = 'hidden';
+
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+                // Set default dates (last 7 days)
+                const today = new Date();
+                const weekAgo = new Date(today);
+                weekAgo.setDate(weekAgo.getDate() - 7);
+
+                endDate.value = today.toISOString().split('T')[0];
+                startDate.value = today.toISOString().split('T')[0];
+                // Lifecycle hook
+                onMounted(() => {
+
+                    @* data.value = raw_data; *@
+
+                        });
+                return {
+                    startDate,
+                    endDate,
+                    data,
+                    loading,
+                    error,
+                    fetchData,
+                    downloadCSV,
+                    GetTotalData
+                };
+            }
+        }).mount('#app');
+    </script>
+}

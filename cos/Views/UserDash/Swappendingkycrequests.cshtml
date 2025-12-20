@@ -1,0 +1,231 @@
+﻿@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "Login Page";
+}
+
+
+
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">eKYC Details (SIM Swap)</h4>
+                <a class="heading-elements-toggle"><i class="la la-ellipsis-v font-medium-3"></i></a>
+                <div class="heading-elements">
+                    <ul class="list-inline mb-0">
+                        <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                        <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                        <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                        <li><a data-action="close"><i class="ft-x"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-content collapse show">
+                <div class="card-body card-dashboard">
+
+                    @* <div class="row mb-2">
+                        <div class="col-md-3">
+                            <label>CAF Type</label>
+                            <select id="cafTypeFilter" class="form-control">
+                                <option value="ALL" selected>All</option>
+                                <option value="cymn">E-KYC Approval</option>
+                                <option value="mnp">E-KYC MNP</option>
+                            </select>
+                        </div>
+                    </div> *@
+
+                 @*    <p class="card-text">ekyc summary</p> *@
+                    <div class="table-responsive">
+                        <table id="kycTable" class="table table-striped table-bordered zero-configuration">
+                            <thead>
+                                <tr>
+                                    <th>State</th>
+                                    <th>Name</th>
+                                    <th>CAF Type</th>
+                                    <th>GSM Number</th>
+                                    <th>SIM Number</th>
+                                    <th>caf sl NO</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body-kycpend"></tbody>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+   
+
+<div class="modal fade" id="pdfModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Customer CAF</h5>
+
+                <!-- APPROVE BUTTON INSIDE MODAL -->
+                <button id="modalApproveBtn" class="btn btn-success btn-sm mr-2">
+                    <i class="fa fa-check"></i> Approve
+                </button>
+
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <iframe id="pdfFrame" style="width:100%; height:600px;" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+   
+@section Scripts {
+    <script>
+          $(document).ready(function () {
+
+              GetkycDetails();
+            
+
+        });
+
+
+        // $('#cafTypeFilter').change(function () {
+        //     GetkycDetails();
+        // });
+
+        function GetkycDetails()
+        {
+
+                   // var cafType = $('#cafTypeFilter').val(); // ALL / CYMN / MNP
+            // Destroy DataTable if already initialized
+            if ($.fn.DataTable.isDataTable('#kycTable')) {
+                $('#kycTable').DataTable().clear().destroy();
+            }
+
+            var tableBody = $('#table-body-kycpend');
+            tableBody.html('<tr style="text-align:center"><td colspan="6">Loading...</td></tr>');
+
+            $.ajax({
+                type: 'POST',
+                url: "/UserDash/GetkycDetailsSwap",
+                headers: {
+                    "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                       // data: { cafType: cafType },   //pass filter
+                success: function (data) {
+
+                    var tableString = '';
+                    for (var i = 0; i < data.length; i++) {
+                        tableString += '<tr>';
+                        tableString += '<td>' + data[i].circle + '</td>';
+                        tableString += '<td>' + data[i].name + '</td>';
+                        tableString += '<td>' + data[i].caftype + '</td>';
+                        tableString += '<td>' + data[i].gsmnumber + '</td>';
+                        tableString += '<td>' + data[i].simnumber + '</td>';
+                        tableString += '<td>' + data[i].cafslno + '</td>';
+                        // // Add Approve button
+                        //  tableString += '<td>';
+                        // tableString += '<button class="btn btn-success btn-sm approve-btn" onclick="approveKyc(\'' + data[i].gsmnumber + '\')">';
+                        // tableString += '<i class="fa fa-check"></i> Approve</button>';
+                        // tableString += '</td>';
+
+                        tableString += '<td>';
+                        tableString += '<a class="btn btn-success btn-sm" href="/UserDash/CAFSwapForm?cafslno=' + data[i].cafslno + '">';
+                        tableString += '<i class="fa fa-check"></i> VIEW</a>';
+                        tableString += '</td>';
+
+
+                        tableString += '</tr>';
+                    }
+
+                    tableBody.html(tableString);
+
+                    // Reinitialize the DataTable
+                    $('#kycTable').DataTable({
+                        "ordering": true,
+                        "paging": true,
+                        "searching": true
+                    });
+
+                }
+            });
+        }
+
+
+ 
+
+        // var selectedGsmNumber = null;   // Global variable
+
+        // function approveKyc(gsmnumber) {
+
+        //     selectedGsmNumber = gsmnumber; // Save GSM for modal approve button
+
+        //     console.log("Test Mode: Loading sample.pdf for GSM:", gsmnumber);
+
+        //     // Load sample PDF
+        //     var pdfUrl = "/sample.pdf";
+        //     $("#pdfFrame").attr("src", pdfUrl);
+
+        //     // Show popup modal
+        //     $("#pdfModal").modal("show");
+        // }
+
+
+                $("#modalApproveBtn").click(function () {
+
+            if (!confirm("Are you sure you want to APPROVE this CAF?")) {
+                return;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/UserDash/ApproveSwapCAF",   // Your controller endpoint
+                data: { gsm: selectedGsmNumber }, // send GSM
+                success: function (response) {
+
+                    alert("CAF approved successfully!");
+
+                    $("#pdfModal").modal("hide");  // close modal
+                    GetkycDetails();               // reload table
+                },
+                error: function () {
+                    alert("Error approving CAF!");
+                }
+            });
+        });
+
+
+
+</script>
+
+    <script>
+        setTimeout(() => {
+            document.querySelectorAll('.alert-success')
+                .forEach(el => el.classList.remove('show'));
+        }, 4000);
+    </script>
+
+}
