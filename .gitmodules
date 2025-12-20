@@ -1,0 +1,3 @@
+[submodule "external/MpinCrypt"]
+	path = external/MpinCrypt
+	url = https://github.com/sam-bkl/MpinCrypt.git

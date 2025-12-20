@@ -90,7 +90,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\mpin-crypt-routine-package\src\MpinCrypt\MpinCrypt.csproj" />
+    <ProjectReference Include="..\external\MpinCrypt\src\MpinCrypt\MpinCrypt.csproj" />  
   </ItemGroup>
-
+ 
 </Project>
