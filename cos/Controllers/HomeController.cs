@@ -103,9 +103,16 @@ namespace cos.Controllers
         //    CaptchaGeneratorDisplayMode = DisplayMode.SumOfTwoNumbers)]
         public async Task<IActionResult> Login(LoginVM postData)
         {
-            // If user is already authenticated, redirect to appropriate dashboard
+            _logger.LogInformation("Login POST called. User authenticated: {IsAuthenticated}, Username: {Username}, OTP sent: {OtpSent}", 
+                User.Identity?.IsAuthenticated ?? false, 
+                postData.username ?? "null", 
+                postData.otp_sent);
+
+            // If user is already authenticated, redirect to appropriate dashboard immediately
+            // This prevents any OTP sending or processing
             if (User.Identity?.IsAuthenticated == true)
             {
+                _logger.LogWarning("Login POST called for already authenticated user. Redirecting to dashboard.");
                 var role = User.FindFirst(ClaimTypes.Role)?.Value;
                 if (!string.IsNullOrEmpty(role))
                 {
@@ -114,12 +121,27 @@ namespace cos.Controllers
                 return RedirectToAction("Index", "UserDash");
             }
 
+            // Additional check: If there's no username/password and user is not in OTP flow, 
+            // this might be an accidental POST - redirect to Index GET
+            if (string.IsNullOrWhiteSpace(postData.username) && string.IsNullOrWhiteSpace(postData.password) && !postData.otp_sent)
+            {
+                _logger.LogWarning("Login POST called without credentials and not in OTP flow. Redirecting to Index.");
+                return RedirectToAction("Index", "Home");
+            }
+
             ViewBag.Error = "";
             postData.otp_sent = postData.otp_sent || false;
 
             if (!postData.otp_sent)
             {
                 // Step 1: Validate CAPTCHA and credentials
+                // Additional safety check: Ensure we have username and password
+                if (string.IsNullOrWhiteSpace(postData.username) || string.IsNullOrWhiteSpace(postData.password))
+                {
+                    _logger.LogWarning("Login POST called without username or password. Redirecting to Index.");
+                    return RedirectToAction("Index", "Home");
+                }
+
                 var captchaInSession = HttpContext.Session.GetString("CaptchaCode");
                 if (captchaInSession == null || postData.captcha_input?.ToUpperInvariant() != captchaInSession.ToUpperInvariant())
                 {
