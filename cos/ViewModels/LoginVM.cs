@@ -7,15 +7,16 @@ namespace cos.ViewModels
     {
         [DisplayName("Username")]
         [Required(ErrorMessage = "Please enter your username.")]
-        public string username { get; set; }
+        public string username { get; set; } = string.Empty;
 
         [DisplayName("Password")]
         [Required(ErrorMessage = "Please enter your password")]
-        public string password { get; set; }
+        public string password { get; set; } = string.Empty;
 
-        //[DisplayName("OTP")]
-        //[Required(ErrorMessage = "Please enter OTP")]
-        //[RegularExpression(@"^[0-9]*$", ErrorMessage = "Numbers only")]
-        //public string otp { get; set; }
+        public string? captcha_input { get; set; }
+
+        public string? otp { get; set; }
+        
+        public bool otp_sent { get; set; } = false;
     }
 }

@@ -745,6 +745,10 @@ namespace cos.Controllers
                 {
                     errors.Add("SSA is required.");
                 }
+                if (string.IsNullOrWhiteSpace(newCtop.dealertype) || (newCtop.dealertype != "CSR" && newCtop.dealertype != "OCSC"))
+                {
+                    errors.Add("Dealer Type is required and must be either CSR or OCSC.");
+                }
 
                 if (errors.Count > 0)
                 {
@@ -771,12 +775,27 @@ namespace cos.Controllers
 
                 var posCode = CtopMaster.GeneratePosUniqueCode(newCtop.aadhaar_no, newCtop.aadhaar_issue_year, newCtop.name);
 
+                // Fetch zonal data to get the 5 new fields
+                var zonalData = await _cscRepository.GetMissingCscCtopDetailsByZoneAsync(ctopupno, circle.zone_code);
+                
+                // Handle the 5 new fields: dealercode, ref_dealer_id, master_dealer_id, parent_ctopno, dealer_status
+                // If no value, pass null for all except parent_ctopno. For parent_ctopno, if no value, use ctopupno
+                var dealercode = !string.IsNullOrWhiteSpace(zonalData?.dealercode) ? zonalData.dealercode : null;
+                var refDealerId = zonalData?.ref_dealer_id.HasValue == true ? zonalData.ref_dealer_id : null;
+                var masterDealerId = zonalData?.master_dealer_id.HasValue == true ? zonalData.master_dealer_id : null;
+                var parentCtopno = !string.IsNullOrWhiteSpace(zonalData?.parent_ctopno) 
+                    ? zonalData.parent_ctopno 
+                    : (!string.IsNullOrWhiteSpace(zonalData?.parent_ctop) 
+                        ? zonalData.parent_ctop 
+                        : ctopupno); // Use ctopupno if no value
+                var dealerStatus = !string.IsNullOrWhiteSpace(zonalData?.dealer_status) ? zonalData.dealer_status : null;
+
                 var ctopEntity = new CtopMaster
                 {
                     username = newCtop.contact_number,
                     ctopupno = ctopupno,
                     name = newCtop.name,
-                    dealertype = newCtop.dealertype ?? "CSR",
+                    dealertype = newCtop.dealertype,
                     ssa_code = ssa.ssa_code,
                     csccode = newCtop.csccode,
                     circle_code = selectedCircle.circle_code,
@@ -801,7 +820,12 @@ namespace cos.Controllers
                     longitude = null,
                     aadhaar_no = newCtop.aadhaar_no,
                     zone_code = selectedCircle.zone_code,
-                    ctop_type = string.IsNullOrEmpty(newCtop.ctop_type) ? "INDIRECT" : newCtop.ctop_type
+                    ctop_type = string.IsNullOrEmpty(newCtop.ctop_type) ? "INDIRECT" : newCtop.ctop_type,
+                    dealercode = dealercode,
+                    ref_dealer_id = refDealerId,
+                    master_dealer_id = masterDealerId,
+                    parent_ctopno = parentCtopno,
+                    dealer_status = dealerStatus
                 };
 
                 var insertResult = await _cscRepository.InsertCtopAsync(ctopEntity, createdByAccountId);
@@ -966,6 +990,10 @@ namespace cos.Controllers
                 {
                     ModelState.AddModelError("NewCtop.ssa_id", "SSA is required.");
                 }
+                if (string.IsNullOrWhiteSpace(newCtop.dealertype) || (newCtop.dealertype != "CSR" && newCtop.dealertype != "OCSC"))
+                {
+                    ModelState.AddModelError("NewCtop.dealertype", "Dealer Type is required and must be either CSR or OCSC.");
+                }
 
                 if (!ModelState.IsValid)
                 {
@@ -1007,12 +1035,27 @@ namespace cos.Controllers
 
                 var posCode = CtopMaster.GeneratePosUniqueCode(newCtop.aadhaar_no, newCtop.aadhaar_issue_year, newCtop.name);
 
+                // Fetch zonal data to get the 5 new fields
+                var zonalData = await _cscRepository.GetMissingCscCtopDetailsByZoneAsync(ctopupno, circle.zone_code);
+                
+                // Handle the 5 new fields: dealercode, ref_dealer_id, master_dealer_id, parent_ctopno, dealer_status
+                // If no value, pass null for all except parent_ctopno. For parent_ctopno, if no value, use ctopupno
+                var dealercode = !string.IsNullOrWhiteSpace(zonalData?.dealercode) ? zonalData.dealercode : null;
+                var refDealerId = zonalData?.ref_dealer_id.HasValue == true ? zonalData.ref_dealer_id : null;
+                var masterDealerId = zonalData?.master_dealer_id.HasValue == true ? zonalData.master_dealer_id : null;
+                var parentCtopno = !string.IsNullOrWhiteSpace(zonalData?.parent_ctopno) 
+                    ? zonalData.parent_ctopno 
+                    : (!string.IsNullOrWhiteSpace(zonalData?.parent_ctop) 
+                        ? zonalData.parent_ctop 
+                        : ctopupno); // Use ctopupno if no value
+                var dealerStatus = !string.IsNullOrWhiteSpace(zonalData?.dealer_status) ? zonalData.dealer_status : null;
+
                 var ctopEntity = new CtopMaster
                 {
                     username = newCtop.contact_number,
                     ctopupno = ctopupno,
                     name = newCtop.name,
-                    dealertype = newCtop.dealertype ?? "CSR",
+                    dealertype = newCtop.dealertype,
                     ssa_code = ssa.ssa_code,
                     csccode = newCtop.csccode,
                     circle_code = selectedCircle.circle_code,
@@ -1037,7 +1080,12 @@ namespace cos.Controllers
                     longitude = null,
                     aadhaar_no = newCtop.aadhaar_no,
                     zone_code = selectedCircle.zone_code,
-                    ctop_type = string.IsNullOrEmpty(newCtop.ctop_type) ? "INDIRECT" : newCtop.ctop_type
+                    ctop_type = string.IsNullOrEmpty(newCtop.ctop_type) ? "INDIRECT" : newCtop.ctop_type,
+                    dealercode = dealercode,
+                    ref_dealer_id = refDealerId,
+                    master_dealer_id = masterDealerId,
+                    parent_ctopno = parentCtopno,
+                    dealer_status = dealerStatus
                 };
 
                 var insertResult = await _cscRepository.InsertCtopAsync(ctopEntity, createdByAccountId);
