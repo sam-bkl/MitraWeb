@@ -25,26 +25,45 @@ namespace cos.Controllers
         }
         public IActionResult Index()
         {
-
-            var _cookieLoggedIn = HttpContext.Request.Cookies["LoggedIn"];
-            ViewBag.LoggedIn = _protector.Unprotect(_cookieLoggedIn);
-            var _cookiecircle = HttpContext.Request.Cookies["Circle"];
-            ViewBag.Circle = _protector.Unprotect(_cookiecircle);
-            var _cookieRole = HttpContext.Request.Cookies["Role"];
-            if (!string.IsNullOrEmpty(_cookieRole))
+            // Check if user is authenticated first
+            if (!User.Identity?.IsAuthenticated ?? true)
             {
-                ViewBag.UserRole = _protector.Unprotect(_cookieRole);
+                return RedirectToAction("Index", "Home");
             }
 
-            //code to check password expiry
-            var _Pwdflag = HttpContext.Request.Cookies["Pwdflag"];
-            var pwdflg = _protector.Unprotect(_Pwdflag);
-            if (String.Equals(pwdflg, "1"))
+            try
             {
-                TempData["PasswordMessage"] = "Password expired .Please change your password ";
-                return RedirectToAction("Pwd_Change", "Users");
+                var _cookieLoggedIn = HttpContext.Request.Cookies["LoggedIn"];
+                ViewBag.LoggedIn = !string.IsNullOrEmpty(_cookieLoggedIn) ? _protector.Unprotect(_cookieLoggedIn) : "";
+                
+                var _cookiecircle = HttpContext.Request.Cookies["Circle"];
+                ViewBag.Circle = !string.IsNullOrEmpty(_cookiecircle) ? _protector.Unprotect(_cookiecircle) : "";
+                
+                var _cookieRole = HttpContext.Request.Cookies["Role"];
+                if (!string.IsNullOrEmpty(_cookieRole))
+                {
+                    ViewBag.UserRole = _protector.Unprotect(_cookieRole);
+                }
+
+                //code to check password expiry
+                var _Pwdflag = HttpContext.Request.Cookies["Pwdflag"];
+                if (!string.IsNullOrEmpty(_Pwdflag))
+                {
+                    var pwdflg = _protector.Unprotect(_Pwdflag);
+                    if (String.Equals(pwdflg, "1"))
+                    {
+                        TempData["PasswordMessage"] = "Password expired .Please change your password ";
+                        return RedirectToAction("Pwd_Change", "Users");
+                    }
+                }
+                //code to check password expiry
             }
-            //code to check password expiry
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error unprotecting cookies in UserDash/Index");
+                // If cookies are invalid, redirect to login
+                return RedirectToAction("Index", "Home");
+            }
 
             return View();
         }
