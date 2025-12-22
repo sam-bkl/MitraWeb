@@ -161,12 +161,14 @@ namespace cos.Repositories
                              contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city, pos_district,
                              pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name, pos_code, pos_ctop,
                              circle_name, pos_unique_code, latitude, longitude, aadhaar_no, zone_code, ctop_type,
+                             dealercode, ref_dealer_id, master_dealer_id, parent_ctopno, dealer_status,
                              account_id, created_on, updated_on, data_source)
                             VALUES
                             (@username, @ctopupno, @name, @dealertype, @ssa_code, @csccode, @circle_code, @attached_to,
                              @contact_number, @pos_hno, @pos_street, @pos_landmark, @pos_locality, @pos_city, @pos_district,
                              @pos_state, @pos_pincode, @created_date, @pos_name_ss, @pos_owner_name, @pos_code, @pos_ctop,
                              @circle_name, @pos_unique_code, @latitude, @longitude, @aadhaar_no, @zone_code, @ctop_type,
+                             @dealercode, @ref_dealer_id, @master_dealer_id, @parent_ctopno, @dealer_status,
                              @account_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, @data_source)");
 
                 using var db = ConnectionPgSql;
@@ -201,10 +203,22 @@ namespace cos.Repositories
                     aadhaar_no = entity.aadhaar_no,
                     zone_code = entity.zone_code,
                     ctop_type = entity.ctop_type,
+                    dealercode = entity.dealercode,
+                    ref_dealer_id = entity.ref_dealer_id,
+                    master_dealer_id = entity.master_dealer_id,
+                    parent_ctopno = entity.parent_ctopno,
+                    dealer_status = entity.dealer_status,
                     account_id = accountId,
                     data_source = "MITRA"
                 };
                 var rowsAffected = await db.ExecuteAsync(sb.ToString(), parameters);
+                
+                // Log to audit table
+                if (rowsAffected > 0)
+                {
+                    await LogCtopMasterAuditAsync(entity, accountId, "INSERT", null, "New CTOP record inserted");
+                }
+                
                 return new InsertResult { Success = true, RowsAffected = rowsAffected };
             }
             catch (Exception ex)
@@ -658,7 +672,8 @@ namespace cos.Repositories
                                                       contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
                                                       pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
                                                       pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
-                                                      aadhaar_no, zone_code, ctop_type
+                                                      aadhaar_no, zone_code, ctop_type, dealercode, ref_dealer_id, master_dealer_id,
+                                                      parent_ctopno, dealer_status
                                                FROM ctop_master
                                                WHERE ctopupno = @ctopupno
                                                ORDER BY created_date DESC
@@ -743,6 +758,26 @@ namespace cos.Repositories
                         return (false, "Failed to update pos_unique_code. No rows affected.");
                     }
 
+                    // Log to audit table - get updated row
+                    var updatedRow = await db.QueryFirstOrDefaultAsync<CtopMaster>(
+                        @"SELECT username, ctopupno, name, dealertype, ssa_code, csccode, circle_code, attached_to,
+                                 contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
+                                 pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
+                                 pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
+                                 aadhaar_no, zone_code, ctop_type, dealercode, ref_dealer_id, master_dealer_id,
+                                 parent_ctopno, dealer_status
+                          FROM ctop_master
+                          WHERE ctopupno = @ctopupno
+                          ORDER BY created_date DESC
+                          LIMIT 1",
+                        new { ctopupno }, transaction);
+                    
+                    if (updatedRow != null)
+                    {
+                        await LogCtopMasterAuditAsync(updatedRow, updatedByAccountId, "UPDATE", currentRow.pos_unique_code, 
+                            $"Updated pos_unique_code from '{currentRow.pos_unique_code}' to '{newPosUniqueCode}'", transaction);
+                    }
+
                     transaction.Commit();
                     return (true, string.Empty);
                 }
@@ -755,6 +790,91 @@ namespace cos.Repositories
             catch (Exception ex)
             {
                 return (false, $"Error updating pos_unique_code: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Logs audit information for ctop_master table operations (INSERT or UPDATE)
+        /// </summary>
+        private async Task LogCtopMasterAuditAsync(CtopMaster entity, long accountId, string auditType, string? oldPosUniqueCode = null, string? changeDescription = null, IDbTransaction? transaction = null)
+        {
+            try
+            {
+                const string auditSql = @"INSERT INTO ctop_master_audit_log
+                    (audit_type, ctopupno, username, name, dealertype, ssa_code, csccode, circle_code, attached_to,
+                     contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city, pos_district,
+                     pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name, pos_code, pos_ctop,
+                     circle_name, pos_unique_code, latitude, longitude, aadhaar_no, zone_code, ctop_type,
+                     dealercode, ref_dealer_id, master_dealer_id, parent_ctopno, dealer_status,
+                     account_id, data_source, old_pos_unique_code, change_description, audit_timestamp)
+                    VALUES
+                    (@audit_type, @ctopupno, @username, @name, @dealertype, @ssa_code, @csccode, @circle_code, @attached_to,
+                     @contact_number, @pos_hno, @pos_street, @pos_landmark, @pos_locality, @pos_city, @pos_district,
+                     @pos_state, @pos_pincode, @created_date, @pos_name_ss, @pos_owner_name, @pos_code, @pos_ctop,
+                     @circle_name, @pos_unique_code, @latitude, @longitude, @aadhaar_no, @zone_code, @ctop_type,
+                     @dealercode, @ref_dealer_id, @master_dealer_id, @parent_ctopno, @dealer_status,
+                     @account_id, @data_source, @old_pos_unique_code, @change_description, CURRENT_TIMESTAMP)";
+
+                using var db = transaction != null ? null : ConnectionPgSql;
+                if (db != null) db.Open();
+
+                var parameters = new
+                {
+                    audit_type = auditType,
+                    ctopupno = entity.ctopupno,
+                    username = entity.username,
+                    name = entity.name,
+                    dealertype = entity.dealertype,
+                    ssa_code = entity.ssa_code,
+                    csccode = entity.csccode,
+                    circle_code = entity.circle_code,
+                    attached_to = entity.attached_to,
+                    contact_number = entity.contact_number,
+                    pos_hno = entity.pos_hno,
+                    pos_street = entity.pos_street,
+                    pos_landmark = entity.pos_landmark,
+                    pos_locality = entity.pos_locality,
+                    pos_city = entity.pos_city,
+                    pos_district = entity.pos_district,
+                    pos_state = entity.pos_state,
+                    pos_pincode = entity.pos_pincode,
+                    created_date = entity.created_date,
+                    pos_name_ss = entity.pos_name_ss,
+                    pos_owner_name = entity.pos_owner_name,
+                    pos_code = entity.pos_code,
+                    pos_ctop = entity.pos_ctop,
+                    circle_name = entity.circle_name,
+                    pos_unique_code = entity.pos_unique_code,
+                    latitude = entity.latitude,
+                    longitude = entity.longitude,
+                    aadhaar_no = entity.aadhaar_no,
+                    zone_code = entity.zone_code,
+                    ctop_type = entity.ctop_type,
+                    dealercode = entity.dealercode,
+                    ref_dealer_id = entity.ref_dealer_id,
+                    master_dealer_id = entity.master_dealer_id,
+                    parent_ctopno = entity.parent_ctopno,
+                    dealer_status = entity.dealer_status,
+                    account_id = accountId,
+                    data_source = "MITRA",
+                    old_pos_unique_code = oldPosUniqueCode,
+                    change_description = changeDescription
+                };
+
+                if (transaction != null)
+                {
+                    await ((IDbConnection)transaction.Connection!).ExecuteAsync(auditSql, parameters, transaction);
+                }
+                else
+                {
+                    await db!.ExecuteAsync(auditSql, parameters);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the main operation
+                // In production, you might want to log this to a separate error log
+                System.Diagnostics.Debug.WriteLine($"Failed to log audit entry: {ex.Message}");
             }
         }
 

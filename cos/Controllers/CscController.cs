@@ -1158,16 +1158,16 @@ namespace cos.Controllers
             }
         }
 
-        // Edit POS Unique Code - BA Admin only
-        [Authorize(Roles = "ba_admin")]
+        // Edit POS Unique Code - BA Admin and CSC Admin
+        [Authorize(Roles = "ba_admin,csc_admin")]
         [HttpGet]
         public IActionResult EditPosUniqueCode()
         {
             try
             {
-                if (!IsBaAdmin())
+                if (!IsBaAdmin() && !IsCscAdmin())
                 {
-                    TempData["Error"] = "Access denied. BA admin role required.";
+                    TempData["Error"] = "Access denied. BA admin or CSC admin role required.";
                     return RedirectToAction("AccessDenied", "Home");
                 }
 
@@ -1180,13 +1180,13 @@ namespace cos.Controllers
             }
         }
 
-        [Authorize(Roles = "ba_admin")]
+        [Authorize(Roles = "ba_admin,csc_admin")]
         [HttpGet]
         public async Task<IActionResult> SearchCtopForEdit(string ctopupno)
         {
             try
             {
-                if (!IsBaAdmin())
+                if (!IsBaAdmin() && !IsCscAdmin())
                 {
                     return Json(new { error = "Access denied" });
                 }
@@ -1210,13 +1210,13 @@ namespace cos.Controllers
             }
         }
 
-        [Authorize(Roles = "ba_admin")]
+        [Authorize(Roles = "ba_admin,csc_admin")]
         [HttpPost]
         public IActionResult GeneratePosUniqueCode([FromBody] GeneratePosUniqueCodeRequest request)
         {
             try
             {
-                if (!IsBaAdmin())
+                if (!IsBaAdmin() && !IsCscAdmin())
                 {
                     return Json(new { success = false, message = "Access denied" });
                 }
@@ -1241,20 +1241,20 @@ namespace cos.Controllers
             }
         }
 
-        [Authorize(Roles = "ba_admin")]
+        [Authorize(Roles = "ba_admin,csc_admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdatePosUniqueCode(string ctopupno, string newPosUniqueCode)
         {
             try
             {
-                if (!IsBaAdmin())
+                if (!IsBaAdmin() && !IsCscAdmin())
                 {
                     if (IsAjaxRequest())
                     {
                         return Json(new { success = false, message = "Access denied" });
                     }
-                    TempData["Error"] = "Access denied. BA admin role required.";
+                    TempData["Error"] = "Access denied. BA admin or CSC admin role required.";
                     return RedirectToAction("AccessDenied", "Home");
                 }
 

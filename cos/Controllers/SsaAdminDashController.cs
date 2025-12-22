@@ -31,8 +31,6 @@ namespace cos.Controllers
             var _cookiecircle = HttpContext.Request.Cookies["Circle"];
             ViewBag.Circle = _protector.Unprotect(_cookiecircle);
             var _cookieRole = HttpContext.Request.Cookies["Role"];
-            var _cookieSsa = HttpContext.Request.Cookies["SSA"];
-            var ssa = _protector.Unprotect(_cookieSsa);
             if (!string.IsNullOrEmpty(_cookieRole))
             {
                 ViewBag.UserRole = _protector.Unprotect(_cookieRole);
