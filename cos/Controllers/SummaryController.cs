@@ -31,6 +31,19 @@ namespace cos.Controllers
         {
             return View();
         }
+
+        public ActionResult CircleWiseBillingStatus()
+        {
+            return View();
+        }
+
+
+        public ActionResult BillingStatus()
+        {
+            return View();
+        }
+
+
         /// <summary>
         /// KYC details grouped by Circle, POS and TYPE
         /// </summary>
@@ -97,6 +110,41 @@ namespace cos.Controllers
                 data
             });
         }  
+
+        /// <summary>
+        /// activation details grouped by Circle, POS and TYPE
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetCircleWiseBillingStatus()
+        {
+
+
+            var data = await _summaryRepository.GetCircleWiseBillingStatusAsync();
+
+            return Json(new
+            {
+                success = true,
+                data
+            });
+        } 
+
+        /// <summary>
+        /// activation details grouped by Circle, POS and TYPE
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetBillingStatus()
+        {
+
+
+            var data = await _summaryRepository.GetBillingStatusAsync();
+
+            return Json(new
+            {
+                success = true,
+                data
+            });
+        } 
+
     
     }
 }
