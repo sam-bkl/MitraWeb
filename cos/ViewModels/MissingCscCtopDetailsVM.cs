@@ -20,6 +20,11 @@ namespace cos.ViewModels
         public string? zone_code { get; set; }
         public string? dealer_id { get; set; }
         public string? dealercode { get; set; }
+        public long? ref_dealer_id { get; set; }
+        public long? master_dealer_id { get; set; }
+        public string? parent_ctopno { get; set; }
+        public string? parent_ctop { get; set; }
+        public string? dealer_status { get; set; }
         
         // Computed/combined fields
         public string? full_name 

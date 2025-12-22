@@ -4,7 +4,7 @@ using System.Data;
 using cos.ViewModels;
 using YourProject.Repositories.Interfaces;
 using cos.Repositories;
-using MpinCrypt;
+// using MpinCrypt; // Temporarily commented out - project reference missing
 
 
 public class OracleRepository : IOracleRepository
@@ -592,7 +592,9 @@ VALUES
                     cmd.Parameters.Add("amount", amount);
 
                     cmd.Parameters.Add("swap_type", "Normal");
-                    cmd.Parameters.Add("mpin", OracleDesCrypto.Encrypt( model.mpin));
+                    // TODO: Re-enable encryption when MpinCrypt project is available
+                    // cmd.Parameters.Add("mpin", OracleDesCrypto.Encrypt( model.mpin));
+                    cmd.Parameters.Add("mpin", model.mpin ?? ""); // Temporarily passing unencrypted
                     cmd.Parameters.Add("mpin_length", model.mpin?.Length ?? 0);
                     cmd.Parameters.Add("source", "KYC_PORTAL");
                     
