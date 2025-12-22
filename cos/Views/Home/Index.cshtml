@@ -23,57 +23,74 @@
                             <div class="card-content">
                                 
                                 <div class="card-body">
+                                    @if (ViewBag.Error != null && !string.IsNullOrEmpty(ViewBag.Error.ToString()))
+                                    {
+                                        <div class="alert alert-danger" role="alert">@ViewBag.Error</div>
+                                    }
                                     <form class="form-horizontal" asp-action="Login" method="post" autocomplete="off" novalidate>
                                         @Html.AntiForgeryToken()
-                                        <fieldset class="form-group position-relative has-icon-left">
-                                            <input input asp-for="username" class="form-control"  placeholder="Your Username" required>
-                                            <div class="form-control-position">
-                                                <i class="la la-user"></i>
-                                            </div>
-                                        </fieldset>
-                                        <fieldset class="form-group position-relative has-icon-left">
-                                            <input asp-for="password" type="password" class="form-control"  placeholder="Enter Password" required>
-                                            <div class="form-control-position">
-                                                <i class="la la-key"></i>
-                                            </div>
-                                        </fieldset>
-                                        <div class="form-group row">
-                                            <div class="col-sm-6 col-12 text-center text-sm-left pr-0">
-                                                <fieldset>
-                                                    <input type="checkbox" id="remember-me" class="chk-remember">
-                                                    <label for="remember-me"> Remember Me</label>
-                                                </fieldset>
-                                            </div>
-                                            <div class="col-sm-6 col-12 float-sm-left text-center text-sm-right"><a href="recover-password.html" class="card-link">Forgot Password?</a></div>
-                                        </div>
+                                        <input type="hidden" asp-for="otp_sent" value="@Model.otp_sent.ToString().ToLower()" />
 
-                                        @* <div class="form-group row">
-                                            <div class="col-sm-4 col-12 text-center text-sm-left pr-0">
-                                            <label>Security Code</label>
-                                            
-                                            <dnt-captcha asp-captcha-generator-max="99"
-                                                         asp-captcha-generator-min="11"
-                                                         asp-captcha-generator-language="English"
-                                                         asp-captcha-generator-display-mode="SumOfTwoNumbers"
-                                                         asp-use-relative-urls="true"
-                                                         asp-placeholder="Enter Captcha"
-                                                         asp-validation-error-message="Please enter the security code."
-                                                         asp-font-name="Tahoma"
-                                                         asp-font-size="20"
-                                                         asp-fore-color="#333333"
-                                                         asp-back-color="#ccc"
-                                                         asp-text-box-class="text-box form-control"
-                                                         asp-text-box-template="<span class='input-group-prepend'><span class='form-group-text'></span></span>{0}"
-                                                         asp-validation-message-class="text-danger"
-                                                         asp-refresh-button-class="fas fa-redo btn-sm"
-                                                         asp-use-noise="false" >                                                                                                     
-
-                                            </dnt-captcha>
+                                        @if (!Model.otp_sent)
+                                        {
+                                            <fieldset class="form-group position-relative has-icon-left">
+                                                <input asp-for="username" class="form-control" placeholder="Your Username" required>
+                                                <div class="form-control-position">
+                                                    <i class="la la-user"></i>
+                                                </div>
+                                            </fieldset>
+                                            <fieldset class="form-group position-relative has-icon-left">
+                                                <input asp-for="password" type="password" class="form-control" placeholder="Enter Password" required>
+                                                <div class="form-control-position">
+                                                    <i class="la la-key"></i>
+                                                </div>
+                                            </fieldset>
+                                            <div class="form-group row">
+                                                <div class="col-sm-6 col-12 text-center text-sm-left pr-0">
+                                                    <fieldset>
+                                                        <input type="checkbox" id="remember-me" class="chk-remember">
+                                                        <label for="remember-me"> Remember Me</label>
+                                                    </fieldset>
+                                                </div>
+                                                <div class="col-sm-6 col-12 float-sm-left text-center text-sm-right"><a href="recover-password.html" class="card-link">Forgot Password?</a></div>
                                             </div>
-                                        </div> *@
 
-                              
-                                        <button type="submit" class="btn btn-outline-info btn-block"><i class="ft-unlock"></i> Login</button>
+                                            <div class="form-group row">
+                                                <div class="col-12">
+                                                    <label>Security Code (CAPTCHA)</label>
+                                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                                        <img src="@Url.Action("CaptchaImage", "Home")" alt="CAPTCHA" id="captchaImg" style="border: 1px solid #ddd; padding: 5px;" />
+                                                        <button type="button" class="btn btn-sm btn-warning" onclick="document.getElementById('captchaImg').src='@Url.Action("CaptchaImage", "Home")?' + Math.random();">
+                                                            <i class="la la-refresh"></i> Refresh
+                                                        </button>
+                                                    </div>
+                                                    <input asp-for="captcha_input" autocomplete="off" class="form-control" placeholder="Enter CAPTCHA" required />
+                                                </div>
+                                            </div>
+
+                                            <button type="submit" class="btn btn-outline-info btn-block"><i class="ft-unlock"></i> Sign in</button>
+                                        }
+                                        else
+                                        {
+                                            <div class="alert alert-info" role="alert">
+                                                <i class="la la-info-circle"></i> OTP has been sent to your registered mobile number. Please enter it below.
+                                            </div>
+                                            <fieldset class="form-group position-relative has-icon-left">
+                                                <input asp-for="otp" class="form-control" placeholder="Enter OTP" autocomplete="off" required maxlength="6" id="otpInput" />
+                                                <div class="form-control-position">
+                                                    <i class="la la-key"></i>
+                                                </div>
+                                                <small class="form-text text-muted">
+                                                    <span id="otpTimer">OTP is valid for 5:00 minutes</span>
+                                                </small>
+                                            </fieldset>
+                                            <div class="form-group">
+                                                <button type="button" onclick="window.location.href='@Url.Action("Index", "Home")'" class="btn btn-link">
+                                                    <i class="la la-arrow-left"></i> Back to Login
+                                                </button>
+                                            </div>
+                                            <button type="submit" class="btn btn-outline-info btn-block"><i class="ft-unlock"></i> Verify OTP</button>
+                                        }
                                     </form>
                                 </div>
                                 @* <p class="card-subtitle line-on-side text-muted text-center font-small-3 mx-2 my-1">
@@ -97,3 +114,81 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    @if (Model.otp_sent)
+    {
+        <script>
+            (function() {
+                const timerElement = document.getElementById('otpTimer');
+                const otpInput = document.getElementById('otpInput');
+                const submitButton = document.querySelector('button[type="submit"]');
+                let timerInterval;
+
+                // Calculate remaining time based on server OTP time
+                function calculateRemainingTime() {
+                    @if (ViewBag.OtpTime != null)
+                    {
+                        <text>
+                        const otpTimeStr = '@ViewBag.OtpTime';
+                        const otpTime = new Date(otpTimeStr);
+                        const now = new Date();
+                        const elapsedSeconds = Math.floor((now - otpTime) / 1000);
+                        const totalSeconds = 300; // 5 minutes
+                        const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
+                        return remainingSeconds;
+                        </text>
+                    }
+                    else
+                    {
+                        <text>
+                        // Fallback: start from 5 minutes if server time not available
+                        return 300;
+                        </text>
+                    }
+                }
+
+                let timeLeft = calculateRemainingTime();
+
+                function updateTimer() {
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+                    const formattedTime = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+                    
+                    if (timeLeft > 0) {
+                        timerElement.textContent = 'OTP expires in ' + formattedTime;
+                        timerElement.className = 'form-text text-muted';
+                        timeLeft--;
+                    } else {
+                        // Timer expired
+                        clearInterval(timerInterval);
+                        timerElement.textContent = 'OTP has expired. Please login again.';
+                        timerElement.className = 'form-text text-danger font-weight-bold';
+                        if (otpInput) {
+                            otpInput.disabled = true;
+                            otpInput.placeholder = 'OTP Expired';
+                        }
+                        if (submitButton) {
+                            submitButton.disabled = true;
+                            submitButton.innerHTML = '<i class="ft-lock"></i> OTP Expired';
+                            submitButton.className = 'btn btn-outline-danger btn-block';
+                        }
+                    }
+                }
+
+                // Start the countdown timer
+                if (timerElement) {
+                    updateTimer(); // Initial call
+                    timerInterval = setInterval(updateTimer, 1000); // Update every second
+                }
+
+                // Clean up interval when page is unloaded
+                window.addEventListener('beforeunload', function() {
+                    if (timerInterval) {
+                        clearInterval(timerInterval);
+                    }
+                });
+            })();
+        </script>
+    }
+}

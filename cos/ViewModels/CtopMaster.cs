@@ -34,6 +34,11 @@ namespace cos.ViewModels
         public string? aadhaar_no { get; set; }
         public string? zone_code { get; set; }
         public string? ctop_type { get; set; }
+        public string? dealercode { get; set; }
+        public long? ref_dealer_id { get; set; }
+        public long? master_dealer_id { get; set; }
+        public string? parent_ctopno { get; set; }
+        public string? dealer_status { get; set; }
 
         /// <summary>
         /// Builds the POS unique code using the provided Aadhaar number, Aadhaar issue year, and name.

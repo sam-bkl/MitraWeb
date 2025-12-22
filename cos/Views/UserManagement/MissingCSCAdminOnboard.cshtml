@@ -74,8 +74,13 @@
                             <span class="text-danger" asp-validation-for="NewCtop.name"></span>
                         </div>
                         <div class="form-group col-md-4">
-                            <label asp-for="NewCtop.dealertype"></label>
-                            <input class="form-control" asp-for="NewCtop.dealertype" id="NewCtop_dealertype" readonly />
+                            <label asp-for="NewCtop.dealertype">Dealer Type <span class="text-danger">*</span></label>
+                            <select class="form-control" asp-for="NewCtop.dealertype" id="NewCtop_dealertype" required>
+                                <option value="">-- Select Dealer Type --</option>
+                                <option value="CSR">CSR</option>
+                                <option value="OCSC">OCSC</option>
+                            </select>
+                            <span class="text-danger" asp-validation-for="NewCtop.dealertype"></span>
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.designation"></label>
@@ -397,7 +402,12 @@
 
             const dealertypeField = document.getElementById('NewCtop_dealertype');
             if (dealertypeField) {
-                dealertypeField.value = ctopData.dealertype || '';
+                // Set the selected option if dealertype matches CSR or OCSC
+                if (ctopData.dealertype === 'CSR' || ctopData.dealertype === 'OCSC') {
+                    dealertypeField.value = ctopData.dealertype;
+                } else {
+                    dealertypeField.value = ''; // Default to empty if not CSR or OCSC
+                }
             }
 
             const contactField = document.getElementById('NewCtop_contact_number');

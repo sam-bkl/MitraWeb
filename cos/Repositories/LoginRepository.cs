@@ -249,5 +249,48 @@ namespace cos.Repositories
                 }
             }
         }
+
+        /// <summary>
+        /// Gets account information by account ID without requiring password authentication.
+        /// Used for retrieving account details after OTP verification.
+        /// </summary>
+        public async Task<AccountVM?> GetAccountByIdAsync(long accountId)
+        {
+            AccountVM? userAccount = null;
+
+            StringBuilder query = new StringBuilder();
+            query.Append("SELECT b.id, a.staff_name, a.email, a.mobile, a.hrno, c.role_name, ");
+            query.Append("a.designation_code, a.ssa_code, a.changepassword, a.circle, ");
+            query.Append("TO_CHAR(b.reset_on, 'DD/MM/YYYY') AS reset_on, b.is_verified, ");
+            query.Append("b.username AS user_name ");
+            query.Append("FROM users a ");
+            query.Append("LEFT JOIN accounts b ON a.account_id = b.id ");
+            query.Append("LEFT JOIN roles c ON b.role_id = c.id ");
+            query.Append("WHERE a.record_status = :param_record_status ");
+            query.Append("AND b.id = :param_account_id ");
+            query.Append("AND b.record_status = :param_record_status");
+
+            using (IDbConnection dbConnection = ConnectionPgSql)
+            {
+                dbConnection.Open();
+
+                try
+                {
+                    var result = await dbConnection.QueryAsync<AccountVM>(query.ToString(), new
+                    {
+                        param_record_status = "ACTIVE",
+                        param_account_id = accountId
+                    });
+
+                    userAccount = result.FirstOrDefault();
+                    return userAccount;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"GetAccountByIdAsync error: {ex.Message}");
+                    return null;
+                }
+            }
+        }
     }
 }
