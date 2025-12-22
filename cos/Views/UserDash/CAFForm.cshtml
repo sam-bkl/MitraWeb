@@ -182,7 +182,11 @@
             <tr>
                 <td class="serial-no">7</td>
                 <td>Father / Husband Name</td>
-                <td colspan="4"><input value="@Model.F_H_Name" readonly /></td>
+                <td colspan="4">
+                    <input class="editable-field"
+                           name="F_H_Name"
+                           value="@Model.F_H_Name" required />
+                </td>
 
                 @* <td class="serial-no">7A</td>
                 <td>Father Name (As per UIDAI)</td>
@@ -354,7 +358,11 @@
                     Number of Mobile connections held in name of Individual/Outstation
                     customer(Includlng all TSPs)
                 </td>
-                <td><input value="@Model.Distinct_Operators" readonly /></td>
+                <td><<input class="editable-field"
+           type="number"
+           min="0"
+           name="Distinct_Operators"
+           value="@Model.Distinct_Operators" required/></td>
             </tr>
 
             <tr>
@@ -386,7 +394,7 @@
                 <td>Name</td>
                 <td><input class="editable-field" name="Local_Ref" value="@Model.local_ref_name" /></td>
 
-                <td>Contact</td>
+                <td>c.Phone number</td>
                 <td><input class="editable-field" name="Local_Ref_Contact" value="@Model.Local_Ref_Contact" /></td>
             </tr>
 
@@ -553,11 +561,13 @@
         <!-- BUTTONS -->
         <div class="no-print mt-3 d-flex justify-content-between">
             <div>
-
+            @* blocked except for cc agent *@
+                @if (ViewBag.UserRole != null && (string.Equals(ViewBag.UserRole.ToString(), "cc_admin", StringComparison.OrdinalIgnoreCase)))
+            {
                 <button type="button" class="btn btn-warning" onclick="openSeeLaterModal()">
                     See Later
                 </button>
-
+            }
                 <button type="button" class="btn btn-danger me-2" onclick="openRejectModal()">
                     Reject
                 </button>
@@ -622,7 +632,7 @@
     </div>
 </div>
 
-<!-- see later Modal -->
+<!-- see later Modal commeneted on 21-12-25-->
 <div class="modal fade" id="seeLaterModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
