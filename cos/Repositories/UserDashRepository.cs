@@ -242,17 +242,17 @@ if (role != "cc_admin")
 
             if (role == "cc_admin")
             {
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata','DD-MM-YYYY HH24:MI:SS') as verified_date,verified_by  ");
+                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by  ");
                 query.Append("from cos_bcd where  verified_flag = 'Y'");
             }
             else if (role == "circle_admin")
             {
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata','DD-MM-YYYY HH24:MI:SS') as verified_date,verified_by  ");
+                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by  ");
                 query.Append("from cos_bcd where  verified_flag = 'Y' AND circle_code = @circle::int ");
             }
             else
             {
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata','DD-MM-YYYY HH24:MI:SS') as verified_date,verified_by  ");
+                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by  ");
                 query.Append("from cos_bcd where  verified_flag = 'Y' AND circle_code = @circle::int and ssa_code = @oa");
             }
 
@@ -288,17 +288,17 @@ if (role != "cc_admin")
 
             if (role == "cc_admin")
             {
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata','DD-MM-YYYY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
+                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
                 query.Append("from cos_bcd where  verified_flag = 'F' ");
             }
             else if (role == "circle_admin")
             {
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata','DD-MM-YYYY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
+                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status, to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
                 query.Append("from cos_bcd where  verified_flag = 'F' AND circle_code = @circle::int");
             }
             else
             {
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata','DD-MM-YYYY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
+                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
                 query.Append("from cos_bcd where  verified_flag = 'F' AND circle_code = @circle::int and ssa_code = @oa");
             }
 
@@ -333,18 +333,18 @@ if (role != "cc_admin")
 
             if (role == "cc_admin")
             {
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata','DD-MM-YYYY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
+                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
                 query.Append("from cos_bcd where  verified_flag = 'R'");
             }
             else if (role == "circle_admin")
             {
 
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata','DD-MM-YYYY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
+                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
                 query.Append("from cos_bcd where  verified_flag = 'R' AND circle_code = @circle::int");
             }
             else
             {
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata','DD-MM-YYYY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
+                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
                 query.Append("from cos_bcd where  verified_flag = 'R' AND circle_code = @circle::int and ssa_code = @oa");
 
             }
@@ -577,7 +577,9 @@ WHERE caf_serial_no = @cafslno;";
 
             string sql = @"
         UPDATE cos_bcd
-        SET local_ref_name = @local_ref_name,
+        SET f_h_name = @F_H_Name,
+            other_connection_det = @Distinct_Operators,
+            local_ref_name = @local_ref_name,
             local_ref_contact = @Local_Ref_Contact,
             verified_flag = 'Y',
             verified_date = NOW(),
@@ -598,6 +600,8 @@ WHERE caf_serial_no = @cafslno;";
                 {
                     int rows = await db.ExecuteAsync(sql, new
                     {
+                        model.F_H_Name,
+                        model.Distinct_Operators,
                         model.local_ref_name,
                         model.Local_Ref_Contact,
                         model.Gsmnumber,
@@ -634,7 +638,9 @@ WHERE caf_serial_no = @cafslno;";
 
             string sql = @"
                 UPDATE cos_bcd
-                SET local_ref_name = @local_ref_name,
+                SET f_h_name = @F_H_Name,
+                    other_connection_det = @Distinct_Operators,
+                    local_ref_name = @local_ref_name,
                     local_ref_contact = @Local_Ref_Contact,
                     verified_flag = 'Y',
                     verified_date = NOW(),
@@ -670,6 +676,8 @@ WHERE caf_serial_no = @cafslno;";
                 {
                     int rows = await db.ExecuteAsync(sql, new
                     {
+                        model.F_H_Name,
+                        model.Distinct_Operators,
                         model.local_ref_name,
                         model.Local_Ref_Contact,
                         model.Gsmnumber,
@@ -823,7 +831,7 @@ WHERE caf_serial_no = @cafslno;";
         SELECT print_service_center_id 
         FROM print_service 
         WHERE circle_code = @circle 
-          AND ssa_code = @ssa
+          AND ssa_code = upper(@ssa)
         LIMIT 1;
     ";
 
@@ -851,10 +859,46 @@ WHERE caf_serial_no = @cafslno;";
         }
 
 
-        public async Task<string?> GetInPlanIdAsync(string planCode, int circleCode)
+        //    public async Task<string?> GetInPlanIdAsync(string planCode, int circleCode)
+        //    {
+        //        string sql = @"
+        //    SELECT TCOSP_ID 
+        //    FROM in_plan_details 
+        //    WHERE ss_plan_code = @plan 
+        //      AND circle_code = @circle
+        //    LIMIT 1;
+        //";
+
+        //        using (var con = new NpgsqlConnection(connectionStringPgSql))
+        //        {
+        //            await con.OpenAsync();
+
+        //            try
+        //            {
+        //                using (var cmd = new NpgsqlCommand(sql, con))
+        //                {
+        //                    cmd.Parameters.AddWithValue("@plan", planCode);
+        //                    cmd.Parameters.AddWithValue("@circle", circleCode);
+
+        //                    var result = await cmd.ExecuteScalarAsync();
+        //                    return result?.ToString();
+        //                }
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                Console.WriteLine("ERROR-GetInPlanIdAsync: " + ex.Message);
+        //                return null;
+        //            }
+        //        }
+        //    }
+
+        public async Task<InPlanDetails?> GetInPlanDetailsAsync(string planCode, int circleCode)
         {
             string sql = @"
-        SELECT TCOSP_ID 
+        SELECT 
+            TCOSP_ID,
+            sim_state       AS simstate,
+            prim_balance    AS primary_talk_value
         FROM in_plan_details 
         WHERE ss_plan_code = @plan 
           AND circle_code = @circle
@@ -872,17 +916,31 @@ WHERE caf_serial_no = @cafslno;";
                         cmd.Parameters.AddWithValue("@plan", planCode);
                         cmd.Parameters.AddWithValue("@circle", circleCode);
 
-                        var result = await cmd.ExecuteScalarAsync();
-                        return result?.ToString();
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                return new InPlanDetails
+                                {
+                                    InPlanId = reader["tcosp_id"]?.ToString(),
+                                    SimState = reader["simstate"]?.ToString(),
+                                    PrimaryTalkValue = reader["primary_talk_value"] == DBNull.Value
+                                        ? null
+                                        : Convert.ToDecimal(reader["primary_talk_value"])
+                                };
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("ERROR-GetInPlanIdAsync: " + ex.Message);
-                    return null;
+                    Console.WriteLine("ERROR-GetInPlanDetailsAsync: " + ex.Message);
                 }
             }
+
+            return null;
         }
+
 
 
         //lock method
@@ -1199,18 +1257,70 @@ WHERE caf_serial_no = @cafslno;";
 
 
         //fetch api for usim imsi
+        //public async Task<string> GetImsiFromUsimApiAsync(CafModel model)
+        //{
+        //    try
+        //    {
+        //        using var client = new PyroUsimSimSaleApiClient();
+
+        //        var request = new PyroUsimSimSaleRequest
+        //        {
+        //            SimVendor = "Idemia",                 // or from config
+        //            CircleId = model.circle_code.ToString(),
+        //            Msisdn =  model.Gsmnumber,
+        //            Iccid =  model.Simnumber,            // NEW SIM ICCID
+        //            Brand = "BSNL",
+        //            International = false,
+        //            SimType = model.Connection_Type == "1" ? "Prepaid" : "Postpaid",
+        //            ChannelName = "SancharMitra",
+        //            MethodName = "New"
+        //        };
+
+        //        var response = await client.SubmitAsync(request);
+
+        //        if (!response.IsSuccess)
+        //        {
+        //            throw new Exception(
+        //                $"USIM API failed. Status={response.Status}, Desc={response.StatusDescription}"
+        //            );
+        //        }
+
+        //        if (response.Data == null || string.IsNullOrWhiteSpace(response.Data.Imsi))
+        //        {
+        //            throw new Exception("USIM API success but IMSI not returned");
+        //        }
+
+        //        // ✅ SUCCESS
+        //        return response.Data.Imsi;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine("ERROR-GetImsiFromUsimApiAsync: " + ex.Message);
+        //        throw; // 🔥 IMPORTANT: rethrow to STOP CAF flow
+        //    }
+        //}
+
+        // fetch api for usim imsi (WITH DETAILED SERVER LOGGING)
         public async Task<string> GetImsiFromUsimApiAsync(CafModel model)
         {
+            Console.WriteLine("========== USIM IMSI FETCH START ==========");
+            Console.WriteLine($"[INPUT] GSM      : {model.Gsmnumber}");
+            Console.WriteLine($"[INPUT] SIM(ICCID): {model.Simnumber}");
+            Console.WriteLine($"[INPUT] Circle   : {model.circle_code}");
+            Console.WriteLine($"[INPUT] ConnType : {model.Connection_Type}");
+            Console.WriteLine($"[INPUT] UsimType : {model.usimtype}");
+            Console.WriteLine($"[TIME ] Start    : {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+
             try
             {
                 using var client = new PyroUsimSimSaleApiClient();
 
                 var request = new PyroUsimSimSaleRequest
                 {
-                    SimVendor = "Idemia",                 // or from config
+                    SimVendor = "Idemia",
                     CircleId = model.circle_code.ToString(),
-                    Msisdn =  model.Gsmnumber,
-                    Iccid =  model.Simnumber,            // NEW SIM ICCID
+                    Msisdn = model.Gsmnumber,
+                    Iccid = model.Simnumber,
                     Brand = "BSNL",
                     International = false,
                     SimType = model.Connection_Type == "1" ? "Prepaid" : "Postpaid",
@@ -1218,30 +1328,73 @@ WHERE caf_serial_no = @cafslno;";
                     MethodName = "New"
                 };
 
+                Console.WriteLine("----- USIM API REQUEST BUILT -----");
+                Console.WriteLine($"Vendor   : {request.SimVendor}");
+                Console.WriteLine($"CircleId : {request.CircleId}");
+                Console.WriteLine($"Msisdn   : {request.Msisdn}");
+                Console.WriteLine($"Iccid    : {request.Iccid}");
+                Console.WriteLine($"SimType  : {request.SimType}");
+
+                Console.WriteLine(">>> Calling USIM API ...");
+
                 var response = await client.SubmitAsync(request);
+
+                Console.WriteLine("<<< USIM API RESPONSE RECEIVED");
+                Console.WriteLine($"HTTP StatusCode : {response.StatusCode}");
+                Console.WriteLine($"Status          : {response.Status}");
+                Console.WriteLine($"Description     : {response.StatusDescription}");
+                Console.WriteLine($"IsSuccess       : {response.IsSuccess}");
 
                 if (!response.IsSuccess)
                 {
+                    Console.WriteLine("❌ USIM API FAILURE");
                     throw new Exception(
                         $"USIM API failed. Status={response.Status}, Desc={response.StatusDescription}"
                     );
                 }
 
-                if (response.Data == null || string.IsNullOrWhiteSpace(response.Data.Imsi))
+                if (response.Data == null)
                 {
-                    throw new Exception("USIM API success but IMSI not returned");
+                    Console.WriteLine("❌ USIM API SUCCESS BUT DATA IS NULL");
+                    throw new Exception("USIM API success but data object is null");
                 }
 
-                // ✅ SUCCESS
+                Console.WriteLine("----- USIM API DATA -----");
+                Console.WriteLine($"TransactionId : {response.Data.TransactionId}");
+                Console.WriteLine($"MSISDN        : {response.Data.Msisdn}");
+                Console.WriteLine($"ICCID         : {response.Data.Iccid}");
+
+                if (string.IsNullOrWhiteSpace(response.Data.Imsi))
+                {
+                    Console.WriteLine("❌ IMSI RETURNED NULL/EMPTY FROM API");
+                    throw new Exception("IMSI returned null/empty");
+                }
+
+                // Mask IMSI for logs
+                string maskedImsi =
+                    response.Data.Imsi.Length > 6
+                        ? response.Data.Imsi[..3] + "******" + response.Data.Imsi[^3..]
+                        : "INVALID";
+
+                Console.WriteLine($"IMSI (masked)  : {maskedImsi}");
+                Console.WriteLine("✅ USIM IMSI FETCH SUCCESS");
+                Console.WriteLine("========== USIM IMSI FETCH END ==========");
+
                 return response.Data.Imsi;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("ERROR-GetImsiFromUsimApiAsync: " + ex.Message);
-                throw; // 🔥 IMPORTANT: rethrow to STOP CAF flow
+                Console.WriteLine("🔥 ERROR IN USIM IMSI FETCH 🔥");
+                Console.WriteLine($"[ERROR] GSM      : {model.Gsmnumber}");
+                Console.WriteLine($"[ERROR] SIM(ICCID): {model.Simnumber}");
+                Console.WriteLine($"[ERROR] Circle   : {model.circle_code}");
+                Console.WriteLine($"[ERROR] Message  : {ex.Message}");
+                Console.WriteLine($"[ERROR] Stack    : {ex.StackTrace}");
+                Console.WriteLine("========== USIM IMSI FETCH FAILED ==========");
+
+                throw; // 🚨 STOP CAF FLOW
             }
         }
-
 
     }
 }

@@ -477,5 +477,28 @@
 
     }
 
+    public class PyroApiResponse
+    {
+        public int statuscode { get; set; }
+        public string status { get; set; }
+        public string statusDescription { get; set; }
+        public PyroApiData data { get; set; }
+    }
+
+    public class PyroApiData
+    {
+        public string transactionId { get; set; }
+        public string imsi { get; set; }
+        public string msisdn { get; set; }
+        public string iccid { get; set; }
+    }
+
+    public class InPlanDetails
+    {
+        public string? InPlanId { get; set; }
+        public string? SimState { get; set; }
+        public decimal? PrimaryTalkValue { get; set; }
+    }
+
 
 }

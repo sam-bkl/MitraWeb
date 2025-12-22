@@ -110,10 +110,14 @@ public class OracleRepository : IOracleRepository
             //get print service center
             model.Print_Service_Center_Id = await _pgRepo.GetPrintServiceCenterIdAsync( model.circle_code,model.ssa_code);
 
-            // Get in_plan_id from PostgreSQL
-            
-            string? inPlanId = await _pgRepo.GetInPlanIdAsync(model.Plan_Code, model.circle_code);
+            // Get in_plan_id,simstate,primary_talk_value from PostgreSQL 
 
+            //string? inPlanId = await _pgRepo.GetInPlanIdAsync(model.Plan_Code, model.circle_code);
+
+            var planDetails = await _pgRepo.GetInPlanDetailsAsync(model.Plan_Code,model.circle_code);
+            string inPlanId = planDetails.InPlanId;
+            string? simState = planDetails.SimState;
+            decimal? primaryTalkValue = planDetails.PrimaryTalkValue;
 
             // Fetch master values
             var master = await _pgRepo.GetCmfMasterByCircleAsync(model.circle_code,model.Connection_Type , model.caf_type);
@@ -266,8 +270,10 @@ VALUES (
 
                     //added by sujith
                     cmd.Parameters.Add(new OracleParameter("in_plan_id", inPlanId ?? (object)DBNull.Value));
-                    cmd.Parameters.Add(new OracleParameter("simstate", "UNIFIEDPREACT"));
-                    cmd.Parameters.Add(new OracleParameter("primary_talk_value", "0"));
+                    //cmd.Parameters.Add(new OracleParameter("simstate", "UNIFIEDPREACT"));
+                    cmd.Parameters.Add(new OracleParameter("simstate", simState ?? simState ?? "UNIFIEDPREACT"));
+                    //cmd.Parameters.Add(new OracleParameter("primary_talk_value", "0"));
+                    cmd.Parameters.Add(new OracleParameter("primary_talk_value", primaryTalkValue ?? 0));
                     cmd.Parameters.Add(new OracleParameter("print_service_center_id", model.Print_Service_Center_Id));
                     cmd.Parameters.Add(new OracleParameter("INS_USR", userId));
                     cmd.Parameters.Add(new OracleParameter("de_csccode", model.de_csccode));
@@ -279,13 +285,13 @@ VALUES (
 
                     cmd.Parameters.Add(new OracleParameter("verified_by", userId));
 
-                    Console.WriteLine("== SQL INSERT ==");
-                    Console.WriteLine(sql);
-                    int index = 0;
-                    foreach (OracleParameter p in cmd.Parameters)
-                    {
-                        Console.WriteLine($"{index++} => {p.ParameterName} = {p.Value} ({p.Value?.GetType()})");
-                    }
+                    //Console.WriteLine("== SQL INSERT ==");
+                    //Console.WriteLine(sql);
+                    //int index = 0;
+                    //foreach (OracleParameter p in cmd.Parameters)
+                    //{
+                    //    Console.WriteLine($"{index++} => {p.ParameterName} = {p.Value} ({p.Value?.GetType()})");
+                    //}
                     int rows = await cmd.ExecuteNonQueryAsync();
                     return rows > 0;
                 }
@@ -317,7 +323,11 @@ VALUES (
 
             // Get in_plan_id from PostgreSQL
 
-            string? inPlanId = await _pgRepo.GetInPlanIdAsync(model.Plan_Code, model.circle_code);
+            //string? inPlanId = await _pgRepo.GetInPlanIdAsync(model.Plan_Code, model.circle_code);
+            var planDetails = await _pgRepo.GetInPlanDetailsAsync(model.Plan_Code, model.circle_code);
+            string inPlanId = planDetails.InPlanId;
+            string? simState = planDetails.SimState;
+            decimal? primaryTalkValue = planDetails.PrimaryTalkValue;
 
 
             // Fetch master values
@@ -328,7 +338,7 @@ VALUES (
                 await con.OpenAsync();
 
                 string sql = @"
-               INSERT INTO CAF_ADMIN.SIM_SWAP_DATA_TEST (
+               INSERT INTO CAF_ADMIN.SIM_SWAP_DATA (
     CSCCODE,
     GSMNUMBER,
     PRESENT_IMSI,
@@ -493,13 +503,13 @@ VALUES (
                     cmd.Parameters.Add("approved_csc", userId);
                     cmd.Parameters.Add("approved_csc_ip", model.Approved_Csc_Ip);
 
-                    Console.WriteLine("== SQL INSERT ==");
-                    Console.WriteLine(sql);
-                    int index = 0;
-                    foreach (OracleParameter p in cmd.Parameters)
-                    {
-                        Console.WriteLine($"{index++} => {p.ParameterName} = {p.Value} ({p.Value?.GetType()})");
-                    }
+                    //Console.WriteLine("== SQL INSERT ==");
+                    //Console.WriteLine(sql);
+                    //int index = 0;
+                    //foreach (OracleParameter p in cmd.Parameters)
+                    //{
+                    //    Console.WriteLine($"{index++} => {p.ParameterName} = {p.Value} ({p.Value?.GetType()})");
+                    //}
                     int rows = await cmd.ExecuteNonQueryAsync();
                     return rows > 0;
                 }
@@ -528,12 +538,14 @@ VALUES (
                 await con.OpenAsync();
 
                 string sql = @"
-INSERT INTO CAF_ADMIN.SIMSWAP_AMOUNT_DEDUCT_REQUESTS_TEST
+INSERT INTO CAF_ADMIN.SIMSWAP_AMOUNT_DEDUCT_REQUESTS
 (
+    SS_REQUEST_ID,    
     CIRCLE_CODE,
     DEALERCODE,
     CTOPUPNO,
     DEALERTYPE,
+    FRANCHISEE,
     GSMNUMBER,
     SIMNUMBER,
     AMOUNT,
@@ -545,10 +557,12 @@ INSERT INTO CAF_ADMIN.SIMSWAP_AMOUNT_DEDUCT_REQUESTS_TEST
    )
 VALUES
 (
+    :ss_request_id,  
     :circle_code,
     :dealercode,
     :ctopupno,
     :dealertype,
+    :franchisee,
     :gsmnumber,
     :simnumber,
     :amount,
@@ -560,52 +574,36 @@ VALUES
 )";
 
 
-                //try
-                //{
-                //    string myData = "SensitiveData";
 
-                //    // Encrypt
-                //    string encryptedmpin = OracleDesCrypto.Encrypt(model.mpin);
-                //    Console.WriteLine($"Encrypted: {encryptedmpin}");
+                // 1. Get sequence
+                long sequenceNo;
+                using (var seqCmd = new OracleCommand(
+                    "SELECT CAF_ADMIN.SS_REQUEST_SEQ.NEXTVAL FROM DUAL", con))
+                {
+                    sequenceNo = Convert.ToInt64(await seqCmd.ExecuteScalarAsync());
+                }
 
-                //    // Decrypt
-                //    //string decrypted = OracleDesCrypto.Decrypt(encrypted);
-                //   // Console.WriteLine($"Decrypted: {decrypted}");
-                //}
-                //catch (Exception ex)
-                //{
-                //    // Handle encryption/decryption errors
-                //    Console.WriteLine($"Error: {ex.Message}");
-                //}
-   
 
                 using (var cmd = new OracleCommand(sql, con))
                 {
                     cmd.BindByName = true;
-
+                    cmd.Parameters.Add("ss_request_id", sequenceNo);
                     cmd.Parameters.Add("circle_code", model.circle_code);
                     cmd.Parameters.Add("dealercode", model.de_csccode);
                     cmd.Parameters.Add("ctopupno", model.ctopupno);
                     cmd.Parameters.Add("dealertype", model.dealertype);
+                    cmd.Parameters.Add("franchisee", model.dealertype);
                     cmd.Parameters.Add("gsmnumber", model.Gsmnumber);
                     cmd.Parameters.Add("simnumber", model.Simnumber);
                     cmd.Parameters.Add("amount", amount);
+
 
                     cmd.Parameters.Add("swap_type", "Normal");
                     cmd.Parameters.Add("mpin", OracleDesCrypto.Encrypt( model.mpin));
                     cmd.Parameters.Add("mpin_length", model.mpin?.Length ?? 0);
                     cmd.Parameters.Add("source", "KYC_PORTAL");
                     
-                    //// Unique references
-                    //cmd.Parameters.Add(
-                    //    "ss_request_id",
-                    //    $"SS-{model.Gsmnumber}-{DateTime.Now:yyyyMMddHHmmss}"
-                    //);
-
-                    //cmd.Parameters.Add(
-                    //    "transaction_id",
-                    //    Guid.NewGuid().ToString("N").Substring(0, 20)
-                    //);
+                   
 
                     int rows = await cmd.ExecuteNonQueryAsync();
                     return rows > 0;

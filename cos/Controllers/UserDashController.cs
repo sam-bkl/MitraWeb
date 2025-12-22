@@ -91,6 +91,7 @@ namespace cos.Controllers
         }
 
         // pending kyc request view
+        
         public IActionResult pendingkycrequests()
         {
          
@@ -108,6 +109,7 @@ namespace cos.Controllers
         }
 
         // pending kyc request view
+        [Authorize(Roles = "ba_admin,csc_admin")]
         public IActionResult Swappendingkycrequests()
         {
 
@@ -146,6 +148,7 @@ namespace cos.Controllers
         //get details of pending sim swap requests
         [HttpPost]
         // [Authorize(Roles = "circle_admin,circle_view,ba_admin")]
+        [Authorize(Roles = "ba_admin,csc_admin")]
         public async Task<JsonResult> GetkycDetailsSwap()
         {
             var _cookiecircle = HttpContext.Request.Cookies["Circle"];
@@ -237,6 +240,11 @@ namespace cos.Controllers
         {
             var _cookieLoggedIn = HttpContext.Request.Cookies["LoggedIn"];
             ViewBag.LoggedIn = _protector.Unprotect(_cookieLoggedIn);
+            var _cookieRole = HttpContext.Request.Cookies["Role"];
+            if (!string.IsNullOrEmpty(_cookieRole))
+            {
+                ViewBag.UserRole = _protector.Unprotect(_cookieRole);
+            }
 
             if (string.IsNullOrEmpty(cafslno))
                 return BadRequest("cafslno is required");
