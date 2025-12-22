@@ -103,6 +103,17 @@ namespace cos.Controllers
         //    CaptchaGeneratorDisplayMode = DisplayMode.SumOfTwoNumbers)]
         public async Task<IActionResult> Login(LoginVM postData)
         {
+            // If user is already authenticated, redirect to appropriate dashboard
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var role = User.FindFirst(ClaimTypes.Role)?.Value;
+                if (!string.IsNullOrEmpty(role))
+                {
+                    return RedirectToRoleBasedPage(role);
+                }
+                return RedirectToAction("Index", "UserDash");
+            }
+
             ViewBag.Error = "";
             postData.otp_sent = postData.otp_sent || false;
 
@@ -307,108 +318,8 @@ namespace cos.Controllers
         }
 
 
-        [HttpPost]
-
-        public async Task<JsonResult> CheckOtp(LgchkVM postdata)
-        {
-
-            ViewBag.Error = "";
-
-            LgchkVM lgchk = new LgchkVM();
-
-            if (ModelState.IsValid)
-            {
-
-                //  TempData["alertMessage"] = postdata.account_no;
-                //  return View("ShowBillaccounts");
-
-                try
-                {
-
-                    lgchk = await loginRepository.ChkData(postdata);
-                    if (lgchk != null)
-                    {
-
-
-                        // TempData["alertMessage"] = "ok";
-                        Random random = new Random();
-                        string otp = (random.Next(100100, 999990)).ToString();
-
-                        // var remoteIpAddress = HttpContext.Connection.RemoteIpAddress.ToString();
-                        string remoteIpAddress = GetClientIp();
-                        await loginRepository.OtpLogEntry(lgchk, remoteIpAddress, otp);
-
-                        // Get account information to get circle and SSA
-                        string? zone = null;
-                        string? circle = null;
-                        string? ssa = null;
-                        if (lgchk.id > 0)
-                        {
-                            var user = await _cscRepository.GetUserByAccountIdAsync(lgchk.id);
-                            if (user != null)
-                            {
-                                circle = user.circle;
-                                ssa = user.ssa_code;
-                                if (!string.IsNullOrWhiteSpace(circle))
-                                {
-                                    var circles = await _cscRepository.GetCirclesAsync();
-                                    var circleInfo = circles.FirstOrDefault(c => c.circle_code == circle);
-                                    zone = circleInfo?.zone_code;
-                                }
-                            }
-                        }
-
-                        string result = await _smsApiCaller.SendOtpSms(lgchk.mobile.ToString(), otp, zone, circle, ssa);
-                        JObject jsonObject = JObject.Parse(result);
-                        string? messageId = jsonObject["Message_Id"]?.Value<string>();
-                        string? myerror = jsonObject["Error"]?.Value<string>();
-
-                        if (messageId?.Length > 0)
-                        {
-                            TempData["alertMessage"] = "OTP sent to your registered Mobile Number";
-                            return Json(TempData);
-                            //    //return View("ShowBillaccounts");
-                        }
-                        else
-                        {
-                            TempData["alertMessage"] = myerror;
-                            //   TempData["alertMessage"] = "OTP facility is currently out of service.pl try after sometime";
-                            return Json(TempData);
-                            //return View("ShowBillaccounts");
-                        }
-
-
-                    }
-                    else
-                    {
-                        TempData["alertMessage"] = "Sorry!These credentials do not match our record";
-                        return Json(TempData);
-                        //return View("ShowBillaccounts");
-                        // errors.Add(result);
-
-                    }
-                }
-                catch (Exception err)
-                {
-                    //errors.Add(err.Message);
-                    TempData["alertMessage"] = err.Message;
-                    return Json(TempData);
-                }
-            }
-
-
-            //  ViewBag.Errors = errors;
-            // return View("Create");
-            // ViewBag.Error = "Please check your credentials";
-            else
-            {
-                TempData["alertMessage"] = "Please enter your credentials";
-                return Json(TempData);
-            }
-            //if everything fails
-            TempData["alertMessage"] = "System error.pl try after sometime";
-            return Json(TempData);
-        }
+        // OLD CheckOtp method removed - OTP functionality is now handled in the Login method
+        // This method was causing conflicts with the new OTP flow
 
         public async Task<IActionResult> Logout()
         {
