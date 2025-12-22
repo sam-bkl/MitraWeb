@@ -69,6 +69,28 @@
                                 
                                 <!-- Table Tab -->
                                 <div v-show="activeTab === 'table'">
+
+                                    <!-- Search and Filter Row -->
+                                    <div class="row p-2">
+                                        <div class="d-flex">
+                                            <input
+                                            type="text"
+                                            v-model="searchQuery"
+                                            class="form-control"
+                                            placeholder="Search..."
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="row p-2">
+                                        <div class="col-md-3" v-for="(options, field) in filterOptions" :key="field">
+                                                <select v-model="selectedFilters[field]" class="form-select">
+                                                <option value="">All {{ field }}</option>
+                                                <option v-for="opt in options" :key="opt" :value="opt">{{ opt }}</option>
+                                                </select>
+                                        </div>
+                                                                                   
+                                    </div>
+
                                     
                                     <div v-if="error" class="error">
                                         {{ error }}
@@ -93,7 +115,7 @@
                                             </thead>
                                             <tbody>
                                                 <tr v-for="(row, index) in data" :key="index">
-                                                    <td v-for="(value, key) in row" :key="key">
+                                                    <td v-if="shouldShowRow(row)" v-for="(value, key) in row" :key="key">
                                                         {{ value }}
                                                     </td>
                                                 </tr>
@@ -145,117 +167,6 @@
                     </div>
 
 
-                    @* <div class="card">
-                        <div class="card-header">
-                            <!-- Tab Navigation -->
-                                    <ul class="nav nav-tabs" role="tablist">
-                                        <li class="nav-item">
-                                            <a class="nav-link active" 
-                                            id="table-tab" 
-                                            data-toggle="tab" 
-                                            href="#table-content" 
-                                            role="tab" 
-                                            aria-controls="table-content" 
-                                            aria-selected="true">
-                                                Table View
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a class="nav-link" 
-                                            id="summary-tab" 
-                                            data-toggle="tab" 
-                                            href="#summary-content" 
-                                            role="tab" 
-                                            aria-controls="summary-content" 
-                                            aria-selected="false">
-                                                Summary
-                                            </a>
-                                        </li>
-                                    </ul>
-                        </div>
-
-                        <div class="card-content collapse show">
-                                <div class="card-body card-dashboard">
-                                    <!-- Tab Content -->
-                                    <div class="tab-content">
-                                        <!-- Table Tab -->
-                                        <div class="tab-pane fade show active" 
-                                            id="table-content" 
-                                            role="tabpanel" 
-                                            aria-labelledby="table-tab">
-                                            
-                                            <!-- Your existing table code goes here -->
-                                            <div class="table-responsive" v-if="data.length !== 0">
-                                                <!-- ... your table ... -->
-
-                                            </div>
-                                            
-                                        </div>
-                                        
-                                        <!-- Summary Tab -->
-                                        <div class="tab-pane fade" 
-                                            id="summary-content" 
-                                            role="tabpanel" 
-                                            aria-labelledby="summary-tab">
-                                            
-                                            <!-- Add your summary content here -->
-                                            <div class="summary-section">
-                                                <h4>Summary Information</h4>
-                                                <p>Your summary content goes here</p>
-                                            </div>
-                                            
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-
-                        <div class="card-content collapse show">
-                            <div class="card-body card-dashboard">
-
-                                <div class="table-responsive " v-if="data.length !== 0">
-
-                                    <div v-if="error" class="error">
-                                        {{ error }}
-                                    </div>
-
-                                    <div v-if="loading" class="loading">
-                                        Loading data...
-                                    </div>
-
-                                    <div v-else-if="!loading && data.length === 0" class="no-data">
-                                        No data available. Click "Fetch Data" to load activation summary.
-                                    </div>
-                                        
-                                       
-                                    <table v-else class="table table-striped table-bordered table-sm small zero-configuration ">
-                                        <thead>
-                                            
-                                            <tr>
-                                            <th v-for="(value, key) in data[0]" :key="key">
-                                            {{ key }}
-                                            </th>
-                                        </tr>
-                                         </thead>
-                                        <tbody>
-                                         
-                                                    
-                                        <tr v-for="(row, index) in data" :key="index">
-                                        <td v-for="(value, key) in row" :key="key">
-                                            {{ value }}
-                                        </td>
-                                        </tr>
-                                </tbody>
-                                    </table>
-                                </div>
-
-                            </div>
-                        </div>
-
-                    </div> *@
-
-
-
                 </div>
             </div>
         </div>
@@ -281,6 +192,8 @@
                 const loading = ref(false);
                 const error = ref('');
                 const error_sumary = ref('');
+                const searchQuery = ref("");
+    
                 const download_file_name =  "pos_details.csv"
                 const fetchUrl = `/pos/GetCtopupMaster`
                 const fetchUrlSummary = `/pos/GetCtopupSummaryMaster`
@@ -312,6 +225,22 @@
                     }
                 };
 
+                const selectedFilters = ref({
+                ssa_code: "",
+                dealertype: ""
+                });     
+                const filterOptions = computed(() => {
+                    if (!data.value.length) return {};
+                    return {
+                        ssa_code: [...new Set(data.value.map(item => item.ssa_code))],
+                        dealertype: [...new Set(data.value.map(item => item.dealertype))]
+                    };
+                    });           
+               // const filterOptions = (field)=> {
+                //if (data.value.length === 0) return [];
+               //     return [...new Set(data.value.map(item => item[field]))];
+               // };                
+
                 const fetchSummary = async () => {
                     loading.value = true;
                     error.value = '';
@@ -342,6 +271,20 @@
                 const switchTab = (tab) => {
                     activeTab.value = tab;
                 }
+
+                const shouldShowRow = (row) => {
+                    const matchesSearch = Object.values(row).some(value =>
+                        String(value).toLowerCase().includes(searchQuery.value.toLowerCase())
+                    );
+                      // Check all selected filters
+                    const matchesFilters = Object.entries(selectedFilters.value).every(([field, selectedValue]) => {
+                        return !selectedValue || row[field] === selectedValue;
+                    });
+
+                    return matchesSearch && matchesFilters;
+                };
+
+ 
 
                 const downloadCSV = () => {
                     if (data.value.length === 0) return;
@@ -397,7 +340,12 @@
                     loading,
                     error,
                     fetchData,
+                    
                     downloadCSV,
+                    searchQuery,
+                     filterOptions,
+                    shouldShowRow,
+                    selectedFilters ,
                     switchTab,activeTab
                    
                 };
