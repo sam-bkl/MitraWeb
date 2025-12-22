@@ -38,6 +38,9 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
 builder.Services.AddScoped<IOracleRepository, OracleRepository>();
 builder.Services.AddScoped<SummaryRepository, SummaryRepository>();
 
+// Register HttpContextAccessor for views
+builder.Services.AddHttpContextAccessor();
+
 // Register HttpClient for FileStoreService
 builder.Services.AddHttpClient();
 
