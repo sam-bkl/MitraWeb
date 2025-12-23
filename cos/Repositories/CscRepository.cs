@@ -423,48 +423,36 @@ namespace cos.Repositories
                     case "EAST":
                         sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_ez cme
-                                WHERE cme.dealer_status = 'Active' 
-                                  AND cme.dealertype = 'CSR'
-                                  AND cme.ctopupno = cme.contact_number
-                                  AND cme.ctopupno LIKE @pattern
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)
-                                ORDER BY ctopupno
+                                WHERE cme.active = 'A'
+                                  AND cme.contact_number LIKE @pattern
+                                ORDER BY contact_number
                                 LIMIT 20";
                         break;
                     case "SZ":
                     case "SOUTH":
                         sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_sz cme
-                                WHERE cme.dealer_status = 'Active' 
-                                  AND cme.dealertype = 'CSR'
-                                  AND cme.ctopupno = cme.contact_number
-                                  AND cme.ctopupno LIKE @pattern
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)
-                                ORDER BY ctopupno
+                                WHERE cme.active = 'A' 
+                                  AND cme.contact_number LIKE @pattern
+                                ORDER BY contact_number
                                 LIMIT 20";
                         break;
                     case "NZ":
                     case "NORTH":
                         sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_nz cme
-                                WHERE cme.dealer_status = 'Active' 
-                                  AND cme.dealertype = 'DEPT'
-                                  AND cme.ctopupno = cme.contact_number
-                                  AND cme.ctopupno LIKE @pattern
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)
-                                ORDER BY ctopupno
+                                WHERE cme.active = 'A'
+                                  AND cme.contact_number LIKE @pattern
+                                ORDER BY contact_number
                                 LIMIT 20";
                         break;
                     case "WZ":
                     case "WEST":
                         sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_wz cme
-                                WHERE cme.dealer_status = 'Active' 
-                                  AND cme.dealertype = 'CSR'
-                                  AND cme.ctopupno = cme.contact_number
-                                  AND cme.ctopupno LIKE @pattern
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)
-                                ORDER BY ctopupno
+                                WHERE cme.active = 'A' 
+                                  AND cme.contact_number LIKE @pattern
+                                ORDER BY contact_number
                                 LIMIT 20";
                         break;
                     default:
