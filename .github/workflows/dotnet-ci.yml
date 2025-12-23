@@ -12,13 +12,13 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: production
+
     steps:
-      - name: Checkout repo + private submodules  with PAT
+      - name: Checkout repo + private submodules
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          token: ${{ secrets.SUBMODULE_TOKEN }}
+          token: ${{ secrets.PAT }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
