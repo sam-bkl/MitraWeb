@@ -1511,12 +1511,5 @@ namespace cos.Controllers
         public string? ctopupno { get; set; }
         public string? zoneCode { get; set; }
     }
-
-    public class GeneratePosUniqueCodeRequest
-    {
-        public string? aadhaarNo { get; set; }
-        public string? aadhaarIssueYear { get; set; }
-        public string? aadhaarName { get; set; }
-    }
 }
 
