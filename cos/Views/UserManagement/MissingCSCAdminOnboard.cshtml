@@ -374,6 +374,9 @@
 
         searchInput.addEventListener('input', function (e) {
             const query = (e.target.value || '').trim();
+            
+            // Reset all cards/sections when search is initiated
+            resetAllCards();
 
             if (query.length < 3) {
                 searchResults.style.display = 'none';
@@ -464,23 +467,28 @@
                     })
                 });
 
-                if (!resp.ok) {
-                    const error = await resp.json();
-                    showError(error.error || 'Error fetching CTOP details');
+                let responseData;
+                try {
+                    responseData = await resp.json();
+                } catch (parseError) {
+                    // If JSON parsing fails, show generic error
+                    showError('Error fetching CTOP details. Please try again.');
+                    resetAllCards();
                     return;
                 }
-
-                const responseData = await resp.json();
+                
+                // Check for errors in response
+                if (!resp.ok || responseData.error) {
+                    const errorMsg = responseData.error || 'Error fetching CTOP details';
+                    showError(errorMsg);
+                    // Reset all cards on error
+                    resetAllCards();
+                    return;
+                }
                 
                 // 2.1 Check if user exists in ctop_master
                 if (responseData.existsInCtopMaster) {
                     displayExistingUser(responseData.ctop, responseData.dealer_status);
-                    return;
-                }
-
-                // 2.2 User doesn't exist, proceed with new user creation
-                if (responseData.error) {
-                    showError(responseData.error);
                     return;
                 }
 
@@ -506,6 +514,68 @@
             } catch (err) {
                 console.error('Error fetching details:', err);
                 showError('Error fetching CTOP details: ' + err.message);
+                // Reset all cards on error
+                resetAllCards();
+            }
+        }
+
+        function resetAllCards() {
+            // Hide all sections
+            if (ctopDetailsSection) {
+                ctopDetailsSection.style.display = 'none';
+            }
+            if (createAccountSection) {
+                createAccountSection.style.display = 'none';
+            }
+            
+            // Clear content
+            const detailsDiv = document.getElementById('ctopDetails');
+            if (detailsDiv) {
+                detailsDiv.innerHTML = '';
+            }
+            
+            const existingUserMessage = document.getElementById('existingUserMessage');
+            if (existingUserMessage) {
+                existingUserMessage.style.display = 'none';
+            }
+            
+            const errorMessage = document.getElementById('errorMessage');
+            if (errorMessage) {
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+            }
+            
+            // Hide Get/Show button
+            const getDetailsBtn = document.getElementById('getDetailsBtn');
+            if (getDetailsBtn) {
+                getDetailsBtn.style.display = 'none';
+            }
+            
+            // Hide search results
+            if (searchResults) {
+                searchResults.style.display = 'none';
+            }
+            
+            // Reset form
+            const createAccountForm = document.getElementById('createAccountForm');
+            if (createAccountForm) {
+                createAccountForm.reset();
+            }
+            
+            // Hide document sections
+            const posUniqueCodeSection = document.getElementById('posUniqueCodeSection');
+            if (posUniqueCodeSection) {
+                posUniqueCodeSection.style.display = 'none';
+            }
+            
+            const csrDocsSection = document.getElementById('csrDocumentsSection');
+            if (csrDocsSection) {
+                csrDocsSection.style.display = 'none';
+            }
+            
+            const otherDocsSection = document.getElementById('otherDocumentsSection');
+            if (otherDocsSection) {
+                otherDocsSection.style.display = 'none';
             }
         }
 
