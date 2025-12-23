@@ -17,7 +17,6 @@ jobs:
       - name: Checkout repo + private submodules
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
           submodules: recursive
           token: ${{ secrets.GITHUB_TOKEN }}
 
