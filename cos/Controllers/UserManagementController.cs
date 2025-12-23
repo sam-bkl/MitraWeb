@@ -624,7 +624,7 @@ namespace cos.Controllers
                     return Json(new { error = "CTOPUP number and zone code are required" });
                 }
 
-                // 2.1 Check if user already exists in ctop_master
+                // 2.1 Check if user already exists in ctop_master (by username/contact number)
                 var existingCtop = await _cscRepository.GetCtopMasterByCtopupnoAsync(request.ctopupno);
                 if (existingCtop != null)
                 {

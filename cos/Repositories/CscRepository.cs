@@ -261,7 +261,7 @@ namespace cos.Repositories
                                             pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
                                             aadhaar_no, zone_code, ctop_type
                                      FROM ctop_master
-                                     WHERE ctopupno = @ctopupno
+                                     WHERE username = @ctopupno
                                      ORDER BY created_date DESC
                                      LIMIT 1";
                 using var db = ConnectionPgSql;
@@ -488,7 +488,7 @@ namespace cos.Repositories
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
                                        dealer_address, dealer_status, parent_ctopno as parent_ctop, active
                                 FROM ctop_master_ez cme
-                                WHERE cme.ctopupno = @ctopupno";
+                                WHERE cme.contact_number = @ctopupno";
                         break;
                     case "SZ":
                     case "SOUTH":
@@ -497,7 +497,7 @@ namespace cos.Repositories
                                        dealer_address, dealer_status, parent_ctopno as parent_ctop,
                                        aadhaar_no, zone_code, ssa_city, active
                                 FROM ctop_master_sz cme
-                                WHERE cme.ctopupno = @ctopupno";
+                                WHERE cme.contact_number = @ctopupno";
                         break;
                     case "NZ":
                     case "NORTH":
@@ -505,7 +505,7 @@ namespace cos.Repositories
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
                                        dealer_address, dealer_status, parent_ctop, ssa_city, active
                                 FROM ctop_master_nz cme
-                                WHERE cme.ctopupno = @ctopupno";
+                                WHERE cme.contact_number = @ctopupno";
                         break;
                     case "WZ":
                     case "WEST":
@@ -513,7 +513,7 @@ namespace cos.Repositories
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
                                        dealer_address, dealer_status, parent_ctop, ssa_city, active
                                 FROM ctop_master_wz cme
-                                WHERE cme.ctopupno = @ctopupno";
+                                WHERE cme.contact_number = @ctopupno";
                         break;
                     default:
                         throw new Exception($"Invalid zone code: {zoneCode}");
