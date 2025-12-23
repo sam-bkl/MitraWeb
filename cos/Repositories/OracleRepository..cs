@@ -114,10 +114,11 @@ public class OracleRepository : IOracleRepository
 
             //string? inPlanId = await _pgRepo.GetInPlanIdAsync(model.Plan_Code, model.circle_code);
 
-            var planDetails = await _pgRepo.GetInPlanDetailsAsync(model.Plan_Code,model.circle_code);
-            string inPlanId = planDetails.InPlanId;
-            string? simState = planDetails.SimState;
-            decimal? primaryTalkValue = planDetails.PrimaryTalkValue;
+            var planDetails = await _pgRepo.GetInPlanDetailsAsync( model.Plan_Code,model.circle_code);
+
+            string? inPlanId = planDetails?.InPlanId;
+            string? simState = planDetails?.SimState;
+            decimal? primaryTalkValue = planDetails?.PrimaryTalkValue;
 
             // Fetch master values
             var master = await _pgRepo.GetCmfMasterByCircleAsync(model.circle_code,model.Connection_Type , model.caf_type);
@@ -325,7 +326,7 @@ VALUES (
 
             //string? inPlanId = await _pgRepo.GetInPlanIdAsync(model.Plan_Code, model.circle_code);
             var planDetails = await _pgRepo.GetInPlanDetailsAsync(model.Plan_Code, model.circle_code);
-            string inPlanId = planDetails.InPlanId;
+            string? inPlanId = planDetails.InPlanId;
             string? simState = planDetails.SimState;
             decimal? primaryTalkValue = planDetails.PrimaryTalkValue;
 
