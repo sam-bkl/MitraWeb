@@ -38,9 +38,19 @@
 
         public string verified_by { get; set; }
 
-        public string? reason { get; set; } 
+        public string? reason { get; set; }
 
+        public string? alternate_contact_no { get; set; }
 
+        public string? de_username { get; set; }
+
+        public string? ssa_code { get; set; }
+
+        public string? de_csccode { get; set; }
+
+        public string? live_photo_date { get; set; }
+
+        public string? parent_ctopup_number { get; set; }
     }
 
 
