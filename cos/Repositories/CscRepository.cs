@@ -151,6 +151,13 @@ namespace cos.Repositories
             public string? ErrorMessage { get; set; }
         }
 
+        public class TempDataResult<T>
+        {
+            public bool Success { get; set; }
+            public T? Data { get; set; }
+            public string? Error { get; set; }
+        }
+
         public async Task<InsertResult> InsertCtopAsync(CtopMaster entity, long accountId)
         {
             try
@@ -615,7 +622,7 @@ namespace cos.Repositories
         }
 
         // Get data from temp_csc_sa_data
-        public async Task<TempCscSaDataVM?> GetTempCscSaDataByPosCtopAsync(string posCtop)
+        public async Task<TempDataResult<TempCscSaDataVM>> GetTempCscSaDataByPosCtopAsync(string posCtop)
         {
             try
             {
@@ -629,16 +636,25 @@ namespace cos.Repositories
                                      WHERE pos_ctop = @posCtop
                                      LIMIT 1";
                 using var db = ConnectionPgSql;
-                return await db.QueryFirstOrDefaultAsync<TempCscSaDataVM>(sql, new { posCtop });
+                var data = await db.QueryFirstOrDefaultAsync<TempCscSaDataVM>(sql, new { posCtop });
+                return new TempDataResult<TempCscSaDataVM>
+                {
+                    Success = true,
+                    Data = data
+                };
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error retrieving temp_csc_sa_data: {ex.Message}", ex);
+                return new TempDataResult<TempCscSaDataVM>
+                {
+                    Success = false,
+                    Error = $"Error retrieving temp_csc_sa_data: {ex.Message}"
+                };
             }
         }
 
         // Get data from temp_sa_pos_data
-        public async Task<TempSaPosDataVM?> GetTempSaPosDataByPosCtopAsync(string posCtop)
+        public async Task<TempDataResult<TempSaPosDataVM>> GetTempSaPosDataByPosCtopAsync(string posCtop)
         {
             try
             {
@@ -652,11 +668,20 @@ namespace cos.Repositories
                                      WHERE pos_ctop = @posCtop
                                      LIMIT 1";
                 using var db = ConnectionPgSql;
-                return await db.QueryFirstOrDefaultAsync<TempSaPosDataVM>(sql, new { posCtop });
+                var data = await db.QueryFirstOrDefaultAsync<TempSaPosDataVM>(sql, new { posCtop });
+                return new TempDataResult<TempSaPosDataVM>
+                {
+                    Success = true,
+                    Data = data
+                };
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error retrieving temp_sa_pos_data: {ex.Message}", ex);
+                return new TempDataResult<TempSaPosDataVM>
+                {
+                    Success = false,
+                    Error = $"Error retrieving temp_sa_pos_data: {ex.Message}"
+                };
             }
         }
 
