@@ -1,7 +1,15 @@
 #!/bin/sh
+
 BRANCH=$(git branch --show-current)
 
 if [ "$BRANCH" = "main" ]; then
   echo "❌ Direct commits to 'main' are not allowed."
+  echo "👉 Please create a feature branch."
   exit 1
 fi
+
+echo "✅ Commit checks passed."
+echo "👏 Thank you for maintaining code quality and team discipline."
+echo "🤝 Regards, Mitra Team"
+
+exit 0
