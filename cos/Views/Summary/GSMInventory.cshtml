@@ -48,11 +48,11 @@
                                 <!-- Tab Content -->
                                
 
-                                    <div v-if="loading_summary" class="loading">
+                                    <div v-if="loading" class="loading">
                                             Loading data please wait...
                                     </div>
 
-                                    <div v-else-if="!loading && summary.length === 0" class="no-data">
+                                    <div v-else-if="!loading && data.length === 0" class="no-data">
                                         No data available.
                                     </div>
                                     
@@ -60,13 +60,13 @@
                                         <table class="table table-striped table-bordered table-sm small zero-configuration">
                                             <thead>
                                                 <tr>
-                                                    <th v-for="(value, key) in summary[0]" :key="key">
-                                                        {{ key }}
+                                                    <th v-for="(value, key) in data[0]" :key="key">
+                                                        {{ key.toUpperCase()     }}
                                                     </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <tr v-for="(row, index) in summary" :key="index">
+                                                <tr v-for="(row, index) in data" :key="index">
                                                     <td v-for="(value, key) in row" :key="key" :class = "{'text-white bg-primary fw-bold' :  row.dealertype === 'TOTAL'}">
                                                         {{ value }}
                                                     </td>
@@ -103,13 +103,14 @@
 
                 const data = ref([]);
                 const error = ref('');
+                const loading = ref('');
                 const download_file_name =  "GetGSMInventoryCount.csv"
                 const fetchUrl = `/Summary/GetGSMInventoryCount`
 
 
 
                 const fetchData = async () => {
-                    loading_table.value = true;
+                    loading.value = true;
                     error.value = '';
                     
                     try {
@@ -131,7 +132,7 @@
                         error.value = `Failed to fetch data: ${err.message}`;
                         console.error('Error fetching data:', err);
                     } finally {
-                        loading_table.value = false;
+                        loading.value = false;
                     }
                 };
 
@@ -144,7 +145,8 @@
                 return {
                     data,
                     error,
-                    fetchData                 
+                    fetchData ,
+                    loading                
                    
                 };
             }

@@ -404,7 +404,7 @@ namespace cos.Repositories
                     FROM gsm_choice
                     WHERE status = 9
                     GROUP BY circle_code
-                    ORDER BY circle_name;
+                    ORDER BY gsm_count,circle_name;
             ";
 
             // postgres
