@@ -145,7 +145,7 @@ namespace cos.Repositories
                       ssa_code,alternate_contact_no,de_username,
                       de_csccode,TO_CHAR(live_photo_time, 'DD-MM-YYYY') AS live_photo_date
                FROM cos_bcd
-               WHERE (verified_flag IS NULL OR verified_flag = '') ");
+               WHERE (verified_flag IS NULL OR verified_flag = '') and caf_type <> 'simswap' ");
 
 if (role != "cc_admin")
 {
@@ -944,45 +944,57 @@ WHERE caf_serial_no = @cafslno;";
 
 
         //lock method
-        public async Task<bool> LockCAFAsync(string gsm, string loggedin)
+        public async Task<bool> LockCAFAsync(string cafSerialNo, string gsm, string loggedin)
         {
             string sql = @"
-                UPDATE cos_bcd
-                SET in_process = true,
-                    process_by = @loggedin,
-                    process_at = NOW()
-                WHERE gsmnumber = @Gsmnumber
-                  AND verified_flag IS NULL
-                  AND (in_process = false OR in_process IS NULL);
-            ";
+        UPDATE cos_bcd
+        SET in_process = true,
+            process_by = @loggedin,
+            process_at = NOW()
+        WHERE TRIM(gsmnumber) = @Gsmnumber
+          AND TRIM(caf_serial_no) = @cafSerialNo
+          AND verified_flag IS NULL
+          AND (in_process = false OR in_process IS NULL);
+    ";
 
-            //string sql = @"
-            //    UPDATE cos_bcd
-            //    SET in_process = true,
-            //        process_by = @loggedin,
-            //        process_at = NOW()
-            //    WHERE gsmnumber = @Gsmnumber
-            //      AND verified_flag = 'S'
-            //      AND (in_process = false OR in_process IS NULL);
-            //";
+            try
+            {
+                using var db = ConnectionPgSql;
 
-            using var db = ConnectionPgSql;
-            return await db.ExecuteAsync(sql, new { Gsmnumber = gsm, loggedin }) == 1;
+                gsm = gsm?.Trim();
+                cafSerialNo = cafSerialNo?.Trim();
+                loggedin = loggedin?.Trim();
+
+                var param = new DynamicParameters();
+                param.Add("Gsmnumber", gsm, DbType.String);
+                param.Add("cafSerialNo", cafSerialNo, DbType.String);
+                param.Add("loggedin", loggedin, DbType.String);
+
+                int rows = await db.ExecuteAsync(sql, param);
+                return rows == 1;
+            }
+            catch (Exception ex)
+            {
+                // log ex
+                return false;
+            }
         }
 
 
+
+
         //unlock method
-        public async Task ReleaseLockAsync(string gsm, string loggedin)
+        public async Task ReleaseLockAsync(string cafSerialNo,string gsm, string loggedin)
         {
             string sql = @"
         UPDATE cos_bcd
         SET in_process = false
-        WHERE gsmnumber = @Gsmnumber
+        WHERE gsmnumber = @Gsmnumber and caf_serial_no = @cafSerialNo 
           AND process_by = @loggedin;
     ";
 
             using var db = ConnectionPgSql;
-            await db.ExecuteAsync(sql, new { Gsmnumber = gsm, loggedin });
+            await db.ExecuteAsync(sql, new { Gsmnumber = gsm, loggedin , cafSerialNo });
         }
 
         //get simswap caf data model

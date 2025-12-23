@@ -90,10 +90,10 @@
     <PackageReference Include="System.Net.Http.Json" Version="10.0.1" />
   </ItemGroup>
 
-  <!-- Temporarily commented out - MpinCrypt project reference missing
+  <!-- Temporarily commented out - MpinCrypt project reference missing -->
   <ItemGroup>
     <ProjectReference Include="..\external\MpinCrypt\src\MpinCrypt\MpinCrypt.csproj" />  
   </ItemGroup>
-  -->
+  
  
 </Project>
