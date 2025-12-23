@@ -1,0 +1,175 @@
+﻿@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "Login Page";
+}
+
+
+
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">Location Report(Prepaid)</h4>
+                <a class="heading-elements-toggle"><i class="la la-ellipsis-v font-medium-3"></i></a>
+                <div class="heading-elements">
+                    <ul class="list-inline mb-0">
+                        <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                        <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                        <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                        <li><a data-action="close"><i class="ft-x"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-content collapse show">
+                <div class="card-body card-dashboard">
+                 @*    <p class="card-text">ekyc summary</p> *@
+                    <div class="table-responsive">
+                        <table id="kycTable" class="table table-striped table-bordered zero-configuration">
+                            <thead>
+                                <tr>
+                                    <th>Circle Code</th>
+                                    <th>Location</th>
+                                    <th>Unallotted Sims</th>
+                                    
+                                </tr>
+                            </thead>
+                            <tbody id="table-body-postpaid"></tbody>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="postDetailsModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4>Postpaid Details</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <table class="table table-bordered" id="detailsTable">
+          <thead>
+            <tr>
+              <th>Circle Code</th>
+              <th>Location</th>
+              <th>SIMNO</th>
+            </tr>
+          </thead>
+          <tbody id="detailsTableBody">
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+   
+@section Scripts {
+    <script>
+          $(document).ready(function () {
+
+                  GetPrepaidSummary();
+           
+
+        });
+
+
+
+
+        function GetPrepaidSummary()
+        {
+
+            // Destroy DataTable if already initialized
+            if ($.fn.DataTable.isDataTable('#kycTable')) {
+                $('#kycTable').DataTable().clear().destroy();
+            }
+
+            var tableBody = $('#table-body-postpaid');
+            tableBody.html('<tr style="text-align:center"><td colspan="6">Loading...</td></tr>');
+
+            $.ajax({
+                type: 'POST',
+                url: "/Inventory/GetPrepaidSummary",
+                headers: {
+                    "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function (data) {
+
+                    var tableString = '';
+                    for (var i = 0; i < data.length; i++) {
+                        tableString += '<tr>';
+                        tableString += '<td>' + data[i].circle_code + '</td>';
+                        tableString += '<td>' + data[i].location + '</td>';
+                        tableString += '<td><span class="view-post-details text-primary" style="cursor:pointer; text-decoration: underline;"  data-circle="'+data[i].circle_code+'" data-location="' + data[i].location + '" data-status="1">' + data[i].unallotted_sims + '</span></td>';
+                        tableString += '</tr>';
+                    }
+
+                    tableBody.html(tableString);
+
+                    // Reinitialize the DataTable
+                    $('#kycTable').DataTable({
+                        "ordering": true,
+                        "paging": true,
+                        "searching": true
+                    });
+
+                }
+            });
+        }
+
+
+ $(document).on("click", ".view-post-details", function (e) {
+    e.preventDefault();
+    let circle = $(this).data("circle");
+    let location = $(this).data("location");
+    let status = $(this).data("status");
+
+    LoadPostDetails(circle,location, status);
+});
+
+
+function LoadPostDetails(circle, location, status) {
+
+    $("#detailsTableBody").html("<tr><td colspan='6'>Loading...</td></tr>");
+
+    $.ajax({
+        type: "POST",
+        url: "/Inventory/GetPrepaidDetails",
+        data: {
+            circle_code: circle,
+            location: location,
+            status: status
+        },
+        success: function (data) {
+
+            var html = "";
+
+            for (var i = 0; i < data.length; i++) {
+                html += "<tr>";
+                html += "<td>" + data[i].circle_code + "</td>";
+                html += "<td>" + data[i].location + "</td>";
+                html += "<td>" + data[i].simno + "</td>";
+                html += "</tr>";
+            }
+
+            $("#detailsTableBody").html(html);
+
+            $("#postDetailsModal").modal("show"); // open modal
+        }
+    });
+}
+
+
+</script>
+
+}

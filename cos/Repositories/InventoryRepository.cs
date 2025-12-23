@@ -13,10 +13,12 @@ namespace cos.Repositories
     public class InventoryRepository
     {
         private readonly string connectionStringPgSql;
+        private readonly string connectionStringPgSqlRO;
 
         public InventoryRepository(IConfiguration configuration)
         {
             connectionStringPgSql = configuration.GetValue<string>("ConnectionStrings:PgSql");
+            connectionStringPgSqlRO = configuration.GetValue<string>("ConnectionStrings:PgSqlRO");
         }
 
         internal IDbConnection ConnectionPgSql
@@ -24,6 +26,13 @@ namespace cos.Repositories
             get
             {
                 return new NpgsqlConnection(connectionStringPgSql);
+            }
+        }
+        internal IDbConnection ConnectionPgSqlRO
+        {
+            get
+            {
+                return new NpgsqlConnection(connectionStringPgSqlRO);
             }
         }
         public async Task<dynamic> GetCircles()
@@ -206,16 +215,19 @@ namespace cos.Repositories
                 }
             }
         }
-        public async Task<dynamic> GetPrepaidSummary()
+        public async Task<dynamic> GetPrepaidSummary(int circle_code)
         {
             StringBuilder query = new StringBuilder();
-            query.Append("select circle_code, location, count(*) total_sims, count(*) filter (where status=1) unallotted_sims, count(*) filter(where status=2) allotted_sims from simprepaid where circle_code=50 group by circle_code, location order by circle_code, location");
+            query.Append("select circle_code, location, count(*) total_sims, count(*) filter (where status=1) unallotted_sims, count(*) filter(where status=2) allotted_sims from simprepaid where circle_code=:param_circle_code group by circle_code, location order by circle_code, location");
             using (IDbConnection dbConnection = ConnectionPgSql)
             {
                 dbConnection.Open();
                 try
                 {
-                    var result = await dbConnection.QueryAsync(query.ToString());
+                    var result = await dbConnection.QueryAsync(query.ToString(), new
+                    {
+                        param_circle_code=circle_code
+                    });
                     return result.AsList();
                 }
                 catch (Exception e)
@@ -237,6 +249,49 @@ namespace cos.Repositories
                     {
                         param_circle_code = circle_code,
                         param_location = location,
+                        param_status = status
+                    });
+                    return result.AsList();
+                }
+                catch (Exception e)
+                {
+                    throw;
+                }
+            }
+        }
+        public async Task<dynamic> GetCYMNSummary(int circle_code)
+        {
+            StringBuilder query = new StringBuilder();
+            query.Append("select circle_code, count(*) filter(where status=9) remaining_nums, count(*) filter(where status=99) reserved_nums from gsm_choice where circle_code=:param_circle_code group by circle_code");
+            using (IDbConnection dbConnection = ConnectionPgSql)
+            {
+                dbConnection.Open();
+                try
+                {
+                    var result = await dbConnection.QueryAsync(query.ToString(), new
+                    {
+                        param_circle_code = circle_code
+                    });
+                    return result.FirstOrDefault();
+                }
+                catch (Exception e)
+                {
+                    throw;
+                }
+            }
+        }
+        public async Task<dynamic> GetCYMNDetails(int circle_code, int status)
+        {
+            StringBuilder query = new StringBuilder();
+            query.Append("select circle_code, gsmno from gsm_choice where circle_code=@param_circle_code and status=@param_status ");
+            using (IDbConnection dbConnection = ConnectionPgSql)
+            {
+                dbConnection.Open();
+                try
+                {
+                    var result = await dbConnection.QueryAsync(query.ToString(), new
+                    {
+                        param_circle_code = circle_code,
                         param_status = status
                     });
                     return result.AsList();

@@ -333,21 +333,24 @@ if (role != "cc_admin")
 
             if (role == "cc_admin")
             {
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
+                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason, ");
+                query.Append("ssa_code,alternate_contact_no,de_username , de_csccode,TO_CHAR(live_photo_time, 'DD-MM-YYYY') AS live_photo_date, parent_ctopup_number ");
                 query.Append("from cos_bcd where  verified_flag = 'R'");
             }
             else if (role == "circle_admin")
             {
 
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
+                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason, ");
+                query.Append("ssa_code,alternate_contact_no,de_username , de_csccode,TO_CHAR(live_photo_time, 'DD-MM-YYYY') AS live_photo_date, parent_ctopup_number ");
                 query.Append("from cos_bcd where  verified_flag = 'R' AND circle_code = @circle::int");
             }
             else
             {
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason ");
+                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason, ");
+                query.Append("ssa_code,alternate_contact_no,de_username , de_csccode,TO_CHAR(live_photo_time, 'DD-MM-YYYY') AS live_photo_date, parent_ctopup_number ");
                 query.Append("from cos_bcd where  verified_flag = 'R' AND circle_code = @circle::int and ssa_code = @oa");
 
-            }
+            }       
 
                 using (IDbConnection dbConnection = ConnectionPgSql)
                 {

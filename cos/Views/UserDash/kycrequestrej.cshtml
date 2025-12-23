@@ -28,6 +28,7 @@
                             <thead>
                                 <tr>
                                     <th>State</th>
+                                    <th>BA code</th>
                                     <th>Name</th>
                                     <th>GSM Number</th>
                                     <th>SIM Number</th>
@@ -36,6 +37,10 @@
                                     <th>Ver Done by</th>
                                     <th>Verification date</th>
                                     <th>Rejection Reason</th>
+                                    <th>onboarded by</th>
+                                    <th>customer Alt. No</th>
+                                    <th>Onboarded Date</th>
+                                    <th>Ctopup No</th>
                                 </tr>
                             </thead>
                             <tbody id="table-body-kycpend"></tbody>
@@ -95,6 +100,7 @@
                     for (var i = 0; i < data.length; i++) {
                         tableString += '<tr>';
                         tableString += '<td>' + data[i].circle + '</td>';
+                        tableString += '<td>' + data[i].ssa_code + '</td>';
                         tableString += '<td>' + data[i].name + '</td>';
                         tableString += '<td>' + data[i].gsmnumber + '</td>';
                         tableString += '<td>' + data[i].simnumber + '</td>';
@@ -103,6 +109,10 @@
                         tableString += '<td>' + data[i].verified_by + '</td>';
                         tableString += '<td>' + data[i].verified_date + '</td>';
                         tableString += '<td>' + data[i].reason + '</td>';
+                        tableString += '<td>' + data[i].de_username + ' / ' + data[i].de_csccode + '</td>';
+                        tableString += '<td>' + data[i].alternate_contact_no + '</td>';
+                        tableString += '<td>' + data[i].live_photo_date + '</td>';
+                        tableString += '<td>' + data[i].parent_ctopup_number + '</td>';
                         tableString += '</tr>';
                     }
 

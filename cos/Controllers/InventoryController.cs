@@ -21,11 +21,12 @@ namespace cos.Controllers
         {
             var _cookieLoggedIn = HttpContext.Request.Cookies["LoggedIn"];
             ViewBag.LoggedIn = _protector.Unprotect(_cookieLoggedIn);
-            var _cookieRole = HttpContext.Request.Cookies["Role"];
-            if (!string.IsNullOrEmpty(_cookieRole))
-            {
-                ViewBag.UserRole = _protector.Unprotect(_cookieRole);
-            }
+            return View();
+        }
+        public IActionResult CYMNDetails()
+        {
+            var _cookieLoggedIn = HttpContext.Request.Cookies["LoggedIn"];
+            ViewBag.LoggedIn = _protector.Unprotect(_cookieLoggedIn);
             return View();
         }
         public IActionResult PushInventory()
@@ -34,18 +35,18 @@ namespace cos.Controllers
             ViewBag.LoggedIn = _protector.Unprotect(_cookieLoggedIn);
             return View();
         }
-        //public IActionResult UploadGSMInventory()
-        //{
-        //    var _cookieLoggedIn = HttpContext.Request.Cookies["LoggedIn"];
-        //    ViewBag.LoggedIn = _protector.Unprotect(_cookieLoggedIn);
-        //    return View();
-        //}
-        //public IActionResult RemoveCTOPAadhaar()
-        //{
-        //    var _cookieLoggedIn = HttpContext.Request.Cookies["LoggedIn"];
-        //    ViewBag.LoggedIn = _protector.Unprotect(_cookieLoggedIn);
-        //    return View();
-        //}
+        /*public IActionResult UploadGSMInventory()
+        {
+            var _cookieLoggedIn = HttpContext.Request.Cookies["LoggedIn"];
+            ViewBag.LoggedIn = _protector.Unprotect(_cookieLoggedIn);
+            return View();
+        }
+        public IActionResult RemoveCTOPAadhaar()
+        {
+            var _cookieLoggedIn = HttpContext.Request.Cookies["LoggedIn"];
+            ViewBag.LoggedIn = _protector.Unprotect(_cookieLoggedIn);
+            return View();
+        }*/
         public async Task<JsonResult> GetCircles()
         {
             var result = await inventoryRepository.GetCircles();
@@ -73,12 +74,29 @@ namespace cos.Controllers
         [HttpPost]
         public async Task<JsonResult> GetPrepaidSummary()
         {
-            var result = await inventoryRepository.GetPrepaidSummary();
+            var _cookiecircle = HttpContext.Request.Cookies["Circle"];
+            var circle = int.Parse(_protector.Unprotect(_cookiecircle));
+            var result = await inventoryRepository.GetPrepaidSummary(circle);
             return Json(result);
         }
+        [HttpPost]
         public async Task<JsonResult> GetPrepaidDetails(int circle_code, string location, int status)
         {
             var result = await inventoryRepository.GetPrepaidDetails(circle_code, location, status);
+            return Json(result);
+        }
+        [HttpPost]
+        public async Task<JsonResult> GetCYMNSummary()
+        {
+            var _cookiecircle = HttpContext.Request.Cookies["Circle"];
+            var circle = int.Parse(_protector.Unprotect(_cookiecircle));
+            var result = await inventoryRepository.GetCYMNSummary(circle);
+            return Json(result);
+        }
+        [HttpPost]
+        public async Task<JsonResult> GetCYMNDetails(int circle_code, int status)
+        {
+            var result = await inventoryRepository.GetCYMNDetails(circle_code, status);
             return Json(result);
         }
     }
