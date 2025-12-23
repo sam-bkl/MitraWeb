@@ -624,17 +624,108 @@ namespace cos.Controllers
                     return Json(new { error = "CTOPUP number and zone code are required" });
                 }
 
-                var ctopDetails = await _cscRepository.GetMissingCscCtopDetailsByZoneAsync(request.ctopupno, request.zoneCode);
-                if (ctopDetails == null)
+                // 2.1 Check if user already exists in ctop_master
+                var existingCtop = await _cscRepository.GetCtopMasterByCtopupnoAsync(request.ctopupno);
+                if (existingCtop != null)
                 {
-                    return Json(new { error = "CTOP not found" });
+                    return Json(new { 
+                        existsInCtopMaster = true, 
+                        ctop = existingCtop,
+                        dealer_status = existingCtop.dealer_status 
+                    });
                 }
 
-                return Json(ctopDetails);
+                // 2.2 Get data from zonal table
+                var zonalData = await _cscRepository.GetMissingCscCtopDetailsByZoneAsync(request.ctopupno, request.zoneCode);
+                if (zonalData == null)
+                {
+                    return Json(new { error = "CTOP not found in zonal table" });
+                }
+
+                // 2.2.1 Check active field
+                if (zonalData.active != "A")
+                {
+                    return Json(new { 
+                        error = $"The active field in Pyro is set as '{zonalData.active}' and cannot be created" 
+                    });
+                }
+
+                // 2.2.2 Check for pos_unique_code in temp tables
+                TempCscSaDataVM? tempCscData = null;
+                TempSaPosDataVM? tempSaData = null;
+                string? posUniqueCode = null;
+
+                if (zonalData.dealertype == "CSR" || zonalData.dealertype == "CSC" || zonalData.dealertype == "DEPT")
+                {
+                    tempCscData = await _cscRepository.GetTempCscSaDataByPosCtopAsync(request.ctopupno);
+                    if (tempCscData == null)
+                    {
+                        return Json(new { error = "User not found in temp_csc_sa_data" });
+                    }
+                    if (string.IsNullOrWhiteSpace(tempCscData.pos_unique_code))
+                    {
+                        return Json(new { error = "User does not have pos_unique_code in temp_csc_sa_data" });
+                    }
+                    posUniqueCode = tempCscData.pos_unique_code;
+                }
+                else
+                {
+                    tempSaData = await _cscRepository.GetTempSaPosDataByPosCtopAsync(request.ctopupno);
+                    if (tempSaData == null)
+                    {
+                        return Json(new { error = "User not found in temp_sa_pos_data" });
+                    }
+                    if (string.IsNullOrWhiteSpace(tempSaData.pos_unique_code))
+                    {
+                        return Json(new { error = "User does not have pos_unique_code in temp_sa_pos_data" });
+                    }
+                    posUniqueCode = tempSaData.pos_unique_code;
+                }
+
+                // Combine zonal and temp data
+                return Json(new { 
+                    existsInCtopMaster = false,
+                    zonalData = zonalData,
+                    tempCscData = tempCscData,
+                    tempSaData = tempSaData,
+                    posUniqueCode = posUniqueCode,
+                    dealertype = zonalData.dealertype
+                });
             }
             catch (Exception ex)
             {
                 return Json(new { error = ex.Message });
+            }
+        }
+
+        // Generate POS Unique Code endpoint (similar to CscController)
+        [HttpPost]
+        public IActionResult GeneratePosUniqueCode([FromBody] GeneratePosUniqueCodeRequest request)
+        {
+            try
+            {
+                if (!IsBaAdmin())
+                {
+                    return Json(new { success = false, message = "Access denied" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request?.aadhaarNo) || 
+                    string.IsNullOrWhiteSpace(request?.aadhaarIssueYear) || 
+                    string.IsNullOrWhiteSpace(request?.aadhaarName))
+                {
+                    return Json(new { success = false, message = "All fields are required" });
+                }
+
+                var posUniqueCode = CtopMaster.GeneratePosUniqueCode(
+                    request.aadhaarNo, 
+                    request.aadhaarIssueYear, 
+                    request.aadhaarName);
+
+                return Json(new { success = true, posUniqueCode });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error generating code: {ex.Message}" });
             }
         }
 
@@ -767,13 +858,22 @@ namespace cos.Controllers
                     return Json(new { success = false, errors = new[] { "Invalid SSA selected." } });
                 }
 
-                var existingAccountId = await _accountRepository.GetAccountIdByUsernameAsync(ctopupno);
-                if (existingAccountId.HasValue)
+                // 5. Check username+ctopnumber uniqueness
+                var username = newCtop.contact_number ?? ctopupno;
+                var usernameCtopupnoExists = await _cscRepository.CheckUsernameCtopupnoExistsAsync(username, ctopupno);
+                if (usernameCtopupnoExists)
                 {
-                    return Json(new { success = false, errors = new[] { "An account with this CTOPUP number already exists." } });
+                    return Json(new { success = false, errors = new[] { $"The username '{username}' and ctopupno '{ctopupno}' combination already exists in ctop_master and cannot be created." } });
                 }
 
-                var posCode = CtopMaster.GeneratePosUniqueCode(newCtop.aadhaar_no, newCtop.aadhaar_issue_year, newCtop.name);
+                // Get selected pos_unique_code from form
+                var selectedPosUniqueCode = Request.Form["selectedPosUniqueCode"].ToString();
+                if (string.IsNullOrWhiteSpace(selectedPosUniqueCode))
+                {
+                    // Fallback to generated code if not provided
+                    selectedPosUniqueCode = CtopMaster.GeneratePosUniqueCode(newCtop.aadhaar_no, newCtop.aadhaar_issue_year, newCtop.name);
+                }
+                var posCode = selectedPosUniqueCode;
 
                 // Fetch zonal data to get the 5 new fields
                 var zonalData = await _cscRepository.GetMissingCscCtopDetailsByZoneAsync(ctopupno, circle.zone_code);
@@ -850,58 +950,156 @@ namespace cos.Controllers
                     ssa_id = ssa.id
                 };
 
-                var accountResult = await _accountRepository.CreateCscAdminAccountAsync(userModel, createdByAccountId, createdByMobile, _cscRepository);
-                if (!accountResult.Success)
+                // 4. Conditional account creation - only if dealertype is CSR/CSC/DEPT and username = ctopnumber
+                var shouldCreateAccount = (newCtop.dealertype == "CSR" || newCtop.dealertype == "CSC" || newCtop.dealertype == "DEPT") 
+                                         && username == ctopupno;
+                
+                if (shouldCreateAccount)
                 {
-                    return Json(new { success = false, errors = new[] { $"Failed to create account: {accountResult.ErrorMessage}" } });
+                    var accountResult = await _accountRepository.CreateCscAdminAccountAsync(userModel, createdByAccountId, createdByMobile, _cscRepository);
+                    if (!accountResult.Success)
+                    {
+                        return Json(new { success = false, errors = new[] { $"Failed to create account: {accountResult.ErrorMessage}" } });
+                    }
                 }
 
-                // Handle file uploads similar to CscController
-                var username = ctopEntity.username ?? string.Empty;
+                // Handle file uploads - different documents based on dealertype
                 var uploadErrors = new List<string>();
 
-                if (newCtop.BaApprovalLetter != null && newCtop.BaApprovalLetter.Length > 0)
+                if (newCtop.dealertype == "CSR" || newCtop.dealertype == "CSC" || newCtop.dealertype == "DEPT")
                 {
-                    var res = await SaveUserDocumentAsync(newCtop.BaApprovalLetter, username, DocumentCategory.BA_APPROVAL_LETTER, createdByAccountId);
-                    if (!res.Success)
+                    // CSR/CSC/DEPT documents
+                    if (newCtop.BaApprovalLetter != null && newCtop.BaApprovalLetter.Length > 0)
                     {
-                        uploadErrors.Add($"BA Approval Letter upload failed: {res.ErrorMessage}");
+                        var res = await SaveUserDocumentAsync(newCtop.BaApprovalLetter, username, DocumentCategory.BA_APPROVAL_LETTER, createdByAccountId);
+                        if (!res.Success)
+                        {
+                            uploadErrors.Add($"BA Approval Letter upload failed: {res.ErrorMessage}");
+                        }
+                    }
+
+                    if (newCtop.EmployeeIdCard != null && newCtop.EmployeeIdCard.Length > 0)
+                    {
+                        var res = await SaveUserDocumentAsync(newCtop.EmployeeIdCard, username, DocumentCategory.ID_CARD, createdByAccountId);
+                        if (!res.Success)
+                        {
+                            uploadErrors.Add($"Employee ID upload failed: {res.ErrorMessage}");
+                        }
+                    }
+
+                    if (newCtop.AadhaarCard != null && newCtop.AadhaarCard.Length > 0)
+                    {
+                        var res = await SaveUserDocumentAsync(newCtop.AadhaarCard, username, DocumentCategory.AADHAR_CARD, createdByAccountId);
+                        if (!res.Success)
+                        {
+                            uploadErrors.Add($"Aadhaar upload failed: {res.ErrorMessage}");
+                        }
+                    }
+
+                    if (newCtop.PanCard != null && newCtop.PanCard.Length > 0)
+                    {
+                        var res = await SaveUserDocumentAsync(newCtop.PanCard, username, DocumentCategory.PAN_CARD, createdByAccountId);
+                        if (!res.Success)
+                        {
+                            uploadErrors.Add($"PAN upload failed: {res.ErrorMessage}");
+                        }
+                    }
+
+                    if (newCtop.Photo != null && newCtop.Photo.Length > 0)
+                    {
+                        var res = await SaveUserDocumentAsync(newCtop.Photo, username, DocumentCategory.PHOTO, createdByAccountId);
+                        if (!res.Success)
+                        {
+                            uploadErrors.Add($"Photo upload failed: {res.ErrorMessage}");
+                        }
                     }
                 }
-
-                if (newCtop.EmployeeIdCard != null && newCtop.EmployeeIdCard.Length > 0)
+                else
                 {
-                    var res = await SaveUserDocumentAsync(newCtop.EmployeeIdCard, username, DocumentCategory.ID_CARD, createdByAccountId);
-                    if (!res.Success)
+                    // Other dealertypes - different document set
+                    // Note: Document category codes may need to be defined for these new document types
+                    // For now, using generic approach - you may need to add new DocumentCategory constants
+                    
+                    // CIN/LLPIN/Business License
+                    var cinDoc = Request.Form.Files["CinDocument"];
+                    if (cinDoc != null && cinDoc.Length > 0)
                     {
-                        uploadErrors.Add($"Employee ID upload failed: {res.ErrorMessage}");
+                        var res = await SaveUserDocumentAsync(cinDoc, username, "CIN_DOCUMENT", createdByAccountId);
+                        if (!res.Success) uploadErrors.Add($"CIN document upload failed: {res.ErrorMessage}");
                     }
-                }
 
-                if (newCtop.AadhaarCard != null && newCtop.AadhaarCard.Length > 0)
-                {
-                    var res = await SaveUserDocumentAsync(newCtop.AadhaarCard, username, DocumentCategory.AADHAR_CARD, createdByAccountId);
-                    if (!res.Success)
+                    // PAN Card
+                    var panDocOther = Request.Form.Files["PanCardOther"];
+                    if (panDocOther != null && panDocOther.Length > 0)
                     {
-                        uploadErrors.Add($"Aadhaar upload failed: {res.ErrorMessage}");
+                        var res = await SaveUserDocumentAsync(panDocOther, username, DocumentCategory.PAN_CARD, createdByAccountId);
+                        if (!res.Success) uploadErrors.Add($"PAN upload failed: {res.ErrorMessage}");
                     }
-                }
 
-                if (newCtop.PanCard != null && newCtop.PanCard.Length > 0)
-                {
-                    var res = await SaveUserDocumentAsync(newCtop.PanCard, username, DocumentCategory.PAN_CARD, createdByAccountId);
-                    if (!res.Success)
+                    // GST
+                    var gstDoc = Request.Form.Files["GstDocument"];
+                    if (gstDoc != null && gstDoc.Length > 0)
                     {
-                        uploadErrors.Add($"PAN upload failed: {res.ErrorMessage}");
+                        var res = await SaveUserDocumentAsync(gstDoc, username, "GST_DOCUMENT", createdByAccountId);
+                        if (!res.Success) uploadErrors.Add($"GST document upload failed: {res.ErrorMessage}");
                     }
-                }
 
-                if (newCtop.Photo != null && newCtop.Photo.Length > 0)
-                {
-                    var res = await SaveUserDocumentAsync(newCtop.Photo, username, DocumentCategory.PHOTO, createdByAccountId);
-                    if (!res.Success)
+                    // Aadhaar (mandatory)
+                    var aadhaarDocOther = Request.Form.Files["AadhaarCardOther"];
+                    if (aadhaarDocOther != null && aadhaarDocOther.Length > 0)
                     {
-                        uploadErrors.Add($"Photo upload failed: {res.ErrorMessage}");
+                        var res = await SaveUserDocumentAsync(aadhaarDocOther, username, DocumentCategory.AADHAR_CARD, createdByAccountId);
+                        if (!res.Success) uploadErrors.Add($"Aadhaar upload failed: {res.ErrorMessage}");
+                    }
+
+                    // Photo (mandatory)
+                    var photoOther = Request.Form.Files["PhotoOther"];
+                    if (photoOther != null && photoOther.Length > 0)
+                    {
+                        var res = await SaveUserDocumentAsync(photoOther, username, DocumentCategory.PHOTO, createdByAccountId);
+                        if (!res.Success) uploadErrors.Add($"Photo upload failed: {res.ErrorMessage}");
+                    }
+
+                    // Business address proof (mandatory)
+                    var businessAddrProof = Request.Form.Files["BusinessAddressProof"];
+                    if (businessAddrProof != null && businessAddrProof.Length > 0)
+                    {
+                        var res = await SaveUserDocumentAsync(businessAddrProof, username, "BUSINESS_ADDRESS_PROOF", createdByAccountId);
+                        if (!res.Success) uploadErrors.Add($"Business address proof upload failed: {res.ErrorMessage}");
+                    }
+
+                    // Residential address proof (mandatory)
+                    var residentialAddrProof = Request.Form.Files["ResidentialAddressProof"];
+                    if (residentialAddrProof != null && residentialAddrProof.Length > 0)
+                    {
+                        var res = await SaveUserDocumentAsync(residentialAddrProof, username, "RESIDENTIAL_ADDRESS_PROOF", createdByAccountId);
+                        if (!res.Success) uploadErrors.Add($"Residential address proof upload failed: {res.ErrorMessage}");
+                    }
+
+                    // Affidavit (only if CIN, PAN, GST not uploaded)
+                    var hasCinPanGst = (cinDoc != null && cinDoc.Length > 0) || 
+                                      (panDocOther != null && panDocOther.Length > 0) || 
+                                      (gstDoc != null && gstDoc.Length > 0);
+                    if (!hasCinPanGst)
+                    {
+                        var affidavitDoc = Request.Form.Files["Affidavit"];
+                        if (affidavitDoc != null && affidavitDoc.Length > 0)
+                        {
+                            var res = await SaveUserDocumentAsync(affidavitDoc, username, "AFFIDAVIT", createdByAccountId);
+                            if (!res.Success) uploadErrors.Add($"Affidavit upload failed: {res.ErrorMessage}");
+                        }
+                    }
+
+                    // Agreement copy (mandatory if Agreement Type is Normal)
+                    var agreementType = Request.Form["AgreementType"].ToString();
+                    if (agreementType == "Normal")
+                    {
+                        var agreementCopy = Request.Form.Files["AgreementCopy"];
+                        if (agreementCopy != null && agreementCopy.Length > 0)
+                        {
+                            var res = await SaveUserDocumentAsync(agreementCopy, username, "AGREEMENT_COPY", createdByAccountId);
+                            if (!res.Success) uploadErrors.Add($"Agreement copy upload failed: {res.ErrorMessage}");
+                        }
                     }
                 }
 
@@ -1312,6 +1510,13 @@ namespace cos.Controllers
     {
         public string? ctopupno { get; set; }
         public string? zoneCode { get; set; }
+    }
+
+    public class GeneratePosUniqueCodeRequest
+    {
+        public string? aadhaarNo { get; set; }
+        public string? aadhaarIssueYear { get; set; }
+        public string? aadhaarName { get; set; }
     }
 }
 

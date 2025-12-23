@@ -403,7 +403,7 @@ namespace cos.Repositories
             }
         }
 
-        // Zone-specific CTOP search methods
+        // Zone-specific CTOP search methods - returns distinct ctopup nos only
         public async Task<IEnumerable<CtopSearchResultVM>> SearchMissingCscCtopByZoneAsync(string ctopupno, string zoneCode)
         {
             try
@@ -421,50 +421,50 @@ namespace cos.Repositories
                 {
                     case "EZ":
                     case "EAST":
-                        sql = @"SELECT ctopupno, name, contact_number
+                        sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_ez cme
                                 WHERE cme.dealer_status = 'Active' 
                                   AND cme.dealertype = 'CSR'
                                   AND cme.ctopupno = cme.contact_number
                                   AND cme.ctopupno LIKE @pattern
                                   AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)
-                                ORDER BY cme.ctopupno
+                                ORDER BY ctopupno
                                 LIMIT 20";
                         break;
                     case "SZ":
                     case "SOUTH":
-                        sql = @"SELECT ctopupno, name, contact_number
+                        sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_sz cme
                                 WHERE cme.dealer_status = 'Active' 
                                   AND cme.dealertype = 'CSR'
                                   AND cme.ctopupno = cme.contact_number
                                   AND cme.ctopupno LIKE @pattern
                                   AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)
-                                ORDER BY cme.ctopupno
+                                ORDER BY ctopupno
                                 LIMIT 20";
                         break;
                     case "NZ":
                     case "NORTH":
-                        sql = @"SELECT ctopupno, name, contact_number
+                        sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_nz cme
                                 WHERE cme.dealer_status = 'Active' 
                                   AND cme.dealertype = 'DEPT'
                                   AND cme.ctopupno = cme.contact_number
                                   AND cme.ctopupno LIKE @pattern
                                   AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)
-                                ORDER BY cme.ctopupno
+                                ORDER BY ctopupno
                                 LIMIT 20";
                         break;
                     case "WZ":
                     case "WEST":
-                        sql = @"SELECT ctopupno, name, contact_number
+                        sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_wz cme
                                 WHERE cme.dealer_status = 'Active' 
                                   AND cme.dealertype = 'CSR'
                                   AND cme.ctopupno = cme.contact_number
                                   AND cme.ctopupno LIKE @pattern
                                   AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)
-                                ORDER BY cme.ctopupno
+                                ORDER BY ctopupno
                                 LIMIT 20";
                         break;
                     default:
@@ -498,50 +498,34 @@ namespace cos.Repositories
                     case "EAST":
                         sql = @"SELECT ctopupno, name, second_name, last_name, dealertype, 
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
-                                       dealer_address, dealer_status, parent_ctopno as parent_ctop
+                                       dealer_address, dealer_status, parent_ctopno as parent_ctop, active
                                 FROM ctop_master_ez cme
-                                WHERE cme.ctopupno = @ctopupno
-                                  AND cme.dealer_status = 'Active'
-                                  AND cme.dealertype = 'CSR'
-                                  AND cme.ctopupno = cme.contact_number
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     case "SZ":
                     case "SOUTH":
                         sql = @"SELECT ctopupno, name, second_name, last_name, dealertype, 
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
                                        dealer_address, dealer_status, parent_ctopno as parent_ctop,
-                                       aadhaar_no, zone_code, ssa_city
+                                       aadhaar_no, zone_code, ssa_city, active
                                 FROM ctop_master_sz cme
-                                WHERE cme.ctopupno = @ctopupno
-                                  AND cme.dealer_status = 'Active'
-                                  AND cme.dealertype = 'CSR'
-                                  AND cme.ctopupno = cme.contact_number
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     case "NZ":
                     case "NORTH":
                         sql = @"SELECT ctopupno, name, second_name, last_name, dealertype, 
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
-                                       dealer_address, dealer_status, parent_ctop, ssa_city
+                                       dealer_address, dealer_status, parent_ctop, ssa_city, active
                                 FROM ctop_master_nz cme
-                                WHERE cme.ctopupno = @ctopupno
-                                  AND cme.dealer_status = 'Active'
-                                  AND cme.dealertype = 'DEPT'
-                                  AND cme.ctopupno = cme.contact_number
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     case "WZ":
                     case "WEST":
                         sql = @"SELECT ctopupno, name, second_name, last_name, dealertype, 
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
-                                       dealer_address, dealer_status, parent_ctop, ssa_city
+                                       dealer_address, dealer_status, parent_ctop, ssa_city, active
                                 FROM ctop_master_wz cme
-                                WHERE cme.ctopupno = @ctopupno
-                                  AND cme.dealer_status = 'Active'
-                                  AND cme.dealertype = 'CSR'
-                                  AND cme.ctopupno = cme.contact_number
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     default:
                         throw new Exception($"Invalid zone code: {zoneCode}");
@@ -560,6 +544,93 @@ namespace cos.Repositories
             catch (Exception ex)
             {
                 throw new Exception($"Error retrieving missing CSC CTOP details: {ex.Message}", ex);
+            }
+        }
+
+        // Check if user exists in ctop_master
+        public async Task<CtopMaster?> GetCtopMasterByCtopupnoAsync(string ctopupno)
+        {
+            try
+            {
+                const string sql = @"SELECT username, ctopupno, name, dealertype, ssa_code, csccode, circle_code, attached_to,
+                                            contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
+                                            pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
+                                            pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
+                                            aadhaar_no, zone_code, ctop_type, dealer_status
+                                     FROM ctop_master
+                                     WHERE ctopupno = @ctopupno
+                                     ORDER BY created_date DESC
+                                     LIMIT 1";
+                using var db = ConnectionPgSql;
+                return await db.QueryFirstOrDefaultAsync<CtopMaster>(sql, new { ctopupno });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving CTOP from ctop_master: {ex.Message}", ex);
+            }
+        }
+
+        // Get data from temp_csc_sa_data
+        public async Task<TempCscSaDataVM?> GetTempCscSaDataByPosCtopAsync(string posCtop)
+        {
+            try
+            {
+                const string sql = @"SELECT csccode, pos_ctop, dealer_type, ssa_code, circle_code,
+                                            pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
+                                            pos_district, pos_state, pos_pincode, created_date, pos_name,
+                                            pos_name_ss, pos_owner_name, circle_name, pos_unique_code,
+                                            latitude, longitude, aadhaar_no, zone_id, attached_to,
+                                            aggrement_through, ins_flag, insert_date
+                                     FROM temp_csc_sa_data
+                                     WHERE pos_ctop = @posCtop
+                                     LIMIT 1";
+                using var db = ConnectionPgSql;
+                return await db.QueryFirstOrDefaultAsync<TempCscSaDataVM>(sql, new { posCtop });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving temp_csc_sa_data: {ex.Message}", ex);
+            }
+        }
+
+        // Get data from temp_sa_pos_data
+        public async Task<TempSaPosDataVM?> GetTempSaPosDataByPosCtopAsync(string posCtop)
+        {
+            try
+            {
+                const string sql = @"SELECT csccode, pos_ctop, dealer_type, ssa_code, circle_code,
+                                            pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
+                                            pos_district, pos_state, pos_pincode, created_date, pos_name,
+                                            pos_name_ss, pos_owner_name, circle_name, pos_unique_code,
+                                            latitude, longitude, aadhaar_no, zone_id, attached_to,
+                                            aggrement_through, ins_flag, insert_date
+                                     FROM temp_sa_pos_data
+                                     WHERE pos_ctop = @posCtop
+                                     LIMIT 1";
+                using var db = ConnectionPgSql;
+                return await db.QueryFirstOrDefaultAsync<TempSaPosDataVM>(sql, new { posCtop });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving temp_sa_pos_data: {ex.Message}", ex);
+            }
+        }
+
+        // Check if username+ctopnumber combination already exists in ctop_master
+        public async Task<bool> CheckUsernameCtopupnoExistsAsync(string username, string ctopupno)
+        {
+            try
+            {
+                const string sql = @"SELECT COUNT(1)
+                                     FROM ctop_master
+                                     WHERE username = @username AND ctopupno = @ctopupno";
+                using var db = ConnectionPgSql;
+                var count = await db.QueryFirstOrDefaultAsync<int>(sql, new { username, ctopupno });
+                return count > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error checking username+ctopupno combination: {ex.Message}", ex);
             }
         }
 
