@@ -66,10 +66,13 @@
                         <div class="card-content collapse show">
                             <div class="card-body card-dashboard">
                                 <!-- Tab Content -->
-                                
+                               
+
                                 <!-- Table Tab -->
                                 <div v-show="activeTab === 'table'">
-
+                                 <div v-if="loading_table" class="loading">
+                                        Loading data please wait...
+                                 </div>
                                     <!-- Search and Filter Row -->
                                     <div class="row p-2">
                                         <div class="d-flex">
@@ -133,9 +136,9 @@
                                             {{ error_sumary }}
                                             </div>
 
-                                    <div v-if="loading" class="loading">
-                                        Loading data...
-                                    </div>
+                                 <div v-if="loading_summary" class="loading">
+                                        Loading data please wait...
+                                 </div>
 
                                     <div v-else-if="!loading && summary.length === 0" class="no-data">
                                         No data available.
@@ -189,7 +192,8 @@
                 const endDate = ref('');
                 const data = ref([]);
                 const summary = ref([]);
-                const loading = ref(false);
+                const loading_summary = ref(true);
+                const loading_table = ref(true);
                 const error = ref('');
                 const error_sumary = ref('');
                 const searchQuery = ref("");
@@ -199,7 +203,7 @@
                 const fetchUrlSummary = `/pos/GetCtopupSummaryMaster`
                 const activeTab = ref('table');
                 const fetchData = async () => {
-                    loading.value = true;
+                    loading_table.value = true;
                     error.value = '';
                     
                     try {
@@ -221,19 +225,21 @@
                         error.value = `Failed to fetch data: ${err.message}`;
                         console.error('Error fetching data:', err);
                     } finally {
-                        loading.value = false;
+                        loading_table.value = false;
                     }
                 };
 
                 const selectedFilters = ref({
                 ssa_code: "",
-                dealertype: ""
+                dealertype: "",
+                state:"",
                 });     
                 const filterOptions = computed(() => {
                     if (!data.value.length) return {};
                     return {
                         ssa_code: [...new Set(data.value.map(item => item.ssa_code))],
-                        dealertype: [...new Set(data.value.map(item => item.dealertype))]
+                        dealertype: [...new Set(data.value.map(item => item.dealertype))],
+                        state: [...new Set(data.value.map(item => item.state))]
                     };
                     });           
                // const filterOptions = (field)=> {
@@ -242,7 +248,7 @@
                // };                
 
                 const fetchSummary = async () => {
-                    loading.value = true;
+                    loading_summary.value = true;
                     error.value = '';
                     
                     try {
@@ -264,7 +270,7 @@
                         error_sumary.value = `Failed to fetch data: ${err.message}`;
                         console.error('Error fetching data:', err);
                     } finally {
-                        loading.value = false;
+                        loading_summary.value = false;
                     }
                 };
 
@@ -337,13 +343,13 @@
                     endDate,
                     data,
                     summary,
-                    loading,
+                    loading_table,
+                    loading_summary,
                     error,
-                    fetchData,
-                    
+                    fetchData,                    
                     downloadCSV,
                     searchQuery,
-                     filterOptions,
+                    filterOptions,
                     shouldShowRow,
                     selectedFilters ,
                     switchTab,activeTab

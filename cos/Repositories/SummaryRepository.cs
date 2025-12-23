@@ -357,7 +357,61 @@ namespace cos.Repositories
             using var conn = CreateConnection();
             return await conn.QueryAsync(sql,new { startDate, endDate });
         }
-          
+
+
+        /// <summary>
+        /// CircleWiseGSMInvetoryAsync
+        /// </summary>        
+        public async Task<object> CircleWiseGSMInvetoryAsync()
+        {
+            const string sql = @"
+                    SELECT
+                        CASE circle_code
+                            WHEN 65 THEN 'JAMMU AND KASHMIR'
+                            WHEN 61 THEN 'HARYANA'
+                            WHEN 62 THEN 'UPWEST'
+                            WHEN 55 THEN 'HIMACHAL PRADESH'
+                            WHEN 56 THEN 'PUNJAB'
+                            WHEN 59 THEN 'RAJASTHAN'
+                            WHEN 64 THEN 'UTTARANCHAL'
+                            WHEN 60 THEN 'UPEAST'
+                            WHEN 2  THEN 'DELHI'
+                            WHEN 71 THEN 'ASSAM TELECOM CIRCLE'
+                            WHEN 70 THEN 'WEST BENGAL TELECOM CIRCLE'
+                            WHEN 72 THEN 'ODISHA TELECOM CIRCLE'
+                            WHEN 73 THEN 'BIHAR TELECOM CIRCLE'
+                            WHEN 74 THEN 'NORTH EAST-1 TELECOM CIRCLE'
+                            WHEN 75 THEN 'NORTH EAST-2 TELECOM CIRCLE'
+                            WHEN 76 THEN 'JHARKHAND TELECOM CIRCLE'
+                            WHEN 77 THEN 'ANDHMAN TELECOM CIRCLE'
+                            WHEN 78 THEN 'CALCUTTA TELECOM DISTRICT'
+                            WHEN 1  THEN 'MAHARASHTRA'
+                            WHEN 3  THEN 'CHHATTISGARH'
+                            WHEN 4  THEN 'MADHYA PRADESH'
+                            WHEN 10 THEN 'GUJARAT'
+                            WHEN 40 THEN 'CHENNAI'
+                            WHEN 41 THEN 'TELANGANA'
+                            WHEN 50 THEN 'KERALA'
+                            WHEN 51 THEN 'ANDHRA PRADESH'
+                            WHEN 53 THEN 'KARNATAKA'
+                            WHEN 54 THEN 'TAMIL NADU'
+                            WHEN 79 THEN 'SIKKIM TELECOM CIRCLE'
+                            WHEN 12 THEN 'MUMBAI'
+                            WHEN 99 THEN 'SYSADMIN'
+                            ELSE 'UNKNOWN'
+                        END AS circle_name,
+                        COUNT(gsmno) AS gsm_count
+                    FROM gsm_choice
+                    WHERE status = 9
+                    GROUP BY circle_code
+                    ORDER BY circle_name;
+            ";
+
+            // postgres
+            using var conn = CreateConnection();
+            return await conn.QueryAsync(sql);
+        }
+
 
     }
 }

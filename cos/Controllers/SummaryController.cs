@@ -43,6 +43,10 @@ namespace cos.Controllers
             return View();
         }
 
+        public ActionResult GSMInventory()
+        {
+            return View();
+        }
 
         /// <summary>
         /// KYC details grouped by Circle, POS and TYPE
@@ -144,6 +148,22 @@ namespace cos.Controllers
                 data
             });
         } 
+        /// <summary>
+        /// KYC details grouped by Circle, POS and TYPE
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetGSMInventoryCount()
+        {
+
+            var data = await _summaryRepository.CircleWiseGSMInvetoryAsync();
+
+            return Json(new
+            {
+                success = true,
+                data
+            });
+        }  
+
 
     
     }
