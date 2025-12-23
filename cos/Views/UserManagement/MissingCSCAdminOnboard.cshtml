@@ -3,7 +3,7 @@
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @{
     Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
-    ViewData["Title"] = "Onboard Missing CSC Admin";
+    ViewData["Title"] = "Onboard Missing Ctop Users";
 }
 
 <div class="row">
@@ -28,7 +28,7 @@
                 </ul>
             </div>
         }
-        <h3>Onboard Missing CSC Admin</h3>
+        <h3>Onboard Missing Ctop Users</h3>
     </div>
 </div>
 
@@ -42,6 +42,8 @@
                     <input type="text" class="form-control" id="ctopupnoSearch" placeholder="Enter CTOPUP number" />
                     <div id="searchResults" class="list-group mt-2" style="display:none; max-height: 300px; overflow-y: auto; position: absolute; z-index: 1000; width: 100%; background: white; border: 1px solid #ddd;"></div>
                 </div>
+                <button type="button" class="btn btn-primary" id="getDetailsBtn" style="display:none;">Get / Show</button>
+                <div id="errorMessage" class="alert alert-danger mt-2" style="display:none;"></div>
             </div>
         </div>
     </div>
@@ -53,6 +55,9 @@
             <div class="card-body">
                 <h5>CTOP Details</h5>
                 <div id="ctopDetails"></div>
+                <div id="existingUserMessage" class="alert alert-info mt-2" style="display:none;">
+                    <strong>Note:</strong> This user already exists in ctop_master and cannot be added again.
+                </div>
             </div>
         </div>
     </div>
@@ -75,81 +80,79 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.dealertype">Dealer Type <span class="text-danger">*</span></label>
-                            <select class="form-control" asp-for="NewCtop.dealertype" id="NewCtop_dealertype" required>
-                                <option value="">-- Select Dealer Type --</option>
-                                <option value="CSR">CSR</option>
-                                <option value="OCSC">OCSC</option>
-                            </select>
+                            <input class="form-control" asp-for="NewCtop.dealertype" id="NewCtop_dealertype" readonly />
                             <span class="text-danger" asp-validation-for="NewCtop.dealertype"></span>
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.designation"></label>
-                            <input class="form-control" asp-for="NewCtop.designation" id="NewCtop_designation" />
+                            <input class="form-control" asp-for="NewCtop.designation" id="NewCtop_designation" readonly />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label asp-for="NewCtop.contact_number"></label>
+                            <label asp-for="NewCtop.contact_number">Contact Number</label>
                             <input class="form-control" asp-for="NewCtop.contact_number" id="NewCtop_contact_number" />
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.pos_owner_name"></label>
-                            <input class="form-control" asp-for="NewCtop.pos_owner_name" id="NewCtop_pos_owner_name" />
+                            <input class="form-control" asp-for="NewCtop.pos_owner_name" id="NewCtop_pos_owner_name" readonly />
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.pos_name_ss"></label>
-                            <input class="form-control" asp-for="NewCtop.pos_name_ss" id="NewCtop_pos_name_ss" />
+                            <input class="form-control" asp-for="NewCtop.pos_name_ss" id="NewCtop_pos_name_ss" readonly />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.pos_hno"></label>
-                            <input class="form-control" asp-for="NewCtop.pos_hno" id="NewCtop_pos_hno" />
+                            <input class="form-control" asp-for="NewCtop.pos_hno" id="NewCtop_pos_hno" readonly />
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.pos_street"></label>
-                            <input class="form-control" asp-for="NewCtop.pos_street" id="NewCtop_pos_street" />
+                            <input class="form-control" asp-for="NewCtop.pos_street" id="NewCtop_pos_street" readonly />
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.pos_landmark"></label>
-                            <input class="form-control" asp-for="NewCtop.pos_landmark" id="NewCtop_pos_landmark" />
+                            <input class="form-control" asp-for="NewCtop.pos_landmark" id="NewCtop_pos_landmark" readonly />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.pos_locality"></label>
-                            <input class="form-control" asp-for="NewCtop.pos_locality" id="NewCtop_pos_locality" />
+                            <input class="form-control" asp-for="NewCtop.pos_locality" id="NewCtop_pos_locality" readonly />
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.pos_city"></label>
-                            <input class="form-control" asp-for="NewCtop.pos_city" id="NewCtop_pos_city" />
+                            <input class="form-control" asp-for="NewCtop.pos_city" id="NewCtop_pos_city" readonly />
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.pos_pincode"></label>
-                            <input class="form-control" asp-for="NewCtop.pos_pincode" id="NewCtop_pos_pincode" />
+                            <input class="form-control" asp-for="NewCtop.pos_pincode" id="NewCtop_pos_pincode" readonly />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label>Circle</label>
-                            <select class="form-control" id="circleSelect" asp-for="NewCtop.circle_id">
+                            <select class="form-control" id="circleSelect" asp-for="NewCtop.circle_id" disabled>
                                 <option value="">-- Select Circle --</option>
                                 @foreach (var c in Model.Circles)
                                 {
                                     <option value="@c.id" data-code="@c.circle_code" data-zone="@c.zone_code" data-name="@c.circle_name">@c.circle_name</option>
                                 }
                             </select>
+                            <input type="hidden" id="NewCtop_circle_id" name="NewCtop.circle_id" />
                             <span class="text-danger" asp-validation-for="NewCtop.circle_id"></span>
                         </div>
                         <div class="form-group col-md-4">
                             <label>SSA</label>
-                            <select class="form-control" id="ssaSelect" asp-for="NewCtop.ssa_id">
+                            <select class="form-control" id="ssaSelect" asp-for="NewCtop.ssa_id" disabled>
                                 <option value="">-- Select SSA --</option>
                                 @foreach (var s in Model.Ssas)
                                 {
                                     <option value="@s.id" data-name="@s.ssa_name" data-code="@s.ssa_code">@s.ssa_name</option>
                                 }
                             </select>
+                            <input type="hidden" id="NewCtop_ssa_id" name="NewCtop.ssa_id" />
                             <span class="text-danger" asp-validation-for="NewCtop.ssa_id"></span>
                         </div>
                         <div class="form-group col-md-4">
@@ -178,9 +181,10 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.csccode"></label>
-                            <select class="form-control" asp-for="NewCtop.csccode" id="NewCtop_csccode">
+                            <select class="form-control" asp-for="NewCtop.csccode" id="NewCtop_csccode" disabled>
                                 <option value="">-- Select CSC Code --</option>
                             </select>
+                            <input type="hidden" id="NewCtop_csccode_hidden" name="NewCtop.csccode" />
                             <span class="text-danger" asp-validation-for="NewCtop.csccode"></span>
                         </div>
                         <input type="hidden" asp-for="NewCtop.attached_to" id="NewCtop_attached_to" />
@@ -200,35 +204,114 @@
                             <span class="text-danger" asp-validation-for="NewCtop.aadhaar_issue_year"></span>
                         </div>
                     </div>
+                    <div class="form-row" id="posUniqueCodeSection">
+                        <div class="form-group col-md-6" id="posUniqueCodeField">
+                            <label>POS Unique Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="pos_unique_code" readonly />
+                            <input type="radio" name="posUniqueCodeSelection" value="fetched" id="radioFetched" checked />
+                            <label for="radioFetched">Use fetched POS Unique Code</label>
+                        </div>
+                        <div class="form-group col-md-6" id="autoGenPosUniqueCodeField" style="display:none;">
+                            <label>Auto Generated POS Unique Code</label>
+                            <input type="text" class="form-control" id="auto_gen_pos_unique_code" readonly style="font-weight: bold; color: red;" />
+                            <input type="radio" name="posUniqueCodeSelection" value="generated" id="radioGenerated" />
+                            <label for="radioGenerated">Use auto generated POS Unique Code</label>
+                        </div>
+                    </div>
+                    <input type="hidden" id="selectedPosUniqueCode" name="selectedPosUniqueCode" />
+                    
+                    <!-- Documents for CSR/CSC/DEPT -->
+                    <div id="csrDocumentsSection">
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label asp-for="NewCtop.BaApprovalLetter"></label>
+                                <label asp-for="NewCtop.BaApprovalLetter">BA Head Approved Letter</label>
                             <input type="file" class="form-control-file" asp-for="NewCtop.BaApprovalLetter" accept=".pdf,.jpg,.jpeg,.png" />
                             <span class="text-danger" asp-validation-for="NewCtop.BaApprovalLetter"></span>
                         </div>
                         <div class="form-group col-md-6">
-                            <label asp-for="NewCtop.EmployeeIdCard"></label>
+                                <label asp-for="NewCtop.EmployeeIdCard">Employee ID Card</label>
                             <input type="file" class="form-control-file" asp-for="NewCtop.EmployeeIdCard" accept=".pdf,.jpg,.jpeg,.png" />
                             <span class="text-danger" asp-validation-for="NewCtop.EmployeeIdCard"></span>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label asp-for="NewCtop.AadhaarCard"></label>
+                                <label asp-for="NewCtop.AadhaarCard">Aadhaar Card</label>
                             <input type="file" class="form-control-file" asp-for="NewCtop.AadhaarCard" accept=".pdf,.jpg,.jpeg,.png" />
                             <span class="text-danger" asp-validation-for="NewCtop.AadhaarCard"></span>
                         </div>
                         <div class="form-group col-md-6">
-                            <label asp-for="NewCtop.PanCard"></label>
+                                <label asp-for="NewCtop.PanCard">PAN Card</label>
                             <input type="file" class="form-control-file" asp-for="NewCtop.PanCard" accept=".pdf,.jpg,.jpeg,.png" />
                             <span class="text-danger" asp-validation-for="NewCtop.PanCard"></span>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label asp-for="NewCtop.Photo"></label>
+                                <label asp-for="NewCtop.Photo">Photo</label>
                             <input type="file" class="form-control-file" asp-for="NewCtop.Photo" accept=".jpg,.jpeg,.png" />
                             <span class="text-danger" asp-validation-for="NewCtop.Photo"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documents for other dealertypes -->
+                    <div id="otherDocumentsSection" style="display:none;">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>CIN/LLPIN/Business License/Registration No</label>
+                                <input type="file" class="form-control-file" id="CinDocument" name="CinDocument" accept=".pdf,.jpg,.jpeg,.png" />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>PAN Card</label>
+                                <input type="file" class="form-control-file" id="PanCardOther" name="PanCardOther" accept=".pdf,.jpg,.jpeg,.png" />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>GST</label>
+                                <input type="file" class="form-control-file" id="GstDocument" name="GstDocument" accept=".pdf,.jpg,.jpeg,.png" />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>Aadhar Card <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control-file" id="AadhaarCardOther" name="AadhaarCardOther" accept=".pdf,.jpg,.jpeg,.png" required />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Photo <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control-file" id="PhotoOther" name="PhotoOther" accept=".jpg,.jpeg,.png" required />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>Address proof of Place of business <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control-file" id="BusinessAddressProof" name="BusinessAddressProof" accept=".pdf,.jpg,.jpeg,.png" required />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Local Residential address proof <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control-file" id="ResidentialAddressProof" name="ResidentialAddressProof" accept=".pdf,.jpg,.jpeg,.png" required />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>Affidavit</label>
+                                <input type="file" class="form-control-file" id="Affidavit" name="Affidavit" accept=".pdf,.jpg,.jpeg,.png" />
+                                <small class="form-text text-muted">Required only if CIN/LLPIN, PAN, and GST are not uploaded</small>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Agreement Type</label>
+                                <select class="form-control" id="AgreementType" name="AgreementType">
+                                    <option value="">-- Select Agreement Type --</option>
+                                    <option value="Normal">Normal</option>
+                                    <option value="NESL">NESL</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>Agreement Copy <span class="text-danger" id="AgreementCopyRequired">*</span></label>
+                                <input type="file" class="form-control-file" id="AgreementCopy" name="AgreementCopy" accept=".pdf,.jpg,.jpeg,.png" />
+                                <small class="form-text text-muted">Required if Agreement Type is Normal</small>
+                            </div>
                         </div>
                     </div>
                     <div class="form-row">
@@ -324,14 +407,17 @@
                             div.className = 'list-group-item list-group-item-action';
                             div.style.cursor = 'pointer';
                             div.innerHTML = `<strong>${item.ctopupno}</strong> - ${item.name || ''} (${item.contact_number || ''})`;
-                            div.addEventListener('click', async () => {
+                            div.addEventListener('click', () => {
                                 selectedCtopupno = item.ctopupno;
                                 searchInput.value = item.ctopupno;
                                 if (hiddenCtopupno) hiddenCtopupno.value = item.ctopupno;
                                 searchResults.style.display = 'none';
                                 
-                                // Fetch full details and prefill form
-                                await fetchAndPrefillForm(item.ctopupno);
+                                // Show Get/Show button
+                                const getDetailsBtn = document.getElementById('getDetailsBtn');
+                                if (getDetailsBtn) {
+                                    getDetailsBtn.style.display = 'block';
+                                }
                             });
                             searchResults.appendChild(div);
                         });
@@ -350,7 +436,22 @@
             }, 300);
         });
 
+        // Get/Show button click handler
+        const getDetailsBtn = document.getElementById('getDetailsBtn');
+        if (getDetailsBtn) {
+            getDetailsBtn.addEventListener('click', async () => {
+                if (!selectedCtopupno) {
+                    showError('Please select a CTOP number first.');
+                    return;
+                }
+                await fetchAndPrefillForm(selectedCtopupno);
+            });
+        }
+
         async function fetchAndPrefillForm(ctopupno) {
+            const errorMessage = document.getElementById('errorMessage');
+            if (errorMessage) errorMessage.style.display = 'none';
+            
             try {
                 const resp = await fetch('/UserManagement/GetMissingCscCtopDetails', {
                     method: 'POST',
@@ -365,16 +466,36 @@
 
                 if (!resp.ok) {
                     const error = await resp.json();
-                    // Don't show alert if form is being restored after error
-                    if (!showForm) {
-                        alert(error.error || 'Error fetching CTOP details');
-                    }
+                    showError(error.error || 'Error fetching CTOP details');
                     return;
                 }
 
-                const ctopData = await resp.json();
-                prefillForm(ctopData);
-                displayCtopDetails(ctopData);
+                const responseData = await resp.json();
+                
+                // 2.1 Check if user exists in ctop_master
+                if (responseData.existsInCtopMaster) {
+                    displayExistingUser(responseData.ctop, responseData.dealer_status);
+                    return;
+                }
+
+                // 2.2 User doesn't exist, proceed with new user creation
+                if (responseData.error) {
+                    showError(responseData.error);
+                    return;
+                }
+
+                // Combine zonal and temp data
+                const zonalData = responseData.zonalData;
+                const tempCscData = responseData.tempCscData;
+                const tempSaData = responseData.tempSaData;
+                const posUniqueCode = responseData.posUniqueCode;
+                const dealertype = responseData.dealertype;
+
+                // Display in triple column card
+                displayCtopDetailsInCard(zonalData, tempCscData, tempSaData, posUniqueCode);
+                
+                // Prefill form
+                prefillForm(zonalData, tempCscData, tempSaData, posUniqueCode, dealertype);
                 
                 if (ctopDetailsSection) {
                     ctopDetailsSection.style.display = 'block';
@@ -384,78 +505,286 @@
                 }
             } catch (err) {
                 console.error('Error fetching details:', err);
-                // Don't show alert if form is being restored after error
-                if (!showForm) {
-                    alert('Error fetching CTOP details');
-                }
+                showError('Error fetching CTOP details: ' + err.message);
             }
         }
 
-        function prefillForm(ctopData) {
-            // Basic info
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            if (errorMessage) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+            } else {
+                alert(message);
+            }
+        }
+
+        function displayExistingUser(ctop, dealerStatus) {
+            const detailsDiv = document.getElementById('ctopDetails');
+            const existingUserMessage = document.getElementById('existingUserMessage');
+            
+            if (detailsDiv) {
+                detailsDiv.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tr><th>CTOPUP No:</th><td>${escapeHtml(ctop.ctopupno || '')}</td></tr>
+                            <tr><th>Name:</th><td>${escapeHtml(ctop.name || '')}</td></tr>
+                            <tr><th>Username:</th><td>${escapeHtml(ctop.username || '')}</td></tr>
+                            <tr><th>Contact:</th><td>${escapeHtml(ctop.contact_number || '')}</td></tr>
+                            <tr><th>Dealer Type:</th><td>${escapeHtml(ctop.dealertype || '')}</td></tr>
+                            <tr><th>Dealer Status:</th><td><strong>${escapeHtml(dealerStatus || '')}</strong></td></tr>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            if (existingUserMessage) {
+                existingUserMessage.style.display = 'block';
+            }
+            
+            if (ctopDetailsSection) {
+                ctopDetailsSection.style.display = 'block';
+            }
+            
+            // Hide create account section
+            if (createAccountSection) {
+                createAccountSection.style.display = 'none';
+            }
+        }
+
+        function displayCtopDetailsInCard(zonalData, tempCscData, tempSaData, posUniqueCode) {
+            const detailsDiv = document.getElementById('ctopDetails');
+            if (!detailsDiv) return;
+
+            const tempData = tempCscData || tempSaData;
+            const combinedData = { ...zonalData, ...tempData };
+
+            // Create triple column card layout
+            detailsDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header"><strong>Zonal Data</strong></div>
+                            <div class="card-body">
+                                <p><strong>CTOPUP No:</strong> ${escapeHtml(zonalData.ctopupno || '')}</p>
+                                <p><strong>Name:</strong> ${escapeHtml([zonalData.name, zonalData.second_name, zonalData.last_name].filter(x => x).join(' ') || zonalData.name || '')}</p>
+                                <p><strong>Dealer Type:</strong> ${escapeHtml(zonalData.dealertype || '')}</p>
+                                <p><strong>SSA Code:</strong> ${escapeHtml(zonalData.ssa_code || '')}</p>
+                                <p><strong>Circle Code:</strong> ${escapeHtml(zonalData.circle_code || '')}</p>
+                                <p><strong>Contact:</strong> ${escapeHtml(zonalData.contact_number || '')}</p>
+                                <p><strong>Dealer Status:</strong> ${escapeHtml(zonalData.dealer_status || '')}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header"><strong>Temp Data</strong></div>
+                            <div class="card-body">
+                                <p><strong>POS Name:</strong> ${escapeHtml(tempData?.pos_name || '')}</p>
+                                <p><strong>POS Owner:</strong> ${escapeHtml(tempData?.pos_owner_name || '')}</p>
+                                <p><strong>Address:</strong> ${escapeHtml([tempData?.pos_hno, tempData?.pos_street, tempData?.pos_locality, tempData?.pos_city].filter(x => x).join(', ') || '')}</p>
+                                <p><strong>Pincode:</strong> ${escapeHtml(tempData?.pos_pincode || '')}</p>
+                                <p><strong>District:</strong> ${escapeHtml(tempData?.pos_district || '')}</p>
+                                <p><strong>State:</strong> ${escapeHtml(tempData?.pos_state || '')}</p>
+                                <p><strong>POS Unique Code:</strong> <span style="color: red; font-weight: bold;">${escapeHtml(posUniqueCode || '')}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header"><strong>Additional Info</strong></div>
+                            <div class="card-body">
+                                <p><strong>CSC Code:</strong> ${escapeHtml(tempData?.csccode || zonalData.csccode || '')}</p>
+                                <p><strong>Circle Name:</strong> ${escapeHtml(tempData?.circle_name || '')}</p>
+                                <p><strong>Zone:</strong> ${escapeHtml(tempData?.zone_id || zonalData.zone_code || '')}</p>
+                                <p><strong>Aadhaar:</strong> ${escapeHtml(tempData?.aadhaar_no || zonalData.aadhaar_no || '')}</p>
+                                <p><strong>Latitude:</strong> ${escapeHtml(tempData?.latitude || '')}</p>
+                                <p><strong>Longitude:</strong> ${escapeHtml(tempData?.longitude || '')}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function prefillForm(zonalData, tempCscData, tempSaData, posUniqueCode, dealertype) {
+            const tempData = tempCscData || tempSaData;
+            const combinedData = { ...zonalData, ...tempData };
+
+            // Only NAME, CONTACTNO, AADHAAR NO, YEAR are editable - rest are readonly
             const nameField = document.getElementById('NewCtop_name');
             if (nameField) {
-                const fullName = [ctopData.name, ctopData.second_name, ctopData.last_name]
+                const fullName = [combinedData.name, combinedData.second_name, combinedData.last_name]
                     .filter(x => x).join(' ').trim();
-                nameField.value = fullName || ctopData.name || '';
+                nameField.value = fullName || combinedData.name || '';
             }
 
             const dealertypeField = document.getElementById('NewCtop_dealertype');
             if (dealertypeField) {
-                // Set the selected option if dealertype matches CSR or OCSC
-                if (ctopData.dealertype === 'CSR' || ctopData.dealertype === 'OCSC') {
-                    dealertypeField.value = ctopData.dealertype;
-                } else {
-                    dealertypeField.value = ''; // Default to empty if not CSR or OCSC
-                }
+                dealertypeField.value = dealertype || combinedData.dealertype || '';
             }
 
             const contactField = document.getElementById('NewCtop_contact_number');
             if (contactField) {
-                contactField.value = ctopData.contact_number || '';
+                contactField.value = combinedData.contact_number || '';
             }
-
-            // CSC code will be populated when SSA is selected via dropdown
-            // Store the CSC code to set it after SSA dropdown is populated
-            if (ctopData.csccode) {
-                window.pendingCscCode = ctopData.csccode;
-            }
-
-            // attached_to will be synced with csccode when CSC code is selected
 
             // Aadhaar
             const aadhaarField = document.getElementById('NewCtop_aadhaar_no');
-            if (aadhaarField && ctopData.aadhaar_no) {
-                aadhaarField.value = ctopData.aadhaar_no || '';
+            if (aadhaarField) {
+                aadhaarField.value = combinedData.aadhaar_no || '';
             }
 
-            // Address
-            if (ctopData.dealer_address) {
-                const streetField = document.getElementById('NewCtop_pos_street');
-                if (streetField) {
-                    streetField.value = ctopData.dealer_address || '';
+            // Year - keep editable
+            // Other fields - set as readonly
+            if (tempData) {
+                const posOwnerField = document.getElementById('NewCtop_pos_owner_name');
+                if (posOwnerField) posOwnerField.value = tempData.pos_owner_name || '';
+
+                const posNameSsField = document.getElementById('NewCtop_pos_name_ss');
+                if (posNameSsField) posNameSsField.value = tempData.pos_name_ss || '';
+
+                const posHnoField = document.getElementById('NewCtop_pos_hno');
+                if (posHnoField) posHnoField.value = tempData.pos_hno || '';
+
+                const posStreetField = document.getElementById('NewCtop_pos_street');
+                if (posStreetField) posStreetField.value = tempData.pos_street || '';
+
+                const posLandmarkField = document.getElementById('NewCtop_pos_landmark');
+                if (posLandmarkField) posLandmarkField.value = tempData.pos_landmark || '';
+
+                const posLocalityField = document.getElementById('NewCtop_pos_locality');
+                if (posLocalityField) posLocalityField.value = tempData.pos_locality || '';
+
+                const posCityField = document.getElementById('NewCtop_pos_city');
+                if (posCityField) posCityField.value = tempData.pos_city || '';
+
+                const posPincodeField = document.getElementById('NewCtop_pos_pincode');
+                if (posPincodeField) posPincodeField.value = tempData.pos_pincode || '';
+
+                const posDistrictField = document.getElementById('NewCtop_pos_district');
+                if (posDistrictField) posDistrictField.value = tempData.pos_district || '';
+
+                const posStateField = document.getElementById('NewCtop_pos_state');
+                if (posStateField) posStateField.value = tempData.pos_state || '';
+
+                const circleNameField = document.getElementById('NewCtop_circle_name');
+                if (circleNameField) circleNameField.value = tempData.circle_name || '';
+
+                const zoneCodeField = document.getElementById('NewCtop_zone_code');
+                if (zoneCodeField) zoneCodeField.value = tempData.zone_id || zonalData.zone_code || '';
+
+                const circleCodeField = document.getElementById('NewCtop_circle_code');
+                if (circleCodeField) circleCodeField.value = combinedData.circle_code || '';
+
+                const ssaCodeField = document.getElementById('NewCtop_ssa_code');
+                if (ssaCodeField) ssaCodeField.value = combinedData.ssa_code || '';
+
+                // Set CSC code
+                const cscCodeSelect = document.getElementById('NewCtop_csccode');
+                const cscCodeHidden = document.getElementById('NewCtop_csccode_hidden');
+                if (cscCodeSelect && combinedData.csccode) {
+                    cscCodeSelect.value = combinedData.csccode;
+                    if (cscCodeHidden) cscCodeHidden.value = combinedData.csccode;
                 }
+
+                const attachedToField = document.getElementById('NewCtop_attached_to');
+                if (attachedToField) attachedToField.value = combinedData.attached_to || combinedData.csccode || '';
             }
 
-            if (ctopData.ssa_city) {
-                const cityField = document.getElementById('NewCtop_pos_city');
-                if (cityField) {
-                    cityField.value = ctopData.ssa_city || '';
-                }
+            // Circle and SSA - set values but keep disabled
+            if (combinedData.circle_code) {
+                selectCircleByCode(combinedData.circle_code);
             }
 
-            // Circle and SSA selection
-            if (ctopData.circle_code) {
-                selectCircleByCode(ctopData.circle_code);
-            }
-
-            if (ctopData.ssa_code) {
+            if (combinedData.ssa_code) {
                 setTimeout(() => {
-                    selectSsaByCode(ctopData.ssa_code);
-                    // CSC codes will be loaded when SSA is selected
-                    // The pending CSC code will be set after dropdown is populated
+                    selectSsaByCode(combinedData.ssa_code);
                 }, 500);
             }
+
+            // POS Unique Code
+            const posUniqueCodeField = document.getElementById('pos_unique_code');
+            if (posUniqueCodeField && posUniqueCode) {
+                posUniqueCodeField.value = posUniqueCode;
+                document.getElementById('selectedPosUniqueCode').value = posUniqueCode;
+            }
+
+            // Show/hide auto-generated POS unique code field based on dealertype
+            const autoGenField = document.getElementById('autoGenPosUniqueCodeField');
+            if (autoGenField) {
+                if (dealertype === 'CSR' || dealertype === 'CSC' || dealertype === 'DEPT') {
+                    autoGenField.style.display = 'block';
+                    // Auto-generate when aadhaar, year, or name changes
+                    setupPosUniqueCodeGeneration();
+                } else {
+                    autoGenField.style.display = 'none';
+                }
+            }
+
+            // Show/hide document sections based on dealertype
+            const csrDocsSection = document.getElementById('csrDocumentsSection');
+            const otherDocsSection = document.getElementById('otherDocumentsSection');
+            if (dealertype === 'CSR' || dealertype === 'CSC' || dealertype === 'DEPT') {
+                if (csrDocsSection) csrDocsSection.style.display = 'block';
+                if (otherDocsSection) otherDocsSection.style.display = 'none';
+            } else {
+                if (csrDocsSection) csrDocsSection.style.display = 'none';
+                if (otherDocsSection) otherDocsSection.style.display = 'block';
+            }
+
+            // Handle pos unique code radio buttons
+            const radioFetched = document.getElementById('radioFetched');
+            const radioGenerated = document.getElementById('radioGenerated');
+            if (radioFetched && radioGenerated) {
+                radioFetched.addEventListener('change', function() {
+                    if (this.checked) {
+                        document.getElementById('selectedPosUniqueCode').value = posUniqueCodeField.value;
+                    }
+                });
+                radioGenerated.addEventListener('change', function() {
+                    if (this.checked) {
+                        const autoGenCode = document.getElementById('auto_gen_pos_unique_code').value;
+                        document.getElementById('selectedPosUniqueCode').value = autoGenCode;
+                    }
+                });
+            }
+        }
+
+        function setupPosUniqueCodeGeneration() {
+            const aadhaarField = document.getElementById('NewCtop_aadhaar_no');
+            const yearField = document.getElementById('NewCtop_aadhaar_issue_year');
+            const nameField = document.getElementById('NewCtop_name');
+            const autoGenField = document.getElementById('auto_gen_pos_unique_code');
+
+            function generateCode() {
+                const aadhaar = aadhaarField?.value?.trim();
+                const year = yearField?.value?.trim();
+                const name = nameField?.value?.trim();
+
+                if (aadhaar && year && name) {
+                    fetch('/UserManagement/GeneratePosUniqueCode', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            aadhaarNo: aadhaar,
+                            aadhaarIssueYear: year,
+                            aadhaarName: name
+                        })
+                    })
+                    .then(resp => resp.json())
+                    .then(data => {
+                        if (data.success && autoGenField) {
+                            autoGenField.value = data.posUniqueCode;
+                        }
+                    })
+                    .catch(err => console.error('Error generating POS unique code:', err));
+                }
+            }
+
+            if (aadhaarField) aadhaarField.addEventListener('input', generateCode);
+            if (yearField) yearField.addEventListener('input', generateCode);
+            if (nameField) nameField.addEventListener('input', generateCode);
         }
 
         function selectCircleByCode(circleCode) {
@@ -482,23 +811,6 @@
             }
         }
 
-        function displayCtopDetails(ctopData) {
-            const detailsDiv = document.getElementById('ctopDetails');
-            if (!detailsDiv) return;
-            
-            const fullName = [ctopData.name, ctopData.second_name, ctopData.last_name]
-                .filter(x => x).join(' ') || ctopData.name || '';
-            
-            detailsDiv.innerHTML = `
-                <p><strong>CTOPUP No:</strong> ${ctopData.ctopupno || ''}</p>
-                <p><strong>Name:</strong> ${fullName}</p>
-                <p><strong>Contact:</strong> ${ctopData.contact_number || ''}</p>
-                <p><strong>Dealer Type:</strong> ${ctopData.dealertype || ''}</p>
-                <p><strong>SSA Code:</strong> ${ctopData.ssa_code || ''}</p>
-                <p><strong>Circle Code:</strong> ${ctopData.circle_code || ''}</p>
-                <p><strong>CSC Code:</strong> ${ctopData.csccode || ''}</p>
-            `;
-        }
 
         async function loadSsas(circleId) {
             ssaSelect.innerHTML = '<option value="">-- Select SSA --</option>';
