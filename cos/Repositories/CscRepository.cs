@@ -546,7 +546,7 @@ namespace cos.Repositories
                                             pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
                                             aadhaar_no, zone_code, ctop_type, dealer_status
                                      FROM ctop_master
-                                     WHERE ctopupno = @ctopupno
+                                     WHERE username = @ctopupno
                                      ORDER BY created_date DESC
                                      LIMIT 1";
                 using var db = ConnectionPgSql;
@@ -555,6 +555,75 @@ namespace cos.Repositories
             catch (Exception ex)
             {
                 throw new Exception($"Error retrieving CTOP from ctop_master: {ex.Message}", ex);
+            }
+        }
+
+        // Check count of users in ctop_master by username
+        public async Task<int> GetCtopMasterCountByUsernameAsync(string username)
+        {
+            try
+            {
+                const string sql = @"SELECT COUNT(1)
+                                     FROM ctop_master
+                                     WHERE username = @username";
+                using var db = ConnectionPgSql;
+                return await db.QueryFirstOrDefaultAsync<int>(sql, new { username });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error checking count in ctop_master: {ex.Message}", ex);
+            }
+        }
+
+        // Check count of users in zonal table by contact_number
+        public async Task<int> GetZonalDataCountByContactNumberAsync(string contactNumber, string zoneCode)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(zoneCode))
+                {
+                    throw new Exception("Zone code is required");
+                }
+
+                var zone = zoneCode.ToUpper();
+                string sql;
+
+                switch (zone)
+                {
+                    case "EZ":
+                    case "EAST":
+                        sql = @"SELECT COUNT(1)
+                                FROM ctop_master_ez cme
+                                WHERE cme.contact_number = @contactNumber";
+                        break;
+                    case "SZ":
+                    case "SOUTH":
+                        sql = @"SELECT COUNT(1)
+                                FROM ctop_master_sz cme
+                                WHERE cme.contact_number = @contactNumber";
+                        break;
+                    case "NZ":
+                    case "NORTH":
+                        sql = @"SELECT COUNT(1)
+                                FROM ctop_master_nz cme
+                                WHERE cme.contact_number = @contactNumber";
+                        break;
+                    case "WZ":
+                    case "WEST":
+                        sql = @"SELECT COUNT(1)
+                                FROM ctop_master_wz cme
+                                WHERE cme.contact_number = @contactNumber";
+                        break;
+                    default:
+                        throw new Exception($"Invalid zone code: {zoneCode}");
+                }
+
+                using var db = ConnectionPgSql;
+                return await db.QueryFirstOrDefaultAsync<int>(sql, new { contactNumber });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error checking count in zonal table: {ex.Message}", ex);
             }
         }
 

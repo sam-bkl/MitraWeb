@@ -625,6 +625,12 @@ namespace cos.Controllers
                 }
 
                 // 2.1 Check if user already exists in ctop_master (by username/contact number)
+                var existingCtopCount = await _cscRepository.GetCtopMasterCountByUsernameAsync(request.ctopupno);
+                if (existingCtopCount > 1)
+                {
+                    return Json(new { error = "More than one user found for this number in ctop_master table" });
+                }
+                
                 var existingCtop = await _cscRepository.GetCtopMasterByCtopupnoAsync(request.ctopupno);
                 if (existingCtop != null)
                 {
@@ -636,6 +642,12 @@ namespace cos.Controllers
                 }
 
                 // 2.2 Get data from zonal table
+                var zonalDataCount = await _cscRepository.GetZonalDataCountByContactNumberAsync(request.ctopupno, request.zoneCode);
+                if (zonalDataCount > 1)
+                {
+                    return Json(new { error = "Multiple entries found in ctop zonal table for this contact number" });
+                }
+                
                 var zonalData = await _cscRepository.GetMissingCscCtopDetailsByZoneAsync(request.ctopupno, request.zoneCode);
                 if (zonalData == null)
                 {
@@ -650,14 +662,19 @@ namespace cos.Controllers
                     });
                 }
 
-                // 2.2.2 Check for pos_unique_code in temp tables
+                // 2.2.2 Check for pos_unique_code in temp tables - use zonalData.ctopupno
+                if (string.IsNullOrWhiteSpace(zonalData.ctopupno))
+                {
+                    return Json(new { error = "CTOPUP number not found in zonal data" });
+                }
+
                 TempCscSaDataVM? tempCscData = null;
                 TempSaPosDataVM? tempSaData = null;
                 string? posUniqueCode = null;
 
                 if (zonalData.dealertype == "CSR" || zonalData.dealertype == "CSC" || zonalData.dealertype == "DEPT")
                 {
-                    tempCscData = await _cscRepository.GetTempCscSaDataByPosCtopAsync(request.ctopupno);
+                    tempCscData = await _cscRepository.GetTempCscSaDataByPosCtopAsync(zonalData.ctopupno);
                     if (tempCscData == null)
                     {
                         return Json(new { error = "User not found in temp_csc_sa_data" });
@@ -670,7 +687,7 @@ namespace cos.Controllers
                 }
                 else
                 {
-                    tempSaData = await _cscRepository.GetTempSaPosDataByPosCtopAsync(request.ctopupno);
+                    tempSaData = await _cscRepository.GetTempSaPosDataByPosCtopAsync(zonalData.ctopupno);
                     if (tempSaData == null)
                     {
                         return Json(new { error = "User not found in temp_sa_pos_data" });
