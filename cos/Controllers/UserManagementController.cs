@@ -683,7 +683,20 @@ namespace cos.Controllers
 
                 if (zonalData.dealertype == "CSR" || zonalData.dealertype == "CSC" || zonalData.dealertype == "DEPT")
                 {
-                    tempCscData = await _cscRepository.GetTempCscSaDataByPosCtopAsync(zonalData.ctopupno);
+                    try
+                    {
+                        tempCscData = await _cscRepository.GetTempCscSaDataByPosCtopAsync(zonalData.ctopupno);
+                    }
+                    catch (Exception repoEx)
+                    {
+                        // Log the exception for debugging
+                        System.Diagnostics.Debug.WriteLine($"Repository exception caught in GetMissingCscCtopDetails: {repoEx.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Stack trace: {repoEx.StackTrace}");
+                        
+                        // Repository exception - return error to user immediately
+                        return Json(new { error = repoEx.Message });
+                    }
+                    
                     if (tempCscData == null)
                     {
                         return Json(new { error = "User not found in temp_csc_sa_data" });
@@ -696,7 +709,20 @@ namespace cos.Controllers
                 }
                 else
                 {
-                    tempSaData = await _cscRepository.GetTempSaPosDataByPosCtopAsync(zonalData.ctopupno);
+                    try
+                    {
+                        tempSaData = await _cscRepository.GetTempSaPosDataByPosCtopAsync(zonalData.ctopupno);
+                    }
+                    catch (Exception repoEx)
+                    {
+                        // Log the exception for debugging
+                        System.Diagnostics.Debug.WriteLine($"Repository exception caught in GetMissingCscCtopDetails: {repoEx.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Stack trace: {repoEx.StackTrace}");
+                        
+                        // Repository exception - return error to user immediately
+                        return Json(new { error = repoEx.Message });
+                    }
+                    
                     if (tempSaData == null)
                     {
                         return Json(new { error = "User not found in temp_sa_pos_data" });
