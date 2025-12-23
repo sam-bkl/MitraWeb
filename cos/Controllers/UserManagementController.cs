@@ -605,7 +605,22 @@ namespace cos.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { error = ex.Message });
+                // Log the full exception for debugging
+                System.Diagnostics.Debug.WriteLine($"Error in SearchMissingCscCtop: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                
+                // Return user-friendly error message
+                var errorMessage = "An error occurred while searching for CTOP. Please try again.";
+                if (ex.Message.Contains("Error"))
+                {
+                    errorMessage = ex.Message;
+                }
+                
+                return Json(new { error = errorMessage, results = new List<CtopSearchResultVM>() });
             }
         }
 
@@ -705,7 +720,24 @@ namespace cos.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { error = ex.Message });
+                // Log the full exception for debugging
+                System.Diagnostics.Debug.WriteLine($"Error in GetMissingCscCtopDetails: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                
+                // Return user-friendly error message
+                var errorMessage = "An error occurred while fetching CTOP details. Please try again or contact support if the problem persists.";
+                
+                // If it's a known error from repository, use the message
+                if (ex.Message.Contains("Error retrieving") || ex.Message.Contains("Error checking") || ex.Message.Contains("Error"))
+                {
+                    errorMessage = ex.Message;
+                }
+                
+                return Json(new { error = errorMessage });
             }
         }
 
@@ -1127,7 +1159,24 @@ namespace cos.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, errors = new[] { $"An error occurred: {ex.Message}" } });
+                // Log the full exception for debugging
+                System.Diagnostics.Debug.WriteLine($"Error in CreateMissingCscAdminAjax: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                
+                // Return user-friendly error message
+                var errorMessage = "An error occurred while creating the user. Please try again or contact support if the problem persists.";
+                
+                // If it's a known error from repository, use the message
+                if (ex.Message.Contains("Error") || ex.Message.Contains("Failed"))
+                {
+                    errorMessage = ex.Message;
+                }
+                
+                return Json(new { success = false, errors = new[] { errorMessage } });
             }
         }
 

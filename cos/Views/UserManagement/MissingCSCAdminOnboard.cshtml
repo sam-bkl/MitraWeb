@@ -398,10 +398,26 @@
                     const resp = await fetch(url, { signal: currentAbort.signal });
 
                     if (!resp.ok) {
-                        console.warn('fetch not ok:', resp.status);
+                        let errorData;
+                        try {
+                            errorData = await resp.json();
+                        } catch (e) {
+                            errorData = { error: 'Error searching for CTOP. Please try again.' };
+                        }
+                        if (errorData.error) {
+                            showError(errorData.error);
+                        }
                         return;
                     }
+                    
                     const data = await resp.json();
+                    
+                    // Check for error in response
+                    if (data.error) {
+                        showError(data.error);
+                        searchResults.style.display = 'none';
+                        return;
+                    }
 
                     if (data.results && data.results.length > 0) {
                         searchResults.innerHTML = '';
@@ -431,6 +447,7 @@
                 } catch (err) {
                     if (err.name !== 'AbortError') {
                         console.error('Search error:', err);
+                        showError('An error occurred while searching. Please try again.');
                     }
                 } finally {
                     searchTimeout = null;
