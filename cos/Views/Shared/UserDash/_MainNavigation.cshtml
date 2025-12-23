@@ -203,6 +203,28 @@
             }
 
             @* brijesh *@
+            @if (!string.IsNullOrEmpty(userRole) &&
+            (string.Equals(userRole, "circle_admin", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(userRole, "ba_admin", StringComparison.OrdinalIgnoreCase)))
+            {
+                <li class="nav-item">
+                    <a href="#">
+                        <i class="mbri-user"></i>
+                        <span class="menu-title">Pos </span>
+                    </a>
+
+                    <ul class="menu-content">
+                        <li>
+                            <a class="menu-item" asp-controller="Pos" asp-action="Index">
+                                <i class="material-icons">person_add</i>
+                                <span>CTOP-UP master</span>
+                            </a>
+                        </li>
+                    
+
+                    </ul>
+                </li>
+            }
 
 
             @* muslih *@
@@ -236,6 +258,18 @@
                                 <span>DayWiseOnboarding  </span>
                             </a>
                         </li>
+                        <li>
+                            <a class="menu-item" asp-controller="Summary" asp-action="BillingStatus">
+                                <i class="material-icons">person_add</i>
+                                <span>BillingStatus  </span>
+                            </a>
+                        </li>
+                                                <li>
+                            <a class="menu-item" asp-controller="Summary" asp-action="CircleWiseBillingStatus">
+                                <i class="material-icons">person_add</i>
+                                <span>CircleWiseBillingStatus  </span>
+                            </a>
+                        </li>                        
 
                     </ul>
                 </li>

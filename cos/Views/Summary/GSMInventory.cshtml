@@ -1,0 +1,153 @@
+﻿@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "Pos";
+}
+
+
+@section header {
+    <!-- Bootstrap 5 CSS -->
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+
+        
+
+        
+    
+    </style>
+
+}
+<div id="app">
+    <div class="row">
+        <div class="col-12">
+            @* header and filter *@
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>GSM Inventory</h3>
+     
+                        </div>
+
+                    </div>
+
+
+
+                </div>
+            </div>
+      
+            @* table and data *@
+            <div class="row">
+                <div class="col-12">
+      
+                        
+                        
+                        <div class="card-content collapse show">
+                            <div class="card-body card-dashboard">
+                                <!-- Tab Content -->
+                               
+
+                                    <div v-if="loading_summary" class="loading">
+                                            Loading data please wait...
+                                    </div>
+
+                                    <div v-else-if="!loading && summary.length === 0" class="no-data">
+                                        No data available.
+                                    </div>
+                                    
+                                    <div class="table-responsive" v-else>
+                                        <table class="table table-striped table-bordered table-sm small zero-configuration">
+                                            <thead>
+                                                <tr>
+                                                    <th v-for="(value, key) in summary[0]" :key="key">
+                                                        {{ key }}
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="(row, index) in summary" :key="index">
+                                                    <td v-for="(value, key) in row" :key="key" :class = "{'text-white bg-primary fw-bold' :  row.dealertype === 'TOTAL'}">
+                                                        {{ value }}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                   
+                               
+                                
+                            </div>
+                        </div>
+                   
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+</div>
+
+
+
+@section Scripts {
+    <script>
+        const { createApp, ref, reactive, onMounted, computed } = Vue;
+  
+   createApp({
+            setup() {
+
+                const data = ref([]);
+                const error = ref('');
+                const download_file_name =  "GetGSMInventoryCount.csv"
+                const fetchUrl = `/Summary/GetGSMInventoryCount`
+
+
+
+                const fetchData = async () => {
+                    loading_table.value = true;
+                    error.value = '';
+                    
+                    try {
+                         
+                        const response = await fetch(fetchUrl);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const result = await response.json();
+                        
+                        // Parse the data - adjust this based on your actual API response format
+                        // Assuming the API returns an array of objects or raw data
+                      
+                        data.value = result.data;
+                        Object.keys(data.value[0]);
+                    } catch (err) {
+                        error.value = `Failed to fetch data: ${err.message}`;
+                        console.error('Error fetching data:', err);
+                    } finally {
+                        loading_table.value = false;
+                    }
+                };
+
+
+                onMounted(() => {
+                
+                fetchData();
+                
+                });
+                return {
+                    data,
+                    error,
+                    fetchData                 
+                   
+                };
+            }
+        }).mount('#app');
+    </script>
+}

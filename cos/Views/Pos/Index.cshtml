@@ -1,0 +1,361 @@
+@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "Pos";
+}
+
+
+@section header {
+    <!-- Bootstrap 5 CSS -->
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+
+        
+
+        
+    
+    </style>
+
+}
+<div id="app">
+    <div class="row">
+        <div class="col-12">
+            @* header and filter *@
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>CTOP UP MASTER</h3>
+     
+                        </div>
+
+                    </div>
+
+
+
+                </div>
+            </div>
+      
+            @* table and data *@
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <!-- Tab Navigation -->
+                            <ul class="nav nav-tabs" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link" 
+                                    :class="{ active: activeTab === 'table' }"
+                                    @@click="switchTab('table')"
+                                    href="javascript:void(0)">
+                                        Table View
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" 
+                                    :class="{ active: activeTab === 'summary' }"
+                                    @@click="switchTab('summary')"
+                                    href="javascript:void(0)">
+                                        Summary
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="card-content collapse show">
+                            <div class="card-body card-dashboard">
+                                <!-- Tab Content -->
+                               
+
+                                <!-- Table Tab -->
+                                <div v-show="activeTab === 'table'">
+                                 <div v-if="loading_table" class="loading">
+                                        Loading data please wait...
+                                 </div>
+                                    <!-- Search and Filter Row -->
+                                    <div class="row p-2">
+                                        <div class="d-flex">
+                                            <input
+                                            type="text"
+                                            v-model="searchQuery"
+                                            class="form-control"
+                                            placeholder="Search..."
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="row p-2">
+                                        <div class="col-md-3" v-for="(options, field) in filterOptions" :key="field">
+                                                <select v-model="selectedFilters[field]" class="form-select">
+                                                <option value="">All {{ field }}</option>
+                                                <option v-for="opt in options" :key="opt" :value="opt">{{ opt }}</option>
+                                                </select>
+                                        </div>
+                                                                                   
+                                    </div>
+
+                                    
+                                    <div v-if="error" class="error">
+                                        {{ error }}
+                                    </div>
+
+                                    <div v-if="loading" class="loading">
+                                        Loading data...
+                                    </div>
+
+                                    <div v-else-if="!loading && data.length === 0" class="no-data">
+                                        No data available.
+                                    </div>
+                                    
+                                    <div class="table-responsive" v-else>
+                                        <table class="table table-striped table-bordered table-sm small zero-configuration">
+                                            <thead>
+                                                <tr>
+                                                    <th v-for="(value, key) in data[0]" :key="key">
+                                                        {{ key }}
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="(row, index) in data" :key="index">
+                                                    <td v-if="shouldShowRow(row)" v-for="(value, key) in row" :key="key">
+                                                        {{ value }}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                </div>
+                                
+                                <!-- Summary Tab -->
+                                <div v-show="activeTab === 'summary'">
+                                    <div class="summary-section">
+                                        <h4>Summary Information</h4>
+                                        <div v-if="error" class="error">
+                                            {{ error_sumary }}
+                                            </div>
+
+                                 <div v-if="loading_summary" class="loading">
+                                        Loading data please wait...
+                                 </div>
+
+                                    <div v-else-if="!loading && summary.length === 0" class="no-data">
+                                        No data available.
+                                    </div>
+                                    
+                                    <div class="table-responsive" v-else>
+                                        <table class="table table-striped table-bordered table-sm small zero-configuration">
+                                            <thead>
+                                                <tr>
+                                                    <th v-for="(value, key) in summary[0]" :key="key">
+                                                        {{ key }}
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="(row, index) in summary" :key="index">
+                                                    <td v-for="(value, key) in row" :key="key" :class = "{'text-white bg-primary fw-bold' :  row.dealertype === 'TOTAL'}">
+                                                        {{ value }}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+</div>
+
+
+
+@section Scripts {
+    <script>
+        const { createApp, ref, reactive, onMounted, computed } = Vue;
+  
+   createApp({
+            setup() {
+                const startDate = ref('');
+                const endDate = ref('');
+                const data = ref([]);
+                const summary = ref([]);
+                const loading_summary = ref(true);
+                const loading_table = ref(true);
+                const error = ref('');
+                const error_sumary = ref('');
+                const searchQuery = ref("");
+    
+                const download_file_name =  "pos_details.csv"
+                const fetchUrl = `/pos/GetCtopupMaster`
+                const fetchUrlSummary = `/pos/GetCtopupSummaryMaster`
+                const activeTab = ref('table');
+                const fetchData = async () => {
+                    loading_table.value = true;
+                    error.value = '';
+                    
+                    try {
+                         
+                        const response = await fetch(fetchUrl);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const result = await response.json();
+                        
+                        // Parse the data - adjust this based on your actual API response format
+                        // Assuming the API returns an array of objects or raw data
+                      
+                        data.value = result.data;
+                        Object.keys(data.value[0]);
+                    } catch (err) {
+                        error.value = `Failed to fetch data: ${err.message}`;
+                        console.error('Error fetching data:', err);
+                    } finally {
+                        loading_table.value = false;
+                    }
+                };
+
+                const selectedFilters = ref({
+                ssa_code: "",
+                dealertype: "",
+                state:"",
+                });     
+                const filterOptions = computed(() => {
+                    if (!data.value.length) return {};
+                    return {
+                        ssa_code: [...new Set(data.value.map(item => item.ssa_code))],
+                        dealertype: [...new Set(data.value.map(item => item.dealertype))],
+                        state: [...new Set(data.value.map(item => item.state))]
+                    };
+                    });           
+               // const filterOptions = (field)=> {
+                //if (data.value.length === 0) return [];
+               //     return [...new Set(data.value.map(item => item[field]))];
+               // };                
+
+                const fetchSummary = async () => {
+                    loading_summary.value = true;
+                    error.value = '';
+                    
+                    try {
+                         
+                        const response = await fetch(fetchUrlSummary);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const result = await response.json();
+                        
+                        // Parse the data - adjust this based on your actual API response format
+                        // Assuming the API returns an array of objects or raw data
+                      
+                        summary.value = result.data;
+                        
+                    } catch (err) {
+                        error_sumary.value = `Failed to fetch data: ${err.message}`;
+                        console.error('Error fetching data:', err);
+                    } finally {
+                        loading_summary.value = false;
+                    }
+                };
+
+                const switchTab = (tab) => {
+                    activeTab.value = tab;
+                }
+
+                const shouldShowRow = (row) => {
+                    const matchesSearch = Object.values(row).some(value =>
+                        String(value).toLowerCase().includes(searchQuery.value.toLowerCase())
+                    );
+                      // Check all selected filters
+                    const matchesFilters = Object.entries(selectedFilters.value).every(([field, selectedValue]) => {
+                        return !selectedValue || row[field] === selectedValue;
+                    });
+
+                    return matchesSearch && matchesFilters;
+                };
+
+ 
+
+                const downloadCSV = () => {
+                    if (data.value.length === 0) return;
+                    
+
+                    // Create CSV content
+                    @* const headers = Object.keys(data.value[0]?); *@
+                    const csvRows = [headers.join(',')];
+                    
+                    data.value.forEach(row => {
+                        const values = [
+                            row.onboarding_date,
+                            `"${row.circle_name}"`, // Wrap in quotes to handle commas in region names
+                            row.counts
+                        ];
+                        csvRows.push(values.join(','));
+                    });
+                    
+                    const csvContent = csvRows.join('\n');
+                    
+                    // Create blob and download
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', download_file_name);
+                    link.style.visibility = 'hidden';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+                // Set default dates (last 7 days)
+                const today = new Date();
+                const weekAgo = new Date(today);
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                
+                endDate.value = today.toISOString().split('T')[0];
+                startDate.value = today.toISOString().split('T')[0];
+                // Lifecycle hook
+                onMounted(() => {
+                
+                fetchData();
+                fetchSummary();
+
+                });
+                return {
+                    startDate,
+                    endDate,
+                    data,
+                    summary,
+                    loading_table,
+                    loading_summary,
+                    error,
+                    fetchData,                    
+                    downloadCSV,
+                    searchQuery,
+                    filterOptions,
+                    shouldShowRow,
+                    selectedFilters ,
+                    switchTab,activeTab
+                   
+                };
+            }
+        }).mount('#app');
+    </script>
+}

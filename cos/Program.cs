@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using YourProject.Repositories.Interfaces;
 using cos.Repositories;
 using CosApp.Infra;  //*****************//
+using cos.Services;
+using cos.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddConfiguredForwardedHeaders();  //*****************//
@@ -18,7 +20,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 });
 
-
+builder.Services.AddHttpContextAccessor();
+//inject user role,ba,ssa into  UserCookieContext
+builder.Services.AddScoped<IUserCookieContextAccessor,UserCookieContextAccessor>();
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
@@ -37,6 +41,7 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
 
 builder.Services.AddScoped<IOracleRepository, OracleRepository>();
 builder.Services.AddScoped<SummaryRepository, SummaryRepository>();
+builder.Services.AddScoped<PosRepository, PosRepository>();
 
 // Register HttpContextAccessor for views
 builder.Services.AddHttpContextAccessor();
