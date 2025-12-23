@@ -134,7 +134,7 @@ namespace cos.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        //[ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateCscAdmin(CreateCscAdminPageVM page)
         {
             try
@@ -358,7 +358,7 @@ namespace cos.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        //[ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateSsaAdmin(CreateSsaAdminPageVM page)
         {
             try
@@ -625,12 +625,6 @@ namespace cos.Controllers
                 }
 
                 // 2.1 Check if user already exists in ctop_master (by username/contact number)
-                var existingCtopCount = await _cscRepository.GetCtopMasterCountByUsernameAsync(request.ctopupno);
-                if (existingCtopCount > 1)
-                {
-                    return Json(new { error = "More than one user found for this number in ctop_master table" });
-                }
-                
                 var existingCtop = await _cscRepository.GetCtopMasterByCtopupnoAsync(request.ctopupno);
                 if (existingCtop != null)
                 {
@@ -642,10 +636,10 @@ namespace cos.Controllers
                 }
 
                 // 2.2 Get data from zonal table
-                var zonalDataCount = await _cscRepository.GetZonalDataCountByContactNumberAsync(request.ctopupno, request.zoneCode);
+                var zonalDataCount = await _cscRepository.GetZonalDataCountByCtopupnoAsync(request.ctopupno, request.zoneCode);
                 if (zonalDataCount > 1)
                 {
-                    return Json(new { error = "Multiple entries found in ctop zonal table for this contact number" });
+                    return Json(new { error = "More than one record exists with the same ctopupno in zonal table" });
                 }
                 
                 var zonalData = await _cscRepository.GetMissingCscCtopDetailsByZoneAsync(request.ctopupno, request.zoneCode);
@@ -875,14 +869,6 @@ namespace cos.Controllers
                     return Json(new { success = false, errors = new[] { "Invalid SSA selected." } });
                 }
 
-                // 5. Check username+ctopnumber uniqueness
-                var username = newCtop.contact_number ?? ctopupno;
-                var usernameCtopupnoExists = await _cscRepository.CheckUsernameCtopupnoExistsAsync(username, ctopupno);
-                if (usernameCtopupnoExists)
-                {
-                    return Json(new { success = false, errors = new[] { $"The username '{username}' and ctopupno '{ctopupno}' combination already exists in ctop_master and cannot be created." } });
-                }
-
                 // Get selected pos_unique_code from form
                 var selectedPosUniqueCode = Request.Form["selectedPosUniqueCode"].ToString();
                 if (string.IsNullOrWhiteSpace(selectedPosUniqueCode))
@@ -892,25 +878,62 @@ namespace cos.Controllers
                 }
                 var posCode = selectedPosUniqueCode;
 
-                // Fetch zonal data to get the 5 new fields
+                // Fetch zonal data to get dealer_id and master_dealer_id for username/ctopupno determination
                 var zonalData = await _cscRepository.GetMissingCscCtopDetailsByZoneAsync(ctopupno, circle.zone_code);
+                if (zonalData == null)
+                {
+                    return Json(new { success = false, errors = new[] { "Zonal data not found" } });
+                }
+                
+                // Determine username and ctopupno based on dealer_id and master_dealer_id comparison
+                string finalUsername;
+                string finalCtopupno;
+                
+                // Compare dealer_id (string) with master_dealer_id (long?) by converting both to strings
+                var dealerIdStr = zonalData.dealer_id ?? string.Empty;
+                var masterDealerIdStr = zonalData.master_dealer_id.HasValue ? zonalData.master_dealer_id.Value.ToString() : string.Empty;
+                
+                if (dealerIdStr == masterDealerIdStr)
+                {
+                    // If both are same: username = ctopupno (from zonal table)
+                    finalUsername = zonalData.ctopupno ?? ctopupno;
+                    finalCtopupno = zonalData.ctopupno ?? ctopupno;
+                }
+                else
+                {
+                    // If different: username = ctopupno (from zonal table), ctopupno = parent_ctopno (from zonal table)
+                    var parentCtopnoForCtopupno = !string.IsNullOrWhiteSpace(zonalData.parent_ctopno) 
+                        ? zonalData.parent_ctopno 
+                        : (!string.IsNullOrWhiteSpace(zonalData.parent_ctop) 
+                            ? zonalData.parent_ctop 
+                            : zonalData.ctopupno ?? ctopupno);
+                    finalUsername = zonalData.ctopupno ?? ctopupno;
+                    finalCtopupno = parentCtopnoForCtopupno;
+                }
+
+                // 5. Check username+ctopnumber uniqueness
+                var usernameCtopupnoExists = await _cscRepository.CheckUsernameCtopupnoExistsAsync(finalUsername, finalCtopupno);
+                if (usernameCtopupnoExists)
+                {
+                    return Json(new { success = false, errors = new[] { $"The username '{finalUsername}' and ctopupno '{finalCtopupno}' combination already exists in ctop_master and cannot be created." } });
+                }
                 
                 // Handle the 5 new fields: dealercode, ref_dealer_id, master_dealer_id, parent_ctopno, dealer_status
                 // If no value, pass null for all except parent_ctopno. For parent_ctopno, if no value, use ctopupno
-                var dealercode = !string.IsNullOrWhiteSpace(zonalData?.dealercode) ? zonalData.dealercode : null;
-                var refDealerId = zonalData?.ref_dealer_id.HasValue == true ? zonalData.ref_dealer_id : null;
-                var masterDealerId = zonalData?.master_dealer_id.HasValue == true ? zonalData.master_dealer_id : null;
-                var parentCtopno = !string.IsNullOrWhiteSpace(zonalData?.parent_ctopno) 
+                var dealercode = !string.IsNullOrWhiteSpace(zonalData.dealercode) ? zonalData.dealercode : null;
+                var refDealerId = zonalData.ref_dealer_id.HasValue == true ? zonalData.ref_dealer_id : null;
+                var masterDealerId = zonalData.master_dealer_id.HasValue == true ? zonalData.master_dealer_id : null;
+                var parentCtopno = !string.IsNullOrWhiteSpace(zonalData.parent_ctopno) 
                     ? zonalData.parent_ctopno 
-                    : (!string.IsNullOrWhiteSpace(zonalData?.parent_ctop) 
+                    : (!string.IsNullOrWhiteSpace(zonalData.parent_ctop) 
                         ? zonalData.parent_ctop 
-                        : ctopupno); // Use ctopupno if no value
-                var dealerStatus = !string.IsNullOrWhiteSpace(zonalData?.dealer_status) ? zonalData.dealer_status : null;
+                        : zonalData.ctopupno ?? ctopupno); // Use zonal ctopupno if no value
+                var dealerStatus = !string.IsNullOrWhiteSpace(zonalData.dealer_status) ? zonalData.dealer_status : null;
 
                 var ctopEntity = new CtopMaster
                 {
-                    username = newCtop.contact_number,
-                    ctopupno = ctopupno,
+                    username = finalUsername,
+                    ctopupno = finalCtopupno,
                     name = newCtop.name,
                     dealertype = newCtop.dealertype,
                     ssa_code = ssa.ssa_code,
@@ -930,7 +953,7 @@ namespace cos.Controllers
                     pos_name_ss = newCtop.pos_name_ss,
                     pos_owner_name = newCtop.pos_owner_name,
                     pos_code = newCtop.pos_code,
-                    pos_ctop = ctopupno,
+                    pos_ctop = finalCtopupno,
                     circle_name = selectedCircle.circle_name,
                     pos_unique_code = posCode,
                     latitude = null,
@@ -951,34 +974,7 @@ namespace cos.Controllers
                     return Json(new { success = false, errors = new[] { $"Failed to create CTOP user: {insertResult.ErrorMessage}" } });
                 }
 
-                var userModel = new CscAdminCreateVM
-                {
-                    ctopupno = ctopupno,
-                    staff_name = newCtop.name,
-                    mobile = ctopupno,
-                    email = !string.IsNullOrWhiteSpace(newCtop.contact_number) 
-                        ? newCtop.contact_number + "@temp.com" 
-                        : ctopupno + "@temp.com",
-                    hrno = 0,
-                    designation_code = newCtop.designation,
-                    ssa_code = ssa.ssa_code,
-                    circle = selectedCircle.circle_code,
-                    circle_id = selectedCircle.id,
-                    ssa_id = ssa.id
-                };
-
-                // 4. Conditional account creation - only if dealertype is CSR/CSC/DEPT and username = ctopnumber
-                var shouldCreateAccount = (newCtop.dealertype == "CSR" || newCtop.dealertype == "CSC" || newCtop.dealertype == "DEPT") 
-                                         && username == ctopupno;
-                
-                if (shouldCreateAccount)
-                {
-                    var accountResult = await _accountRepository.CreateCscAdminAccountAsync(userModel, createdByAccountId, createdByMobile, _cscRepository);
-                    if (!accountResult.Success)
-                    {
-                        return Json(new { success = false, errors = new[] { $"Failed to create account: {accountResult.ErrorMessage}" } });
-                    }
-                }
+                // No account creation - only insert into ctop_master table
 
                 // Handle file uploads - different documents based on dealertype
                 var uploadErrors = new List<string>();
@@ -988,7 +984,7 @@ namespace cos.Controllers
                     // CSR/CSC/DEPT documents
                     if (newCtop.BaApprovalLetter != null && newCtop.BaApprovalLetter.Length > 0)
                     {
-                        var res = await SaveUserDocumentAsync(newCtop.BaApprovalLetter, username, DocumentCategory.BA_APPROVAL_LETTER, createdByAccountId);
+                        var res = await SaveUserDocumentAsync(newCtop.BaApprovalLetter, finalUsername, DocumentCategory.BA_APPROVAL_LETTER, createdByAccountId);
                         if (!res.Success)
                         {
                             uploadErrors.Add($"BA Approval Letter upload failed: {res.ErrorMessage}");
@@ -997,7 +993,7 @@ namespace cos.Controllers
 
                     if (newCtop.EmployeeIdCard != null && newCtop.EmployeeIdCard.Length > 0)
                     {
-                        var res = await SaveUserDocumentAsync(newCtop.EmployeeIdCard, username, DocumentCategory.ID_CARD, createdByAccountId);
+                        var res = await SaveUserDocumentAsync(newCtop.EmployeeIdCard, finalUsername, DocumentCategory.ID_CARD, createdByAccountId);
                         if (!res.Success)
                         {
                             uploadErrors.Add($"Employee ID upload failed: {res.ErrorMessage}");
@@ -1006,7 +1002,7 @@ namespace cos.Controllers
 
                     if (newCtop.AadhaarCard != null && newCtop.AadhaarCard.Length > 0)
                     {
-                        var res = await SaveUserDocumentAsync(newCtop.AadhaarCard, username, DocumentCategory.AADHAR_CARD, createdByAccountId);
+                        var res = await SaveUserDocumentAsync(newCtop.AadhaarCard, finalUsername, DocumentCategory.AADHAR_CARD, createdByAccountId);
                         if (!res.Success)
                         {
                             uploadErrors.Add($"Aadhaar upload failed: {res.ErrorMessage}");
@@ -1015,7 +1011,7 @@ namespace cos.Controllers
 
                     if (newCtop.PanCard != null && newCtop.PanCard.Length > 0)
                     {
-                        var res = await SaveUserDocumentAsync(newCtop.PanCard, username, DocumentCategory.PAN_CARD, createdByAccountId);
+                        var res = await SaveUserDocumentAsync(newCtop.PanCard, finalUsername, DocumentCategory.PAN_CARD, createdByAccountId);
                         if (!res.Success)
                         {
                             uploadErrors.Add($"PAN upload failed: {res.ErrorMessage}");
@@ -1024,7 +1020,7 @@ namespace cos.Controllers
 
                     if (newCtop.Photo != null && newCtop.Photo.Length > 0)
                     {
-                        var res = await SaveUserDocumentAsync(newCtop.Photo, username, DocumentCategory.PHOTO, createdByAccountId);
+                        var res = await SaveUserDocumentAsync(newCtop.Photo, finalUsername, DocumentCategory.PHOTO, createdByAccountId);
                         if (!res.Success)
                         {
                             uploadErrors.Add($"Photo upload failed: {res.ErrorMessage}");
@@ -1041,7 +1037,7 @@ namespace cos.Controllers
                     var cinDoc = Request.Form.Files["CinDocument"];
                     if (cinDoc != null && cinDoc.Length > 0)
                     {
-                        var res = await SaveUserDocumentAsync(cinDoc, username, "CIN_DOCUMENT", createdByAccountId);
+                        var res = await SaveUserDocumentAsync(cinDoc, finalUsername, "CIN_DOCUMENT", createdByAccountId);
                         if (!res.Success) uploadErrors.Add($"CIN document upload failed: {res.ErrorMessage}");
                     }
 
@@ -1049,7 +1045,7 @@ namespace cos.Controllers
                     var panDocOther = Request.Form.Files["PanCardOther"];
                     if (panDocOther != null && panDocOther.Length > 0)
                     {
-                        var res = await SaveUserDocumentAsync(panDocOther, username, DocumentCategory.PAN_CARD, createdByAccountId);
+                        var res = await SaveUserDocumentAsync(panDocOther, finalUsername, DocumentCategory.PAN_CARD, createdByAccountId);
                         if (!res.Success) uploadErrors.Add($"PAN upload failed: {res.ErrorMessage}");
                     }
 
@@ -1057,7 +1053,7 @@ namespace cos.Controllers
                     var gstDoc = Request.Form.Files["GstDocument"];
                     if (gstDoc != null && gstDoc.Length > 0)
                     {
-                        var res = await SaveUserDocumentAsync(gstDoc, username, "GST_DOCUMENT", createdByAccountId);
+                        var res = await SaveUserDocumentAsync(gstDoc, finalUsername, "GST_DOCUMENT", createdByAccountId);
                         if (!res.Success) uploadErrors.Add($"GST document upload failed: {res.ErrorMessage}");
                     }
 
@@ -1065,7 +1061,7 @@ namespace cos.Controllers
                     var aadhaarDocOther = Request.Form.Files["AadhaarCardOther"];
                     if (aadhaarDocOther != null && aadhaarDocOther.Length > 0)
                     {
-                        var res = await SaveUserDocumentAsync(aadhaarDocOther, username, DocumentCategory.AADHAR_CARD, createdByAccountId);
+                        var res = await SaveUserDocumentAsync(aadhaarDocOther, finalUsername, DocumentCategory.AADHAR_CARD, createdByAccountId);
                         if (!res.Success) uploadErrors.Add($"Aadhaar upload failed: {res.ErrorMessage}");
                     }
 
@@ -1073,7 +1069,7 @@ namespace cos.Controllers
                     var photoOther = Request.Form.Files["PhotoOther"];
                     if (photoOther != null && photoOther.Length > 0)
                     {
-                        var res = await SaveUserDocumentAsync(photoOther, username, DocumentCategory.PHOTO, createdByAccountId);
+                        var res = await SaveUserDocumentAsync(photoOther, finalUsername, DocumentCategory.PHOTO, createdByAccountId);
                         if (!res.Success) uploadErrors.Add($"Photo upload failed: {res.ErrorMessage}");
                     }
 
@@ -1081,7 +1077,7 @@ namespace cos.Controllers
                     var businessAddrProof = Request.Form.Files["BusinessAddressProof"];
                     if (businessAddrProof != null && businessAddrProof.Length > 0)
                     {
-                        var res = await SaveUserDocumentAsync(businessAddrProof, username, "BUSINESS_ADDRESS_PROOF", createdByAccountId);
+                        var res = await SaveUserDocumentAsync(businessAddrProof, finalUsername, "BUSINESS_ADDRESS_PROOF", createdByAccountId);
                         if (!res.Success) uploadErrors.Add($"Business address proof upload failed: {res.ErrorMessage}");
                     }
 
@@ -1089,7 +1085,7 @@ namespace cos.Controllers
                     var residentialAddrProof = Request.Form.Files["ResidentialAddressProof"];
                     if (residentialAddrProof != null && residentialAddrProof.Length > 0)
                     {
-                        var res = await SaveUserDocumentAsync(residentialAddrProof, username, "RESIDENTIAL_ADDRESS_PROOF", createdByAccountId);
+                        var res = await SaveUserDocumentAsync(residentialAddrProof, finalUsername, "RESIDENTIAL_ADDRESS_PROOF", createdByAccountId);
                         if (!res.Success) uploadErrors.Add($"Residential address proof upload failed: {res.ErrorMessage}");
                     }
 
@@ -1102,7 +1098,7 @@ namespace cos.Controllers
                         var affidavitDoc = Request.Form.Files["Affidavit"];
                         if (affidavitDoc != null && affidavitDoc.Length > 0)
                         {
-                            var res = await SaveUserDocumentAsync(affidavitDoc, username, "AFFIDAVIT", createdByAccountId);
+                            var res = await SaveUserDocumentAsync(affidavitDoc, finalUsername, "AFFIDAVIT", createdByAccountId);
                             if (!res.Success) uploadErrors.Add($"Affidavit upload failed: {res.ErrorMessage}");
                         }
                     }
@@ -1114,7 +1110,7 @@ namespace cos.Controllers
                         var agreementCopy = Request.Form.Files["AgreementCopy"];
                         if (agreementCopy != null && agreementCopy.Length > 0)
                         {
-                            var res = await SaveUserDocumentAsync(agreementCopy, username, "AGREEMENT_COPY", createdByAccountId);
+                            var res = await SaveUserDocumentAsync(agreementCopy, finalUsername, "AGREEMENT_COPY", createdByAccountId);
                             if (!res.Success) uploadErrors.Add($"Agreement copy upload failed: {res.ErrorMessage}");
                         }
                     }

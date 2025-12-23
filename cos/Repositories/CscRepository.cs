@@ -424,8 +424,8 @@ namespace cos.Repositories
                         sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_ez cme
                                 WHERE cme.active = 'A'
-                                  AND cme.contact_number LIKE @pattern
-                                ORDER BY contact_number
+                                  AND cme.ctopupno LIKE @pattern
+                                ORDER BY ctopupno
                                 LIMIT 20";
                         break;
                     case "SZ":
@@ -433,8 +433,8 @@ namespace cos.Repositories
                         sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_sz cme
                                 WHERE cme.active = 'A' 
-                                  AND cme.contact_number LIKE @pattern
-                                ORDER BY contact_number
+                                  AND cme.ctopupno LIKE @pattern
+                                ORDER BY ctopupno
                                 LIMIT 20";
                         break;
                     case "NZ":
@@ -442,8 +442,8 @@ namespace cos.Repositories
                         sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_nz cme
                                 WHERE cme.active = 'A'
-                                  AND cme.contact_number LIKE @pattern
-                                ORDER BY contact_number
+                                  AND cme.ctopupno LIKE @pattern
+                                ORDER BY ctopupno
                                 LIMIT 20";
                         break;
                     case "WZ":
@@ -451,8 +451,8 @@ namespace cos.Repositories
                         sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_wz cme
                                 WHERE cme.active = 'A' 
-                                  AND cme.contact_number LIKE @pattern
-                                ORDER BY contact_number
+                                  AND cme.ctopupno LIKE @pattern
+                                ORDER BY ctopupno
                                 LIMIT 20";
                         break;
                     default:
@@ -486,34 +486,38 @@ namespace cos.Repositories
                     case "EAST":
                         sql = @"SELECT ctopupno, name, second_name, last_name, dealertype, 
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
-                                       dealer_address, dealer_status, parent_ctopno as parent_ctop, active
+                                       dealer_address, dealer_status, parent_ctopno as parent_ctop, active,
+                                       dealer_id, master_dealer_id
                                 FROM ctop_master_ez cme
-                                WHERE cme.contact_number = @ctopupno";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     case "SZ":
                     case "SOUTH":
                         sql = @"SELECT ctopupno, name, second_name, last_name, dealertype, 
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
                                        dealer_address, dealer_status, parent_ctopno as parent_ctop,
-                                       aadhaar_no, zone_code, ssa_city, active
+                                       aadhaar_no, zone_code, ssa_city, active,
+                                       dealer_id, master_dealer_id
                                 FROM ctop_master_sz cme
-                                WHERE cme.contact_number = @ctopupno";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     case "NZ":
                     case "NORTH":
                         sql = @"SELECT ctopupno, name, second_name, last_name, dealertype, 
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
-                                       dealer_address, dealer_status, parent_ctop, ssa_city, active
+                                       dealer_address, dealer_status, parent_ctop, ssa_city, active,
+                                       dealer_id, master_dealer_id
                                 FROM ctop_master_nz cme
-                                WHERE cme.contact_number = @ctopupno";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     case "WZ":
                     case "WEST":
                         sql = @"SELECT ctopupno, name, second_name, last_name, dealertype, 
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
-                                       dealer_address, dealer_status, parent_ctop, ssa_city, active
+                                       dealer_address, dealer_status, parent_ctop, ssa_city, active,
+                                       dealer_id, master_dealer_id
                                 FROM ctop_master_wz cme
-                                WHERE cme.contact_number = @ctopupno";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     default:
                         throw new Exception($"Invalid zone code: {zoneCode}");
@@ -558,25 +562,8 @@ namespace cos.Repositories
             }
         }
 
-        // Check count of users in ctop_master by username
-        public async Task<int> GetCtopMasterCountByUsernameAsync(string username)
-        {
-            try
-            {
-                const string sql = @"SELECT COUNT(1)
-                                     FROM ctop_master
-                                     WHERE username = @username";
-                using var db = ConnectionPgSql;
-                return await db.QueryFirstOrDefaultAsync<int>(sql, new { username });
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error checking count in ctop_master: {ex.Message}", ex);
-            }
-        }
-
-        // Check count of users in zonal table by contact_number
-        public async Task<int> GetZonalDataCountByContactNumberAsync(string contactNumber, string zoneCode)
+        // Check count of records in zonal table by ctopupno
+        public async Task<int> GetZonalDataCountByCtopupnoAsync(string ctopupno, string zoneCode)
         {
             try
             {
@@ -594,32 +581,32 @@ namespace cos.Repositories
                     case "EAST":
                         sql = @"SELECT COUNT(1)
                                 FROM ctop_master_ez cme
-                                WHERE cme.contact_number = @contactNumber";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     case "SZ":
                     case "SOUTH":
                         sql = @"SELECT COUNT(1)
                                 FROM ctop_master_sz cme
-                                WHERE cme.contact_number = @contactNumber";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     case "NZ":
                     case "NORTH":
                         sql = @"SELECT COUNT(1)
                                 FROM ctop_master_nz cme
-                                WHERE cme.contact_number = @contactNumber";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     case "WZ":
                     case "WEST":
                         sql = @"SELECT COUNT(1)
                                 FROM ctop_master_wz cme
-                                WHERE cme.contact_number = @contactNumber";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     default:
                         throw new Exception($"Invalid zone code: {zoneCode}");
                 }
 
                 using var db = ConnectionPgSql;
-                return await db.QueryFirstOrDefaultAsync<int>(sql, new { contactNumber });
+                return await db.QueryFirstOrDefaultAsync<int>(sql, new { ctopupno });
             }
             catch (Exception ex)
             {
