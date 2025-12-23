@@ -10,10 +10,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
 
-        
 
-        
-    
     </style>
 
 }
@@ -82,7 +79,15 @@
                                             class="form-control"
                                             placeholder="Search..."
                                             />
+                                            <button @@click="downloadCSV" :disabled="data.length === 0"
+                                            v-if="data.length > 0" class="btn btn-primary m-1">
+                                            <i class="icon-download me-1"></i>
+                                            Download CSV
+                                             </button>
+                                          
                                         </div>
+
+                                        
                                     </div>
                                     <div class="row p-2">
                                         <div class="col-md-3" v-for="(options, field) in filterOptions" :key="field">
@@ -99,11 +104,11 @@
                                         {{ error }}
                                     </div>
 
-                                    <div v-if="loading" class="loading">
+                                    <div v-if="loading_table" class="loading">
                                         Loading data...
                                     </div>
 
-                                    <div v-else-if="!loading && data.length === 0" class="no-data">
+                                    <div v-else-if="!loading_table && data.length === 0" class="no-data">
                                         No data available.
                                     </div>
                                     
@@ -130,39 +135,46 @@
                                 
                                 <!-- Summary Tab -->
                                 <div v-show="activeTab === 'summary'">
+                              
+
                                     <div class="summary-section">
                                         <h4>Summary Information</h4>
                                         <div v-if="error" class="error">
                                             {{ error_sumary }}
-                                            </div>
-
-                                 <div v-if="loading_summary" class="loading">
-                                        Loading data please wait...
-                                 </div>
-
-                                    <div v-else-if="!loading && summary.length === 0" class="no-data">
-                                        No data available.
+                                        </div>
+                                        <button @@click="downloadSummary()" :disabled="summary.length === 0"
+                                                v-if="summary.length > 0" class="btn btn-primary m-1">
+                                                <i class="icon-download me-1"></i>
+                                                Download CSV
+                                        </button>
+                                        <div v-if="loading_summary" class="loading">
+                                                Loading data please wait...
+                                        </div>
+               
+                                        <div v-else-if="!loading_summary && summary.length === 0" class="no-data">
+                                            No data available.
+                                        </div>
+                                        
+                                        <div class="table-responsive" v-else>
+                                            <table class="table table-striped table-bordered table-sm small zero-configuration">
+                                                <thead>
+                                                    <tr>
+                                                        <th v-for="(value, key) in summary[0]" :key="key">
+                                                            {{ key.toUpperCase() }}
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="(row, index) in summary" :key="index">
+                                                        <td v-for="(value, key) in row" :key="key" :class = "{'text-white bg-primary fw-bold' :  row.dealertype === 'TOTAL'}">
+                                                            {{ value }}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                     
-                                    <div class="table-responsive" v-else>
-                                        <table class="table table-striped table-bordered table-sm small zero-configuration">
-                                            <thead>
-                                                <tr>
-                                                    <th v-for="(value, key) in summary[0]" :key="key">
-                                                        {{ key }}
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr v-for="(row, index) in summary" :key="index">
-                                                    <td v-for="(value, key) in row" :key="key" :class = "{'text-white bg-primary fw-bold' :  row.dealertype === 'TOTAL'}">
-                                                        {{ value }}
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    </div>
                                 </div>
                                 
                             </div>
@@ -201,7 +213,7 @@
                 const download_file_name =  "pos_details.csv"
                 const fetchUrl = `/pos/GetCtopupMaster`
                 const fetchUrlSummary = `/pos/GetCtopupSummaryMaster`
-                const activeTab = ref('table');
+                const activeTab = ref('summary');
                 const fetchData = async () => {
                     loading_table.value = true;
                     error.value = '';
@@ -232,7 +244,7 @@
                 const selectedFilters = ref({
                 ssa_code: "",
                 dealertype: "",
-                state:"",
+                state:"ACTIVE",
                 });     
                 const filterOptions = computed(() => {
                     if (!data.value.length) return {};
@@ -296,19 +308,18 @@
                     if (data.value.length === 0) return;
                     
 
-                    // Create CSV content
-                    @* const headers = Object.keys(data.value[0]?); *@
+                    const headers = Object.keys(data.value[0]);
                     const csvRows = [headers.join(',')];
-                    
+
                     data.value.forEach(row => {
-                        const values = [
-                            row.onboarding_date,
-                            `"${row.circle_name}"`, // Wrap in quotes to handle commas in region names
-                            row.counts
-                        ];
+                        const values = headers.map(header => {
+                            const value = row[header];
+                            return value !== undefined && value !== null
+                                ? `"${String(value).replace(/"/g, '""')}"`
+                                : '';
+                        });
                         csvRows.push(values.join(','));
                     });
-                    
                     const csvContent = csvRows.join('\n');
                     
                     // Create blob and download
@@ -324,6 +335,42 @@
                     link.click();
                     document.body.removeChild(link);
                 };
+                
+
+
+                const downloadSummary = () => {
+                    if (summary.value.length === 0) return;
+                    
+
+                    const headers = Object.keys(summary.value[0]);
+                    const csvRows = [headers.join(',')];
+
+                    summary.value.forEach(row => {
+                        const values = headers.map(header => {
+                            const value = row[header];
+                            return value !== undefined && value !== null
+                                ? `"${String(value).replace(/"/g, '""')}"`
+                                : '';
+                        });
+                        csvRows.push(values.join(','));
+                    });
+
+                    const csvContent = csvRows.join('\n');
+                    
+                    // Create blob and download
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', "summary_"+download_file_name);
+                    link.style.visibility = 'hidden';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+
                 // Set default dates (last 7 days)
                 const today = new Date();
                 const weekAgo = new Date(today);
@@ -348,6 +395,7 @@
                     error,
                     fetchData,                    
                     downloadCSV,
+                    downloadSummary,
                     searchQuery,
                     filterOptions,
                     shouldShowRow,

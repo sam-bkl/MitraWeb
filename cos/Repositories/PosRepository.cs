@@ -47,8 +47,8 @@ namespace cos.Repositories
                         ELSE 'CHILD'
                     END AS user_role,
                     CASE 
-                        WHEN cm.end_date IS NULL THEN 'DEACTIVE'
-                        ELSE 'ACTIVE'
+                        WHEN cm.end_date IS NULL THEN 'ACTIVE'
+                        ELSE 'DEACTIVE'
                     END AS state                    
                 FROM 
                     ctop_master cm
@@ -159,28 +159,36 @@ namespace cos.Repositories
         public async Task<object> CtopupBaMasterAsync(string circle_code,string ssa_code)
         {
             const string sql = @"
+
                 SELECT 
                     cm.circle_name,  
                     cm.ssa_code,
                     cm.csccode,
+                    cm.aadhaar_no,
                     cm.pos_unique_code,                    
                     cm.name,
                     cm.username,
                     cm.ctopupno,
                     cm.dealertype,
                     cm.attached_to,
-                    -- cm.circle_code,
                     CASE 
                         WHEN cm.csccode = cm.attached_to THEN 'MASTER'
                         ELSE 'CHILD'
-                    END AS user_role
+                    END AS user_role,
+                    CASE 
+                        WHEN cm.end_date IS NULL THEN 'ACTIVE'
+                        ELSE 'DEACTIVE'
+                    END AS state                    
                 FROM 
                     ctop_master cm
                 WHERE 
-                    cm.end_date IS NOT null
+                    cm.circle_code = :circle_code
                     and cm.ssa_code = :ssa_code
-                    AND cm.circle_code = :circle_code
-                 order by ssa_code,user_role desc,ctopupno,csccode
+                ORDER BY 
+                    ssa_code,
+                    user_role DESC,
+                    ctopupno,
+                    csccode;
             ";
 
             // postgres
@@ -221,22 +229,33 @@ namespace cos.Repositories
         {
             const string sql = @"
 
-                SELECT
+                                 SELECT
                     cm.ssa_code AS ba_code,
                     COALESCE(cm.dealertype, 'TOTAL') AS dealertype,
+                    sum(
+                    CASE 
+                        WHEN cm.end_date is null THEN 1
+                        ELSE 0
+                    END  )AS active, 
+                    sum(
+                    CASE 
+                        WHEN cm.end_date is null THEN 0
+                        ELSE 1
+                    END  )AS inactive,                      
                     COUNT(*) AS total_count
                 FROM
                     ctop_master cm
                 WHERE
-                    cm.end_date IS NOT NULL
-                    AND cm.ssa_code = :ssa_code
-                    AND cm.circle_code = :circle_code                    
+                              
+                    cm.circle_code = :circle_code
+                    AND cm.ssa_code = :ssa_code                    
                 GROUP BY ROLLUP(cm.ssa_code, cm.dealertype)
                 HAVING cm.ssa_code IS NOT NULL
                 ORDER BY
                     cm.ssa_code,
                     CASE WHEN dealertype = 'TOTAL' THEN 1 ELSE 0 END,
                     cm.dealertype;
+
             ";
 
             // postgres
