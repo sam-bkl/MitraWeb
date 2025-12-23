@@ -348,7 +348,7 @@ namespace cos.Controllers
 
             // 🔐 STEP 1: LOCK CAF
             bool locked = await userDashRepository.LockCAFAsync(
-                model.Gsmnumber,
+               model.Caf_Serial_No,model.Gsmnumber,
                 ViewBag.LoggedIn
             );
 
@@ -377,7 +377,7 @@ namespace cos.Controllers
                 {
                     // 🔓 UNLOCK CAF
                     await userDashRepository.ReleaseLockAsync(
-                        model.Gsmnumber,
+                        model.Caf_Serial_No, model.Gsmnumber, 
                         ViewBag.LoggedIn
                     );
 
@@ -414,7 +414,7 @@ namespace cos.Controllers
                 {
                     // 🔓 UNLOCK ONLY IF ORACLE FAILED
                     await userDashRepository.ReleaseLockAsync(
-                        model.Gsmnumber,
+                         model.Caf_Serial_No, model.Gsmnumber,
                         ViewBag.LoggedIn
                     );
 
@@ -471,7 +471,7 @@ namespace cos.Controllers
             {
                 // 🔓 UNLOCK ONLY IF ORACLE DID NOT COMMIT
                 await userDashRepository.ReleaseLockAsync(
-                    model.Gsmnumber,
+                   model.Caf_Serial_No, model.Gsmnumber, 
                     ViewBag.LoggedIn
                 );
 
@@ -498,7 +498,7 @@ namespace cos.Controllers
 
             // 🔐 STEP 1: LOCK CAF
             bool locked = await userDashRepository.LockCAFAsync(
-                model.Gsmnumber,
+                model.Caf_Serial_No, model.Gsmnumber,
                 ViewBag.LoggedIn
             );
 
@@ -538,7 +538,7 @@ namespace cos.Controllers
                     if (!chargeInserted)
                     {
                         await userDashRepository.ReleaseLockAsync(
-                            model.Gsmnumber,
+                            model.Caf_Serial_No, model.Gsmnumber, 
                             ViewBag.LoggedIn
                         );
 
@@ -559,7 +559,7 @@ namespace cos.Controllers
                 if (!oracleInsert)
                 {
                     await userDashRepository.ReleaseLockAsync(
-                        model.Gsmnumber,
+                       model.Caf_Serial_No, model.Gsmnumber, 
                         ViewBag.LoggedIn
                     );
 
@@ -611,7 +611,7 @@ namespace cos.Controllers
             {
                 // 🔓 UNLOCK ONLY IF ORACLE DID NOT COMMIT
                 await userDashRepository.ReleaseLockAsync(
-                    model.Gsmnumber,
+                    model.Caf_Serial_No, model.Gsmnumber,
                     ViewBag.LoggedIn
                 );
 
