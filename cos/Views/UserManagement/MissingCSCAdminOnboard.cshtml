@@ -494,18 +494,26 @@
                     return;
                 }
                 
-                // Check for errors in response
+                // 2.1 Check if user exists in ctop_master - check this FIRST before other errors
+                if (responseData.existsInCtopMaster) {
+                    // Check if it's an active user that cannot be updated
+                    if (responseData.isActive && responseData.error) {
+                        // Display existing user details with error message
+                        displayExistingUser(responseData.ctop, responseData.dealer_status, responseData.error);
+                        return;
+                    } else {
+                        // User exists but can be updated
+                        displayExistingUser(responseData.ctop, responseData.dealer_status);
+                        return;
+                    }
+                }
+                
+                // Check for other errors in response (only if not existsInCtopMaster)
                 if (!resp.ok || responseData.error) {
                     const errorMsg = responseData.error || 'Error fetching CTOP details';
                     showError(errorMsg);
                     // Reset all cards on error
                     resetAllCards();
-                    return;
-                }
-                
-                // 2.1 Check if user exists in ctop_master
-                if (responseData.existsInCtopMaster) {
-                    displayExistingUser(responseData.ctop, responseData.dealer_status);
                     return;
                 }
 
@@ -607,7 +615,7 @@
             }
         }
 
-        function displayExistingUser(ctop, dealerStatus) {
+        function displayExistingUser(ctop, dealerStatus, errorMessage) {
             const detailsDiv = document.getElementById('ctopDetails');
             const existingUserMessage = document.getElementById('existingUserMessage');
             
@@ -627,6 +635,14 @@
             }
             
             if (existingUserMessage) {
+                // Update message based on whether there's an error
+                if (errorMessage) {
+                    existingUserMessage.className = 'alert alert-danger mt-2';
+                    existingUserMessage.innerHTML = `<strong>Error:</strong> ${escapeHtml(errorMessage)}`;
+                } else {
+                    existingUserMessage.className = 'alert alert-info mt-2';
+                    existingUserMessage.innerHTML = '<strong>Note:</strong> This user already exists in ctop_master and cannot be added again.';
+                }
                 existingUserMessage.style.display = 'block';
             }
             
