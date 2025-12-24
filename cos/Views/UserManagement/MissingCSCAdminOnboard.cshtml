@@ -49,6 +49,28 @@
     </div>
 </div>
 
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="errorModalLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Error
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="errorModalMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row mt-3" id="ctopDetailsSection" style="display:none;">
     <div class="col-12">
         <div class="card">
@@ -489,8 +511,8 @@
                     responseData = await resp.json();
                 } catch (parseError) {
                     // If JSON parsing fails, show generic error
+                    resetAllCards(true); // Preserve error message
                     showError('Error fetching CTOP details. Please try again.');
-                    resetAllCards();
                     return;
                 }
                 
@@ -511,9 +533,8 @@
                 // Check for other errors in response (only if not existsInCtopMaster)
                 if (!resp.ok || responseData.error) {
                     const errorMsg = responseData.error || 'Error fetching CTOP details';
+                    resetAllCards(true); // Preserve error message
                     showError(errorMsg);
-                    // Reset all cards on error
-                    resetAllCards();
                     return;
                 }
 
@@ -538,13 +559,12 @@
                 }
             } catch (err) {
                 console.error('Error fetching details:', err);
+                resetAllCards(true); // Preserve error message
                 showError('Error fetching CTOP details: ' + err.message);
-                // Reset all cards on error
-                resetAllCards();
             }
         }
 
-        function resetAllCards() {
+        function resetAllCards(preserveError = false) {
             // Hide all sections
             if (ctopDetailsSection) {
                 ctopDetailsSection.style.display = 'none';
@@ -564,10 +584,13 @@
                 existingUserMessage.style.display = 'none';
             }
             
-            const errorMessage = document.getElementById('errorMessage');
-            if (errorMessage) {
-                errorMessage.style.display = 'none';
-                errorMessage.textContent = '';
+            // Only clear error message if preserveError is false
+            if (!preserveError) {
+                const errorMessage = document.getElementById('errorMessage');
+                if (errorMessage) {
+                    errorMessage.style.display = 'none';
+                    errorMessage.textContent = '';
+                }
             }
             
             // Hide Get/Show button
@@ -605,12 +628,27 @@
         }
 
         function showError(message) {
-            const errorMessage = document.getElementById('errorMessage');
-            if (errorMessage) {
-                errorMessage.textContent = message;
-                errorMessage.style.display = 'block';
-                errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            // Show error in modal window
+            const errorModal = document.getElementById('errorModal');
+            const errorModalMessage = document.getElementById('errorModalMessage');
+            
+            if (errorModal && errorModalMessage) {
+                // Set the error message (escape HTML to prevent XSS)
+                errorModalMessage.textContent = message;
+                
+                // Use jQuery for Bootstrap 4 modal (Bootstrap 4 requires jQuery)
+                if (typeof $ !== 'undefined' && $.fn.modal) {
+                    $('#errorModal').modal('show');
+                } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    // Bootstrap 5 native modal (if available)
+                    const modal = new bootstrap.Modal(errorModal);
+                    modal.show();
+                } else {
+                    // Fallback to alert if Bootstrap/jQuery not available
+                    alert(message);
+                }
             } else {
+                // Fallback to alert if modal elements not found
                 alert(message);
             }
         }
