@@ -697,7 +697,7 @@ namespace cos.Controllers
                 TempSaPosDataVM? tempSaData = null;
                 string? posUniqueCode = null;
 
-                if (zonalData.dealertype == "CSR" || zonalData.dealertype == "CSC" || zonalData.dealertype == "DEPT")
+                if (zonalData.dealertype == "CSR" || zonalData.dealertype == "CSC" || zonalData.dealertype == "DEPT" || zonalData.dealertype == "CSCA" || zonalData.dealertype == "OCSC")
                 {
                     var tempCscResult = await _cscRepository.GetTempCscSaDataByPosCtopAsync(zonalData.ctopupno);
                     
