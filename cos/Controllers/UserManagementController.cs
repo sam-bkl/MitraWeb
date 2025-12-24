@@ -1107,7 +1107,15 @@ namespace cos.Controllers
                 var dealercode = !string.IsNullOrWhiteSpace(zonalData.dealercode) ? zonalData.dealercode : null;
                 var refDealerId = zonalData.ref_dealer_id.HasValue == true ? zonalData.ref_dealer_id : null;
                 var masterDealerId = zonalData.master_dealer_id.HasValue == true ? zonalData.master_dealer_id : null;
-                var dealerId = !string.IsNullOrWhiteSpace(zonalData.dealer_id) ? zonalData.dealer_id : null;
+                // Parse dealer_id from string to decimal (database column is numeric)
+                decimal? dealerId = null;
+                if (!string.IsNullOrWhiteSpace(zonalData.dealer_id))
+                {
+                    if (decimal.TryParse(zonalData.dealer_id, out decimal parsedDealerId))
+                    {
+                        dealerId = parsedDealerId;
+                    }
+                }
                 var active = !string.IsNullOrWhiteSpace(zonalData.active) ? zonalData.active : null;
                 var parentCtopno = !string.IsNullOrWhiteSpace(zonalData.parent_ctopno) 
                     ? zonalData.parent_ctopno 
@@ -1641,17 +1649,46 @@ namespace cos.Controllers
                 // Fetch zonal data to get the 5 new fields
                 var zonalData = await _cscRepository.GetMissingCscCtopDetailsByZoneAsync(ctopupno, circle.zone_code);
                 
-                // Handle the 5 new fields: dealercode, ref_dealer_id, master_dealer_id, parent_ctopno, dealer_status
+                // Handle the fields from zonal data: dealercode, ref_dealer_id, master_dealer_id, parent_ctopno, dealer_id, active
                 // If no value, pass null for all except parent_ctopno. For parent_ctopno, if no value, use ctopupno
                 var dealercode = !string.IsNullOrWhiteSpace(zonalData?.dealercode) ? zonalData.dealercode : null;
                 var refDealerId = zonalData?.ref_dealer_id.HasValue == true ? zonalData.ref_dealer_id : null;
                 var masterDealerId = zonalData?.master_dealer_id.HasValue == true ? zonalData.master_dealer_id : null;
+                // Parse dealer_id from string to decimal (database column is numeric)
+                decimal? dealerId = null;
+                if (!string.IsNullOrWhiteSpace(zonalData?.dealer_id))
+                {
+                    if (decimal.TryParse(zonalData.dealer_id, out decimal parsedDealerId))
+                    {
+                        dealerId = parsedDealerId;
+                    }
+                }
+                var active = !string.IsNullOrWhiteSpace(zonalData?.active) ? zonalData.active : null;
                 var parentCtopno = !string.IsNullOrWhiteSpace(zonalData?.parent_ctopno) 
                     ? zonalData.parent_ctopno 
                     : (!string.IsNullOrWhiteSpace(zonalData?.parent_ctop) 
                         ? zonalData.parent_ctop 
                         : ctopupno); // Use ctopupno if no value
-                var dealerStatus = !string.IsNullOrWhiteSpace(zonalData?.dealer_status) ? zonalData.dealer_status : null;
+                
+                // Set dealer_status and end_date based on zonalData.active
+                string? dealerStatus;
+                DateTime? endDate;
+                
+                if (zonalData?.active == "A")
+                {
+                    dealerStatus = "Active";
+                    endDate = null;
+                }
+                else if (zonalData?.active == "B")
+                {
+                    dealerStatus = "BLOCKED";
+                    endDate = zonalData.deact_date ?? DateTime.UtcNow;
+                }
+                else
+                {
+                    dealerStatus = "InActive";
+                    endDate = zonalData?.deact_date ?? DateTime.UtcNow;
+                }
 
                 var ctopEntity = new CtopMaster
                 {
@@ -1688,7 +1725,10 @@ namespace cos.Controllers
                     ref_dealer_id = refDealerId,
                     master_dealer_id = masterDealerId,
                     parent_ctopno = parentCtopno,
-                    dealer_status = dealerStatus
+                    dealer_status = dealerStatus,
+                    end_date = endDate,
+                    dealer_id = dealerId,
+                    active = active
                 };
 
                 var insertResult = await _cscRepository.InsertCtopAsync(ctopEntity, createdByAccountId);

@@ -116,6 +116,21 @@
     </div>
 </div>
 
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <h5 class="mt-3" id="loadingModalLabel">Submitting...</h5>
+                <p class="text-muted mb-0">Please wait while we process your request.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row mt-3" id="ctopDetailsSection" style="display:none;">
     <div class="col-12">
         <div class="card">
@@ -1262,9 +1277,10 @@
                     return;
                 }
 
-                // Disable submit button
+                // Disable submit button and show loading modal
                 submitFormBtn.disabled = true;
                 submitFormBtn.textContent = 'Submitting...';
+                showLoadingModal();
 
                 try {
                     // Create FormData from form
@@ -1354,6 +1370,7 @@
                     const contentType = response.headers.get('content-type');
                     
                     if (!response.ok && response.status === 404) {
+                        hideLoadingModal();
                         const errorText = await response.text();
                         console.error('404 Error:', errorText);
                         showSubmitError('The requested page was not found (404). Please check the URL: ' + formAction);
@@ -1366,6 +1383,7 @@
                         const result = await response.json();
                         
                         if (result.success) {
+                            hideLoadingModal();
                             showSuccess(result.message || 'Missing CSC admin onboarded successfully.');
                             // Reset form after success
                             setTimeout(() => {
@@ -1374,6 +1392,7 @@
                                 window.location.href = '/UserManagement/MissingCSCAdminOnboard';
                             }, 2000);
                         } else {
+                            hideLoadingModal();
                             showErrors(result.errors || [result.error || 'An error occurred']);
                             submitFormBtn.disabled = false;
                             submitFormBtn.textContent = 'Create Account & Onboard';
@@ -1392,6 +1411,7 @@
                             if (text) errors.push(text);
                         });
 
+                        hideLoadingModal();
                         if (errors.length > 0) {
                             showErrors(errors);
                         } else if (response.ok) {
@@ -1407,6 +1427,7 @@
                         submitFormBtn.textContent = 'Create Account & Onboard';
                     }
                 } catch (error) {
+                    hideLoadingModal();
                     console.error('Form submission error:', error);
                     showSubmitError('An error occurred while submitting the form: ' + error.message);
                     submitFormBtn.disabled = false;
@@ -1445,6 +1466,36 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function showLoadingModal() {
+            const loadingModal = document.getElementById('loadingModal');
+            if (loadingModal) {
+                // Use jQuery for Bootstrap 4 modal (Bootstrap 4 requires jQuery)
+                if (typeof $ !== 'undefined' && $.fn.modal) {
+                    $('#loadingModal').modal('show');
+                } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    // Bootstrap 5 native modal (if available)
+                    const modal = new bootstrap.Modal(loadingModal);
+                    modal.show();
+                }
+            }
+        }
+
+        function hideLoadingModal() {
+            const loadingModal = document.getElementById('loadingModal');
+            if (loadingModal) {
+                // Use jQuery for Bootstrap 4 modal (Bootstrap 4 requires jQuery)
+                if (typeof $ !== 'undefined' && $.fn.modal) {
+                    $('#loadingModal').modal('hide');
+                } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    // Bootstrap 5 native modal (if available)
+                    const modal = bootstrap.Modal.getInstance(loadingModal);
+                    if (modal) {
+                        modal.hide();
+                    }
+                }
+            }
         }
 
         // ========== View Users by CTOPUP No Functionality ==========

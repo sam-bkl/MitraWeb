@@ -40,7 +40,7 @@ namespace cos.ViewModels
         public string? parent_ctopno { get; set; }
         public string? dealer_status { get; set; }
         public DateTime? end_date { get; set; }
-        public string? dealer_id { get; set; }
+        public decimal? dealer_id { get; set; }
         public string? active { get; set; }
 
         /// <summary>
