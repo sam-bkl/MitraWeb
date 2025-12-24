@@ -1363,11 +1363,17 @@ namespace cos.Controllers
 
                 if (uploadErrors.Count > 0)
                 {
-                    // Log errors but don't fail the entire operation
+                    // Log errors for debugging
+                    System.Diagnostics.Debug.WriteLine($"Document upload errors for username {finalUsername}:");
+                    foreach (var error in uploadErrors)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"  - {error}");
+                    }
                     // Return success with warnings
                     return Json(new { success = true, message = "Missing CSC admin onboarded successfully, but some file uploads failed.", warnings = uploadErrors });
                 }
 
+                System.Diagnostics.Debug.WriteLine($"All documents uploaded successfully for username: {finalUsername}");
                 return Json(new { success = true, message = "Missing CSC admin onboarded successfully." });
             }
             catch (Exception ex)
@@ -1826,18 +1832,28 @@ namespace cos.Controllers
             var newDoc = new CtopMasterDoc
             {
                 username = username,
+                document_path = storedFileName,
+                file_name = file.FileName,
                 file_category = DocumentCategory.GetCategoryName(fileCategoryCode),
                 file_category_code = fileCategoryCode,
-                file_name = storedFileName,
-                alt_document_path = altDocumentPath,
-                alt_file_name = altFileName,
                 record_status = "ACTIVE",
                 created_by = accountId,
-                created_on = uploadDate
+                updated_by = accountId,
+                created_on = uploadDate,
+                updated_on = uploadDate,
+                alt_document_path = altDocumentPath,
+                alt_file_name = altFileName
             };
 
             var insertResult = await _cscRepository.InsertDocumentAsync(newDoc);
-            return insertResult.Success ? (true, null) : (false, insertResult.ErrorMessage ?? "Failed to save document record");
+            if (!insertResult.Success)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to insert document for username {username}, category {fileCategoryCode}: {insertResult.ErrorMessage}");
+                return (false, insertResult.ErrorMessage ?? "Failed to save document record");
+            }
+            
+            System.Diagnostics.Debug.WriteLine($"Successfully inserted document for username {username}, category {fileCategoryCode}, document_path: {storedFileName}");
+            return (true, null);
         }
     }
 
