@@ -643,10 +643,26 @@ namespace cos.Controllers
                 var existingCtop = await _cscRepository.GetCtopMasterByCtopupnoAsync(request.ctopupno);
                 if (existingCtop != null)
                 {
+                    // Check if dealer_status = 'Active' and end_date is null
+                    if (existingCtop.dealer_status == "Active" && existingCtop.end_date == null)
+                    {
+                        return Json(new { 
+                            existsInCtopMaster = true,
+                            isActive = true,
+                            error = "User already exists in ctop_master with Active status and no end date.",
+                            ctop = existingCtop,
+                            dealer_status = existingCtop.dealer_status 
+                        });
+                    }
+                    
+                    // If not active or has end_date, allow update
                     return Json(new { 
-                        existsInCtopMaster = true, 
+                        existsInCtopMaster = true,
+                        isActive = false,
+                        canUpdate = true,
                         ctop = existingCtop,
-                        dealer_status = existingCtop.dealer_status 
+                        dealer_status = existingCtop.dealer_status,
+                        end_date = existingCtop.end_date
                     });
                 }
 
@@ -976,7 +992,26 @@ namespace cos.Controllers
                     : (!string.IsNullOrWhiteSpace(zonalData.parent_ctop) 
                         ? zonalData.parent_ctop 
                         : zonalData.ctopupno ?? ctopupno); // Use zonal ctopupno if no value
-                var dealerStatus = !string.IsNullOrWhiteSpace(zonalData.dealer_status) ? zonalData.dealer_status : null;
+                
+                // Set dealer_status and end_date based on zonalData.active
+                string? dealerStatus;
+                DateTime? endDate;
+                
+                if (zonalData.active == "A")
+                {
+                    dealerStatus = "Active";
+                    endDate = null;
+                }
+                else if (zonalData.active == "B")
+                {
+                    dealerStatus = "BLOCKED";
+                    endDate = zonalData.deact_date ?? DateTime.UtcNow;
+                }
+                else
+                {
+                    dealerStatus = "InActive";
+                    endDate = zonalData.deact_date ?? DateTime.UtcNow;
+                }
 
                 var ctopEntity = new CtopMaster
                 {
@@ -1013,16 +1048,118 @@ namespace cos.Controllers
                     ref_dealer_id = refDealerId,
                     master_dealer_id = masterDealerId,
                     parent_ctopno = parentCtopno,
-                    dealer_status = dealerStatus
+                    dealer_status = dealerStatus,
+                    end_date = endDate
                 };
 
-                var insertResult = await _cscRepository.InsertCtopAsync(ctopEntity, createdByAccountId);
-                if (!insertResult.Success)
+                // Check if record exists and needs update
+                var existingCtop = await _cscRepository.GetCtopMasterByCtopupnoAsync(finalUsername);
+                CscRepository.InsertResult insertResult;
+                
+                if (existingCtop != null && !(existingCtop.dealer_status == "Active" && existingCtop.end_date == null))
                 {
-                    return Json(new { success = false, errors = new[] { $"Failed to create CTOP user: {insertResult.ErrorMessage}" } });
+                    // Record exists and can be updated (not active or has end_date)
+                    // Preserve created_date from existing record
+                    ctopEntity.created_date = existingCtop.created_date;
+                    insertResult = await _cscRepository.UpdateCtopAsync(ctopEntity, createdByAccountId);
+                    if (!insertResult.Success)
+                    {
+                        return Json(new { success = false, errors = new[] { $"Failed to update CTOP user: {insertResult.ErrorMessage}" } });
+                    }
+                }
+                else
+                {
+                    // New record or active record (which should have been caught earlier)
+                    insertResult = await _cscRepository.InsertCtopAsync(ctopEntity, createdByAccountId);
+                    if (!insertResult.Success)
+                    {
+                        return Json(new { success = false, errors = new[] { $"Failed to create CTOP user: {insertResult.ErrorMessage}" } });
+                    }
                 }
 
-                // No account creation - only insert into ctop_master table
+                // Handle accounts/users table logic for CSC/DEPT when username = ctopupno
+                if ((ctopEntity.dealertype == "CSC" || ctopEntity.dealertype == "CSR" || ctopEntity.dealertype == "DEPT") && 
+                    ctopEntity.username == ctopEntity.ctopupno)
+                {
+                    try
+                    {
+                        // Check if account exists by username (ctopupno)
+                        var accountInfo = await _cscRepository.GetAccountByUsernameAsync(ctopEntity.username);
+                        
+                        if (accountInfo != null)
+                        {
+                            // Account exists - check and update record_status if needed
+                            if (accountInfo.record_status != "ACTIVE")
+                            {
+                                await _cscRepository.UpdateAccountRecordStatusAsync(accountInfo.id, "ACTIVE", createdByAccountId);
+                            }
+                            
+                            // Check if user exists in users table by mobile
+                            var userInfo = await _cscRepository.GetUserByMobileAsync(ctopEntity.contact_number ?? "");
+                            
+                            if (userInfo != null)
+                            {
+                                // User exists - check and update record_status if needed
+                                if (userInfo.record_status != "ACTIVE")
+                                {
+                                    await _cscRepository.UpdateUserRecordStatusAsync(userInfo.id, "ACTIVE", createdByAccountId);
+                                }
+                            }
+                            else
+                            {
+                                // User doesn't exist - insert into users table
+                                var insertUserResult = await _cscRepository.InsertUserForExistingAccountAsync(
+                                    accountInfo.id,
+                                    ctopEntity.name ?? "",
+                                    ctopEntity.contact_number,
+                                    ctopEntity.ssa_code,
+                                    selectedCircle.circle_code,
+                                    createdByAccountId);
+                                
+                                if (!insertUserResult.Success)
+                                {
+                                    errors.Add($"Failed to create user record: {insertUserResult.ErrorMessage}");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Account doesn't exist - insert into both accounts and users tables
+                            var roleId = await _accountRepository.GetRoleIdByNameAsync("csc_admin");
+                            if (!roleId.HasValue)
+                            {
+                                errors.Add("Role 'csc_admin' not found. Cannot create account and user records.");
+                            }
+                            else
+                            {
+                                const string defaultPassword = "Bsnl@123";
+                                string encryptedPassword = Helpers.PasswordHelper.ComputeSha256Hash(defaultPassword);
+                                
+                                var insertAccountUserResult = await _cscRepository.InsertAccountAndUserForCscDeptAsync(
+                                    ctopEntity.username,
+                                    ctopEntity.name ?? "",
+                                    ctopEntity.contact_number,
+                                    ctopEntity.ssa_code,
+                                    selectedCircle.circle_code,
+                                    roleId.Value,
+                                    encryptedPassword,
+                                    defaultPassword,
+                                    createdByAccountId,
+                                    createdByMobile);
+                                
+                                if (!insertAccountUserResult.Success)
+                                {
+                                    errors.Add($"Failed to create account/user records: {insertAccountUserResult.ErrorMessage}");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log error but don't fail the entire operation
+                        errors.Add($"Warning: Account/User management failed: {ex.Message}");
+                    }
+                }
 
                 // Handle file uploads - different documents based on dealertype
                 var uploadErrors = new List<string>();

@@ -601,6 +601,7 @@
             if (errorMessage) {
                 errorMessage.textContent = message;
                 errorMessage.style.display = 'block';
+                errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             } else {
                 alert(message);
             }
@@ -1031,7 +1032,7 @@
                 // Validate required fields
                 const ctopupno = hiddenCtopupno ? hiddenCtopupno.value : '';
                 if (!ctopupno) {
-                    showError('Please select a CTOP number first.');
+                    showSubmitError('Please select a CTOP number first.');
                     return;
                 }
 
@@ -1129,7 +1130,7 @@
                     if (!response.ok && response.status === 404) {
                         const errorText = await response.text();
                         console.error('404 Error:', errorText);
-                        showError('The requested page was not found (404). Please check the URL: ' + formAction);
+                        showSubmitError('The requested page was not found (404). Please check the URL: ' + formAction);
                         submitFormBtn.disabled = false;
                         submitFormBtn.textContent = 'Create Account & Onboard';
                         return;
@@ -1173,7 +1174,7 @@
                                 window.location.href = '/UserManagement/MissingCSCAdminOnboard';
                             }, 2000);
                         } else {
-                            showError('An error occurred while submitting the form.');
+                            showSubmitError('An error occurred while submitting the form.');
                         }
                         
                         submitFormBtn.disabled = false;
@@ -1181,14 +1182,14 @@
                     }
                 } catch (error) {
                     console.error('Form submission error:', error);
-                    showError('An error occurred while submitting the form: ' + error.message);
+                    showSubmitError('An error occurred while submitting the form: ' + error.message);
                     submitFormBtn.disabled = false;
                     submitFormBtn.textContent = 'Create Account & Onboard';
                 }
             });
         }
 
-        function showError(message) {
+        function showSubmitError(message) {
             if (submitStatus) {
                 submitStatus.innerHTML = `<div class="alert alert-danger">${escapeHtml(message)}</div>`;
                 submitStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
