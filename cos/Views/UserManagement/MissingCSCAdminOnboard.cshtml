@@ -3,7 +3,7 @@
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @{
     Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
-    ViewData["Title"] = "Onboard Missing CSC Admin";
+    ViewData["Title"] = "Onboard Missing Ctop Users";
 }
 
 <div class="row">
@@ -28,7 +28,52 @@
                 </ul>
             </div>
         }
-        <h3>Onboard Missing CSC Admin</h3>
+        <h3>Onboard Missing Ctop Users</h3>
+    </div>
+</div>
+
+<!-- View Users by CTOPUP No Card -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>View Users by CTOPUP No</h5>
+                <div class="form-row">
+                    <div class="form-group col-md-8">
+                        <label for="ctopupnoViewSearch">Search CTOPUP No (where ctopupno = username):</label>
+                        <input type="text" class="form-control" id="ctopupnoViewSearch" placeholder="Type to search CTOPUP numbers..." autocomplete="off" />
+                        <div id="ctopupnoViewResults" class="list-group mt-2" style="display:none; max-height: 300px; overflow-y: auto; position: absolute; z-index: 1000; width: 100%; background: white; border: 1px solid #ddd;"></div>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>&nbsp;</label>
+                        <button type="button" class="btn btn-primary btn-block" id="getUsersBtn" style="display:none;">Get Users</button>
+                    </div>
+                </div>
+                <div id="usersTableContainer" style="display:none;">
+                    <div id="noUsersMessage" class="alert alert-info" style="display:none;">
+                        No users found for the selected CTOPUP number.
+                    </div>
+                    <div class="table-responsive">
+                        <table id="usersTable" class="table table-bordered table-striped" style="display:none;">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>CTOPUP No</th>
+                                    <th>Name</th>
+                                    <th>CSC Code</th>
+                                    <th>POS Unique Code</th>
+                                    <th>SSA</th>
+                                    <th>Dealer Type</th>
+                                    <th>Dealer Status</th>
+                                    <th>Documents</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -42,6 +87,30 @@
                     <input type="text" class="form-control" id="ctopupnoSearch" placeholder="Enter CTOPUP number" />
                     <div id="searchResults" class="list-group mt-2" style="display:none; max-height: 300px; overflow-y: auto; position: absolute; z-index: 1000; width: 100%; background: white; border: 1px solid #ddd;"></div>
                 </div>
+                <button type="button" class="btn btn-primary" id="getDetailsBtn" style="display:none;">Get / Show</button>
+                <div id="errorMessage" class="alert alert-danger mt-2" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="errorModalLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Error
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="errorModalMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -53,6 +122,9 @@
             <div class="card-body">
                 <h5>CTOP Details</h5>
                 <div id="ctopDetails"></div>
+                <div id="existingUserMessage" class="alert alert-info mt-2" style="display:none;">
+                    <strong>Note:</strong> This user already exists in ctop_master and cannot be added again.
+                </div>
             </div>
         </div>
     </div>
@@ -75,11 +147,7 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.dealertype">Dealer Type <span class="text-danger">*</span></label>
-                            <select class="form-control" asp-for="NewCtop.dealertype" id="NewCtop_dealertype" required>
-                                <option value="">-- Select Dealer Type --</option>
-                                <option value="CSR">CSR</option>
-                                <option value="OCSC">OCSC</option>
-                            </select>
+                            <input class="form-control" asp-for="NewCtop.dealertype" id="NewCtop_dealertype" />
                             <span class="text-danger" asp-validation-for="NewCtop.dealertype"></span>
                         </div>
                         <div class="form-group col-md-4">
@@ -89,7 +157,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label asp-for="NewCtop.contact_number"></label>
+                            <label asp-for="NewCtop.contact_number">Contact Number</label>
                             <input class="form-control" asp-for="NewCtop.contact_number" id="NewCtop_contact_number" />
                         </div>
                         <div class="form-group col-md-4">
@@ -132,7 +200,7 @@
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label>Circle</label>
-                            <select class="form-control" id="circleSelect" asp-for="NewCtop.circle_id">
+                            <select class="form-control" id="circleSelect" asp-for="NewCtop.circle_id" name="NewCtop.circle_id">
                                 <option value="">-- Select Circle --</option>
                                 @foreach (var c in Model.Circles)
                                 {
@@ -143,7 +211,7 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label>SSA</label>
-                            <select class="form-control" id="ssaSelect" asp-for="NewCtop.ssa_id">
+                            <select class="form-control" id="ssaSelect" asp-for="NewCtop.ssa_id" name="NewCtop.ssa_id">
                                 <option value="">-- Select SSA --</option>
                                 @foreach (var s in Model.Ssas)
                                 {
@@ -154,33 +222,35 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.pos_state"></label>
-                            <input class="form-control" asp-for="NewCtop.pos_state" id="NewCtop_pos_state" readonly />
+                            <input class="form-control" asp-for="NewCtop.pos_state" id="NewCtop_pos_state" />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.circle_name"></label>
-                            <input class="form-control" asp-for="NewCtop.circle_name" id="NewCtop_circle_name" readonly />
+                            <input class="form-control" asp-for="NewCtop.circle_name" id="NewCtop_circle_name" />
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.zone_code"></label>
-                            <input class="form-control" asp-for="NewCtop.zone_code" id="NewCtop_zone_code" readonly />
+                            <input class="form-control" asp-for="NewCtop.zone_code" id="NewCtop_zone_code" />
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.pos_district"></label>
-                            <input class="form-control" asp-for="NewCtop.pos_district" id="NewCtop_pos_district" readonly />
+                            <input class="form-control" asp-for="NewCtop.pos_district" id="NewCtop_pos_district" />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.ssa_code"></label>
-                            <input class="form-control" asp-for="NewCtop.ssa_code" id="NewCtop_ssa_code" readonly />
+                            <input class="form-control" asp-for="NewCtop.ssa_code" id="NewCtop_ssa_code" />
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.csccode"></label>
-                            <select class="form-control" asp-for="NewCtop.csccode" id="NewCtop_csccode">
-                                <option value="">-- Select CSC Code --</option>
-                            </select>
+                            <div style="position: relative;">
+                                <input type="text" class="form-control" id="cscCodeSearch" placeholder="Type to search CSC codes..." autocomplete="off" />
+                                <input type="hidden" asp-for="NewCtop.csccode" id="NewCtop_csccode" name="NewCtop.csccode" />
+                                <div id="cscCodeDropdown" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ced4da; border-top: none; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
+                            </div>
                             <span class="text-danger" asp-validation-for="NewCtop.csccode"></span>
                         </div>
                         <input type="hidden" asp-for="NewCtop.attached_to" id="NewCtop_attached_to" />
@@ -188,7 +258,7 @@
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.circle_code"></label>
-                            <input class="form-control" asp-for="NewCtop.circle_code" id="NewCtop_circle_code" readonly />
+                            <input class="form-control" asp-for="NewCtop.circle_code" id="NewCtop_circle_code" />
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.aadhaar_no"></label>
@@ -200,35 +270,114 @@
                             <span class="text-danger" asp-validation-for="NewCtop.aadhaar_issue_year"></span>
                         </div>
                     </div>
+                    <div class="form-row" id="posUniqueCodeSection">
+                        <div class="form-group col-md-6" id="posUniqueCodeField">
+                            <label>POS Unique Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="pos_unique_code" />
+                            <input type="radio" name="posUniqueCodeSelection" value="fetched" id="radioFetched" checked />
+                            <label for="radioFetched">Use fetched POS Unique Code</label>
+                        </div>
+                        <div class="form-group col-md-6" id="autoGenPosUniqueCodeField" style="display:none;">
+                            <label>Auto Generated POS Unique Code</label>
+                            <input type="text" class="form-control" id="auto_gen_pos_unique_code" style="font-weight: bold; color: red;" />
+                            <input type="radio" name="posUniqueCodeSelection" value="generated" id="radioGenerated" />
+                            <label for="radioGenerated">Use auto generated POS Unique Code</label>
+                        </div>
+                    </div>
+                    <input type="hidden" id="selectedPosUniqueCode" name="selectedPosUniqueCode" />
+                    
+                    <!-- Documents for CSR/CSC/DEPT -->
+                    <div id="csrDocumentsSection">
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label asp-for="NewCtop.BaApprovalLetter"></label>
+                                <label asp-for="NewCtop.BaApprovalLetter">BA Head Approved Letter</label>
                             <input type="file" class="form-control-file" asp-for="NewCtop.BaApprovalLetter" accept=".pdf,.jpg,.jpeg,.png" />
                             <span class="text-danger" asp-validation-for="NewCtop.BaApprovalLetter"></span>
                         </div>
                         <div class="form-group col-md-6">
-                            <label asp-for="NewCtop.EmployeeIdCard"></label>
+                                <label asp-for="NewCtop.EmployeeIdCard">Employee ID Card</label>
                             <input type="file" class="form-control-file" asp-for="NewCtop.EmployeeIdCard" accept=".pdf,.jpg,.jpeg,.png" />
                             <span class="text-danger" asp-validation-for="NewCtop.EmployeeIdCard"></span>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label asp-for="NewCtop.AadhaarCard"></label>
+                                <label asp-for="NewCtop.AadhaarCard">Aadhaar Card</label>
                             <input type="file" class="form-control-file" asp-for="NewCtop.AadhaarCard" accept=".pdf,.jpg,.jpeg,.png" />
                             <span class="text-danger" asp-validation-for="NewCtop.AadhaarCard"></span>
                         </div>
                         <div class="form-group col-md-6">
-                            <label asp-for="NewCtop.PanCard"></label>
+                                <label asp-for="NewCtop.PanCard">PAN Card</label>
                             <input type="file" class="form-control-file" asp-for="NewCtop.PanCard" accept=".pdf,.jpg,.jpeg,.png" />
                             <span class="text-danger" asp-validation-for="NewCtop.PanCard"></span>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label asp-for="NewCtop.Photo"></label>
+                                <label asp-for="NewCtop.Photo">Photo</label>
                             <input type="file" class="form-control-file" asp-for="NewCtop.Photo" accept=".jpg,.jpeg,.png" />
                             <span class="text-danger" asp-validation-for="NewCtop.Photo"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documents for other dealertypes -->
+                    <div id="otherDocumentsSection" style="display:none;">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>CIN/LLPIN/Business License/Registration No</label>
+                                <input type="file" class="form-control-file" id="CinDocument" name="CinDocument" accept=".pdf,.jpg,.jpeg,.png" />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>PAN Card</label>
+                                <input type="file" class="form-control-file" id="PanCardOther" name="PanCardOther" accept=".pdf,.jpg,.jpeg,.png" />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>GST</label>
+                                <input type="file" class="form-control-file" id="GstDocument" name="GstDocument" accept=".pdf,.jpg,.jpeg,.png" />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>Aadhar Card <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control-file" id="AadhaarCardOther" name="AadhaarCardOther" accept=".pdf,.jpg,.jpeg,.png" required />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Photo <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control-file" id="PhotoOther" name="PhotoOther" accept=".jpg,.jpeg,.png" required />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>Address proof of Place of business <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control-file" id="BusinessAddressProof" name="BusinessAddressProof" accept=".pdf,.jpg,.jpeg,.png" required />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Local Residential address proof <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control-file" id="ResidentialAddressProof" name="ResidentialAddressProof" accept=".pdf,.jpg,.jpeg,.png" required />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>Affidavit</label>
+                                <input type="file" class="form-control-file" id="Affidavit" name="Affidavit" accept=".pdf,.jpg,.jpeg,.png" />
+                                <small class="form-text text-muted">Required only if CIN/LLPIN, PAN, and GST are not uploaded</small>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Agreement Type</label>
+                                <select class="form-control" id="AgreementType" name="AgreementType">
+                                    <option value="">-- Select Agreement Type --</option>
+                                    <option value="Normal">Normal</option>
+                                    <option value="NESL">NESL</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>Agreement Copy <span class="text-danger" id="AgreementCopyRequired">*</span></label>
+                                <input type="file" class="form-control-file" id="AgreementCopy" name="AgreementCopy" accept=".pdf,.jpg,.jpeg,.png" />
+                                <small class="form-text text-muted">Required if Agreement Type is Normal</small>
+                            </div>
                         </div>
                     </div>
                     <div class="form-row">
@@ -255,7 +404,6 @@
         const createAccountSection = document.getElementById('createAccountSection');
         const circleSelect = document.getElementById('circleSelect');
         const ssaSelect = document.getElementById('ssaSelect');
-        const cscCodeSelect = document.getElementById('NewCtop_csccode');
         const hiddenCtopupno = document.getElementById('hiddenCtopupno');
         const zoneCode = '@Model.ZoneCode';
         const showForm = @(ViewBag.ShowForm != null && ViewBag.ShowForm ? "true" : "false");
@@ -291,6 +439,9 @@
 
         searchInput.addEventListener('input', function (e) {
             const query = (e.target.value || '').trim();
+            
+            // Reset all cards/sections when search is initiated
+            resetAllCards();
 
             if (query.length < 3) {
                 searchResults.style.display = 'none';
@@ -312,10 +463,26 @@
                     const resp = await fetch(url, { signal: currentAbort.signal });
 
                     if (!resp.ok) {
-                        console.warn('fetch not ok:', resp.status);
+                        let errorData;
+                        try {
+                            errorData = await resp.json();
+                        } catch (e) {
+                            errorData = { error: 'Error searching for CTOP. Please try again.' };
+                        }
+                        if (errorData.error) {
+                            showError(errorData.error);
+                        }
                         return;
                     }
+                    
                     const data = await resp.json();
+                    
+                    // Check for error in response
+                    if (data.error) {
+                        showError(data.error);
+                        searchResults.style.display = 'none';
+                        return;
+                    }
 
                     if (data.results && data.results.length > 0) {
                         searchResults.innerHTML = '';
@@ -324,14 +491,17 @@
                             div.className = 'list-group-item list-group-item-action';
                             div.style.cursor = 'pointer';
                             div.innerHTML = `<strong>${item.ctopupno}</strong> - ${item.name || ''} (${item.contact_number || ''})`;
-                            div.addEventListener('click', async () => {
+                            div.addEventListener('click', () => {
                                 selectedCtopupno = item.ctopupno;
                                 searchInput.value = item.ctopupno;
                                 if (hiddenCtopupno) hiddenCtopupno.value = item.ctopupno;
                                 searchResults.style.display = 'none';
                                 
-                                // Fetch full details and prefill form
-                                await fetchAndPrefillForm(item.ctopupno);
+                                // Show Get/Show button
+                                const getDetailsBtn = document.getElementById('getDetailsBtn');
+                                if (getDetailsBtn) {
+                                    getDetailsBtn.style.display = 'block';
+                                }
                             });
                             searchResults.appendChild(div);
                         });
@@ -342,6 +512,7 @@
                 } catch (err) {
                     if (err.name !== 'AbortError') {
                         console.error('Search error:', err);
+                        showError('An error occurred while searching. Please try again.');
                     }
                 } finally {
                     searchTimeout = null;
@@ -350,7 +521,22 @@
             }, 300);
         });
 
+        // Get/Show button click handler
+        const getDetailsBtn = document.getElementById('getDetailsBtn');
+        if (getDetailsBtn) {
+            getDetailsBtn.addEventListener('click', async () => {
+                if (!selectedCtopupno) {
+                    showError('Please select a CTOP number first.');
+                    return;
+                }
+                await fetchAndPrefillForm(selectedCtopupno);
+            });
+        }
+
         async function fetchAndPrefillForm(ctopupno) {
+            const errorMessage = document.getElementById('errorMessage');
+            if (errorMessage) errorMessage.style.display = 'none';
+            
             try {
                 const resp = await fetch('/UserManagement/GetMissingCscCtopDetails', {
                     method: 'POST',
@@ -363,18 +549,50 @@
                     })
                 });
 
-                if (!resp.ok) {
-                    const error = await resp.json();
-                    // Don't show alert if form is being restored after error
-                    if (!showForm) {
-                        alert(error.error || 'Error fetching CTOP details');
+                let responseData;
+                try {
+                    responseData = await resp.json();
+                } catch (parseError) {
+                    // If JSON parsing fails, show generic error
+                    resetAllCards(true); // Preserve error message
+                    showError('Error fetching CTOP details. Please try again.');
+                    return;
+                }
+                
+                // 2.1 Check if user exists in ctop_master - check this FIRST before other errors
+                if (responseData.existsInCtopMaster) {
+                    // Check if it's an active user that cannot be updated
+                    if (responseData.isActive && responseData.error) {
+                        // Display existing user details with error message
+                        displayExistingUser(responseData.ctop, responseData.dealer_status, responseData.error);
+                        return;
+                    } else {
+                        // User exists but can be updated
+                        displayExistingUser(responseData.ctop, responseData.dealer_status);
+                        return;
                     }
+                }
+                
+                // Check for other errors in response (only if not existsInCtopMaster)
+                if (!resp.ok || responseData.error) {
+                    const errorMsg = responseData.error || 'Error fetching CTOP details';
+                    resetAllCards(true); // Preserve error message
+                    showError(errorMsg);
                     return;
                 }
 
-                const ctopData = await resp.json();
-                prefillForm(ctopData);
-                displayCtopDetails(ctopData);
+                // Combine zonal and temp data
+                const zonalData = responseData.zonalData;
+                const tempCscData = responseData.tempCscData;
+                const tempSaData = responseData.tempSaData;
+                const posUniqueCode = responseData.posUniqueCode;
+                const dealertype = responseData.dealertype;
+
+                // Display in triple column card
+                displayCtopDetailsInCard(zonalData, tempCscData, tempSaData, posUniqueCode);
+                
+                // Prefill form
+                prefillForm(zonalData, tempCscData, tempSaData, posUniqueCode, dealertype);
                 
                 if (ctopDetailsSection) {
                     ctopDetailsSection.style.display = 'block';
@@ -384,78 +602,397 @@
                 }
             } catch (err) {
                 console.error('Error fetching details:', err);
-                // Don't show alert if form is being restored after error
-                if (!showForm) {
-                    alert('Error fetching CTOP details');
-                }
+                resetAllCards(true); // Preserve error message
+                showError('Error fetching CTOP details: ' + err.message);
             }
         }
 
-        function prefillForm(ctopData) {
-            // Basic info
+        function resetAllCards(preserveError = false) {
+            // Hide all sections
+            if (ctopDetailsSection) {
+                ctopDetailsSection.style.display = 'none';
+            }
+            if (createAccountSection) {
+                createAccountSection.style.display = 'none';
+            }
+            
+            // Clear content
+            const detailsDiv = document.getElementById('ctopDetails');
+            if (detailsDiv) {
+                detailsDiv.innerHTML = '';
+            }
+            
+            const existingUserMessage = document.getElementById('existingUserMessage');
+            if (existingUserMessage) {
+                existingUserMessage.style.display = 'none';
+            }
+            
+            // Only clear error message if preserveError is false
+            if (!preserveError) {
+                const errorMessage = document.getElementById('errorMessage');
+                if (errorMessage) {
+                    errorMessage.style.display = 'none';
+                    errorMessage.textContent = '';
+                }
+            }
+            
+            // Hide Get/Show button
+            const getDetailsBtn = document.getElementById('getDetailsBtn');
+            if (getDetailsBtn) {
+                getDetailsBtn.style.display = 'none';
+            }
+            
+            // Hide search results
+            if (searchResults) {
+                searchResults.style.display = 'none';
+            }
+            
+            // Reset form
+            const createAccountForm = document.getElementById('createAccountForm');
+            if (createAccountForm) {
+                createAccountForm.reset();
+            }
+            
+            // Clear CSC code search and dropdown
+            const cscCodeSearch = document.getElementById('cscCodeSearch');
+            const cscCodeDropdown = document.getElementById('cscCodeDropdown');
+            if (cscCodeSearch) {
+                cscCodeSearch.value = '';
+            }
+            if (cscCodeDropdown) {
+                cscCodeDropdown.innerHTML = '';
+                cscCodeDropdown.style.display = 'none';
+            }
+            allCscCodes = [];
+            
+            // Hide document sections
+            const posUniqueCodeSection = document.getElementById('posUniqueCodeSection');
+            if (posUniqueCodeSection) {
+                posUniqueCodeSection.style.display = 'none';
+            }
+            
+            const csrDocsSection = document.getElementById('csrDocumentsSection');
+            if (csrDocsSection) {
+                csrDocsSection.style.display = 'none';
+            }
+            
+            const otherDocsSection = document.getElementById('otherDocumentsSection');
+            if (otherDocsSection) {
+                otherDocsSection.style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            // Show error in modal window
+            const errorModal = document.getElementById('errorModal');
+            const errorModalMessage = document.getElementById('errorModalMessage');
+            
+            if (errorModal && errorModalMessage) {
+                // Set the error message (escape HTML to prevent XSS)
+                errorModalMessage.textContent = message;
+                
+                // Use jQuery for Bootstrap 4 modal (Bootstrap 4 requires jQuery)
+                if (typeof $ !== 'undefined' && $.fn.modal) {
+                    $('#errorModal').modal('show');
+                } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    // Bootstrap 5 native modal (if available)
+                    const modal = new bootstrap.Modal(errorModal);
+                    modal.show();
+                } else {
+                    // Fallback to alert if Bootstrap/jQuery not available
+                    alert(message);
+                }
+            } else {
+                // Fallback to alert if modal elements not found
+                alert(message);
+            }
+        }
+
+        function displayExistingUser(ctop, dealerStatus, errorMessage) {
+            const detailsDiv = document.getElementById('ctopDetails');
+            const existingUserMessage = document.getElementById('existingUserMessage');
+            
+            if (detailsDiv) {
+                detailsDiv.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tr><th>CTOPUP No:</th><td>${escapeHtml(ctop.ctopupno || '')}</td></tr>
+                            <tr><th>Name:</th><td>${escapeHtml(ctop.name || '')}</td></tr>
+                            <tr><th>Username:</th><td>${escapeHtml(ctop.username || '')}</td></tr>
+                            <tr><th>Contact:</th><td>${escapeHtml(ctop.contact_number || '')}</td></tr>
+                            <tr><th>Dealer Type:</th><td>${escapeHtml(ctop.dealertype || '')}</td></tr>
+                            <tr><th>Dealer Status:</th><td><strong>${escapeHtml(dealerStatus || '')}</strong></td></tr>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            if (existingUserMessage) {
+                // Update message based on whether there's an error
+                if (errorMessage) {
+                    existingUserMessage.className = 'alert alert-danger mt-2';
+                    existingUserMessage.innerHTML = `<strong>Error:</strong> ${escapeHtml(errorMessage)}`;
+                } else {
+                    existingUserMessage.className = 'alert alert-info mt-2';
+                    existingUserMessage.innerHTML = '<strong>Note:</strong> This user already exists in ctop_master and cannot be added again.';
+                }
+                existingUserMessage.style.display = 'block';
+            }
+            
+            if (ctopDetailsSection) {
+                ctopDetailsSection.style.display = 'block';
+            }
+            
+            // Hide create account section
+            if (createAccountSection) {
+                createAccountSection.style.display = 'none';
+            }
+        }
+
+        function displayCtopDetailsInCard(zonalData, tempCscData, tempSaData, posUniqueCode) {
+            const detailsDiv = document.getElementById('ctopDetails');
+            if (!detailsDiv) return;
+
+            const tempData = tempCscData || tempSaData;
+            const combinedData = { ...zonalData, ...tempData };
+
+            // Create triple column card layout
+            detailsDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header"><strong>Zonal Data</strong></div>
+                            <div class="card-body">
+                                <p><strong>CTOPUP No:</strong> ${escapeHtml(zonalData.ctopupno || '')}</p>
+                                <p><strong>Name:</strong> ${escapeHtml([zonalData.name, zonalData.second_name, zonalData.last_name].filter(x => x).join(' ') || zonalData.name || '')}</p>
+                                <p><strong>Dealer Type:</strong> ${escapeHtml(zonalData.dealertype || '')}</p>
+                                <p><strong>SSA Code:</strong> ${escapeHtml(zonalData.ssa_code || '')}</p>
+                                <p><strong>Circle Code:</strong> ${escapeHtml(zonalData.circle_code || '')}</p>
+                                <p><strong>Contact:</strong> ${escapeHtml(zonalData.contact_number || '')}</p>
+                                <p><strong>Dealer Status:</strong> ${escapeHtml(zonalData.dealer_status || '')}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header"><strong>Temp Data</strong></div>
+                            <div class="card-body">
+                                <p><strong>POS Name:</strong> ${escapeHtml(tempData?.pos_name || '')}</p>
+                                <p><strong>POS Owner:</strong> ${escapeHtml(tempData?.pos_owner_name || '')}</p>
+                                <p><strong>Address:</strong> ${escapeHtml([tempData?.pos_hno, tempData?.pos_street, tempData?.pos_locality, tempData?.pos_city].filter(x => x).join(', ') || '')}</p>
+                                <p><strong>Pincode:</strong> ${escapeHtml(tempData?.pos_pincode || '')}</p>
+                                <p><strong>District:</strong> ${escapeHtml(tempData?.pos_district || '')}</p>
+                                <p><strong>State:</strong> ${escapeHtml(tempData?.pos_state || '')}</p>
+                                <p><strong>POS Unique Code:</strong> <span style="color: red; font-weight: bold;">${escapeHtml(posUniqueCode || '')}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header"><strong>Additional Info</strong></div>
+                            <div class="card-body">
+                                <p><strong>CSC Code:</strong> ${escapeHtml(tempData?.csccode || zonalData.csccode || '')}</p>
+                                <p><strong>Circle Name:</strong> ${escapeHtml(tempData?.circle_name || '')}</p>
+                                <p><strong>Zone:</strong> ${escapeHtml(tempData?.zone_id || zonalData.zone_code || '')}</p>
+                                <p><strong>Aadhaar:</strong> ${escapeHtml(tempData?.aadhaar_no || zonalData.aadhaar_no || '')}</p>
+                                <p><strong>Latitude:</strong> ${escapeHtml(tempData?.latitude || '')}</p>
+                                <p><strong>Longitude:</strong> ${escapeHtml(tempData?.longitude || '')}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function prefillForm(zonalData, tempCscData, tempSaData, posUniqueCode, dealertype) {
+            const tempData = tempCscData || tempSaData;
+            const combinedData = { ...zonalData, ...tempData };
+
+            // All fields are now editable
             const nameField = document.getElementById('NewCtop_name');
             if (nameField) {
-                const fullName = [ctopData.name, ctopData.second_name, ctopData.last_name]
+                const fullName = [combinedData.name, combinedData.second_name, combinedData.last_name]
                     .filter(x => x).join(' ').trim();
-                nameField.value = fullName || ctopData.name || '';
+                nameField.value = fullName || combinedData.name || '';
             }
 
             const dealertypeField = document.getElementById('NewCtop_dealertype');
             if (dealertypeField) {
-                // Set the selected option if dealertype matches CSR or OCSC
-                if (ctopData.dealertype === 'CSR' || ctopData.dealertype === 'OCSC') {
-                    dealertypeField.value = ctopData.dealertype;
-                } else {
-                    dealertypeField.value = ''; // Default to empty if not CSR or OCSC
-                }
+                dealertypeField.value = dealertype || combinedData.dealertype || '';
             }
 
             const contactField = document.getElementById('NewCtop_contact_number');
             if (contactField) {
-                contactField.value = ctopData.contact_number || '';
+                contactField.value = combinedData.contact_number || '';
             }
-
-            // CSC code will be populated when SSA is selected via dropdown
-            // Store the CSC code to set it after SSA dropdown is populated
-            if (ctopData.csccode) {
-                window.pendingCscCode = ctopData.csccode;
-            }
-
-            // attached_to will be synced with csccode when CSC code is selected
 
             // Aadhaar
             const aadhaarField = document.getElementById('NewCtop_aadhaar_no');
-            if (aadhaarField && ctopData.aadhaar_no) {
-                aadhaarField.value = ctopData.aadhaar_no || '';
+            if (aadhaarField) {
+                aadhaarField.value = combinedData.aadhaar_no || '';
             }
 
-            // Address
-            if (ctopData.dealer_address) {
-                const streetField = document.getElementById('NewCtop_pos_street');
-                if (streetField) {
-                    streetField.value = ctopData.dealer_address || '';
-                }
+            // Year - keep editable
+            // Other fields - set values
+            if (tempData) {
+                const posOwnerField = document.getElementById('NewCtop_pos_owner_name');
+                if (posOwnerField) posOwnerField.value = tempData.pos_owner_name || '';
+
+                const posNameSsField = document.getElementById('NewCtop_pos_name_ss');
+                if (posNameSsField) posNameSsField.value = tempData.pos_name_ss || '';
+
+                const posHnoField = document.getElementById('NewCtop_pos_hno');
+                if (posHnoField) posHnoField.value = tempData.pos_hno || '';
+
+                const posStreetField = document.getElementById('NewCtop_pos_street');
+                if (posStreetField) posStreetField.value = tempData.pos_street || '';
+
+                const posLandmarkField = document.getElementById('NewCtop_pos_landmark');
+                if (posLandmarkField) posLandmarkField.value = tempData.pos_landmark || '';
+
+                const posLocalityField = document.getElementById('NewCtop_pos_locality');
+                if (posLocalityField) posLocalityField.value = tempData.pos_locality || '';
+
+                const posCityField = document.getElementById('NewCtop_pos_city');
+                if (posCityField) posCityField.value = tempData.pos_city || '';
+
+                const posPincodeField = document.getElementById('NewCtop_pos_pincode');
+                if (posPincodeField) posPincodeField.value = tempData.pos_pincode || '';
+
+                const posDistrictField = document.getElementById('NewCtop_pos_district');
+                if (posDistrictField) posDistrictField.value = tempData.pos_district || '';
+
+                const posStateField = document.getElementById('NewCtop_pos_state');
+                if (posStateField) posStateField.value = tempData.pos_state || '';
+
+                const circleNameField = document.getElementById('NewCtop_circle_name');
+                if (circleNameField) circleNameField.value = tempData.circle_name || '';
+
+                const zoneCodeField = document.getElementById('NewCtop_zone_code');
+                if (zoneCodeField) zoneCodeField.value = tempData.zone_id || zonalData.zone_code || '';
+
+                const circleCodeField = document.getElementById('NewCtop_circle_code');
+                if (circleCodeField) circleCodeField.value = combinedData.circle_code || '';
+
+                const ssaCodeField = document.getElementById('NewCtop_ssa_code');
+                if (ssaCodeField) ssaCodeField.value = combinedData.ssa_code || '';
+
+                const attachedToField = document.getElementById('NewCtop_attached_to');
+                if (attachedToField) attachedToField.value = combinedData.attached_to || combinedData.csccode || '';
             }
 
-            if (ctopData.ssa_city) {
-                const cityField = document.getElementById('NewCtop_pos_city');
-                if (cityField) {
-                    cityField.value = ctopData.ssa_city || '';
-                }
+            // Circle and SSA - set values
+            if (combinedData.circle_code) {
+                selectCircleByCode(combinedData.circle_code);
             }
 
-            // Circle and SSA selection
-            if (ctopData.circle_code) {
-                selectCircleByCode(ctopData.circle_code);
-            }
-
-            if (ctopData.ssa_code) {
+            if (combinedData.ssa_code) {
                 setTimeout(() => {
-                    selectSsaByCode(ctopData.ssa_code);
-                    // CSC codes will be loaded when SSA is selected
-                    // The pending CSC code will be set after dropdown is populated
+                    selectSsaByCode(combinedData.ssa_code);
+                    // Set CSC code after SSA codes are loaded
+                    if (combinedData.csccode) {
+                        window.pendingCscCode = combinedData.csccode;
+                    }
                 }, 500);
+            } else if (combinedData.csccode) {
+                // If no SSA code, set CSC code directly
+                const cscCodeSearch = document.getElementById('cscCodeSearch');
+                const cscCodeHidden = document.getElementById('NewCtop_csccode');
+                if (cscCodeHidden) {
+                    cscCodeHidden.value = combinedData.csccode;
+                }
+                if (cscCodeSearch) {
+                    cscCodeSearch.value = combinedData.csccode;
+                }
             }
+
+            // POS Unique Code - show section and set value
+            const posUniqueCodeSection = document.getElementById('posUniqueCodeSection');
+            if (posUniqueCodeSection) {
+                posUniqueCodeSection.style.display = 'block';
+            }
+            
+            const posUniqueCodeField = document.getElementById('pos_unique_code');
+            if (posUniqueCodeField && posUniqueCode) {
+                posUniqueCodeField.value = posUniqueCode;
+                document.getElementById('selectedPosUniqueCode').value = posUniqueCode;
+            }
+
+            // Show/hide auto-generated POS unique code field based on dealertype
+            const autoGenField = document.getElementById('autoGenPosUniqueCodeField');
+            if (autoGenField) {
+                if (dealertype === 'CSR' || dealertype === 'CSC' || dealertype === 'DEPT') {
+                    autoGenField.style.display = 'block';
+                    // Auto-generate when aadhaar, year, or name changes
+                    setupPosUniqueCodeGeneration();
+                } else {
+                    autoGenField.style.display = 'none';
+                }
+            }
+
+            // Show/hide document sections based on dealertype
+            const csrDocsSection = document.getElementById('csrDocumentsSection');
+            const otherDocsSection = document.getElementById('otherDocumentsSection');
+            if (dealertype === 'CSR' || dealertype === 'CSC' || dealertype === 'DEPT') {
+                if (csrDocsSection) csrDocsSection.style.display = 'block';
+                if (otherDocsSection) otherDocsSection.style.display = 'none';
+            } else {
+                if (csrDocsSection) csrDocsSection.style.display = 'none';
+                if (otherDocsSection) otherDocsSection.style.display = 'block';
+            }
+
+            // Handle pos unique code radio buttons
+            const radioFetched = document.getElementById('radioFetched');
+            const radioGenerated = document.getElementById('radioGenerated');
+            if (radioFetched && radioGenerated) {
+                radioFetched.addEventListener('change', function() {
+                    if (this.checked) {
+                        document.getElementById('selectedPosUniqueCode').value = posUniqueCodeField.value;
+                    }
+                });
+                radioGenerated.addEventListener('change', function() {
+                    if (this.checked) {
+                        const autoGenCode = document.getElementById('auto_gen_pos_unique_code').value;
+                        document.getElementById('selectedPosUniqueCode').value = autoGenCode;
+                    }
+                });
+            }
+        }
+
+        function setupPosUniqueCodeGeneration() {
+            const aadhaarField = document.getElementById('NewCtop_aadhaar_no');
+            const yearField = document.getElementById('NewCtop_aadhaar_issue_year');
+            const nameField = document.getElementById('NewCtop_name');
+            const autoGenField = document.getElementById('auto_gen_pos_unique_code');
+
+            function generateCode() {
+                const aadhaar = aadhaarField?.value?.trim();
+                const year = yearField?.value?.trim();
+                const name = nameField?.value?.trim();
+
+                if (aadhaar && year && name) {
+                    fetch('/UserManagement/GeneratePosUniqueCode', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            aadhaarNo: aadhaar,
+                            aadhaarIssueYear: year,
+                            aadhaarName: name
+                        })
+                    })
+                    .then(resp => resp.json())
+                    .then(data => {
+                        if (data.success && autoGenField) {
+                            autoGenField.value = data.posUniqueCode;
+                        }
+                    })
+                    .catch(err => console.error('Error generating POS unique code:', err));
+                }
+            }
+
+            if (aadhaarField) aadhaarField.addEventListener('input', generateCode);
+            if (yearField) yearField.addEventListener('input', generateCode);
+            if (nameField) nameField.addEventListener('input', generateCode);
         }
 
         function selectCircleByCode(circleCode) {
@@ -482,23 +1019,6 @@
             }
         }
 
-        function displayCtopDetails(ctopData) {
-            const detailsDiv = document.getElementById('ctopDetails');
-            if (!detailsDiv) return;
-            
-            const fullName = [ctopData.name, ctopData.second_name, ctopData.last_name]
-                .filter(x => x).join(' ') || ctopData.name || '';
-            
-            detailsDiv.innerHTML = `
-                <p><strong>CTOPUP No:</strong> ${ctopData.ctopupno || ''}</p>
-                <p><strong>Name:</strong> ${fullName}</p>
-                <p><strong>Contact:</strong> ${ctopData.contact_number || ''}</p>
-                <p><strong>Dealer Type:</strong> ${ctopData.dealertype || ''}</p>
-                <p><strong>SSA Code:</strong> ${ctopData.ssa_code || ''}</p>
-                <p><strong>Circle Code:</strong> ${ctopData.circle_code || ''}</p>
-                <p><strong>CSC Code:</strong> ${ctopData.csccode || ''}</p>
-            `;
-        }
 
         async function loadSsas(circleId) {
             ssaSelect.innerHTML = '<option value="">-- Select SSA --</option>';
@@ -520,11 +1040,24 @@
             }
         }
 
+        // Store all CSC codes for filtering
+        let allCscCodes = [];
+        const cscCodeSearch = document.getElementById('cscCodeSearch');
+        const cscCodeDropdown = document.getElementById('cscCodeDropdown');
+        const cscCodeHidden = document.getElementById('NewCtop_csccode');
+
         // Load CSC codes when SSA is selected
         async function loadCscCodes(ssaCode) {
-            if (!cscCodeSelect) return;
-            cscCodeSelect.innerHTML = '<option value="">-- Select CSC Code --</option>';
-            if (!ssaCode) return;
+            if (!ssaCode) {
+                allCscCodes = [];
+                if (cscCodeSearch) cscCodeSearch.value = '';
+                if (cscCodeHidden) cscCodeHidden.value = '';
+                if (cscCodeDropdown) {
+                    cscCodeDropdown.innerHTML = '';
+                    cscCodeDropdown.style.display = 'none';
+                }
+                return;
+            }
             
             try {
                 const resp = await fetch(`/Csc/GetCscCodesBySsa?ssaCode=${encodeURIComponent(ssaCode)}`);
@@ -534,39 +1067,132 @@
                 }
                 const data = await resp.json();
                 if (data.codes && Array.isArray(data.codes)) {
-                    data.codes.forEach(csc => {
-                        const opt = document.createElement('option');
-                        opt.value = csc.csccode;
-                        opt.textContent = `${csc.csccode}${csc.csc_name ? ' - ' + csc.csc_name : ''}`;
-                        cscCodeSelect.appendChild(opt);
-                    });
+                    allCscCodes = data.codes;
                     
                     // If there's a pending CSC code to set, set it now
                     if (window.pendingCscCode) {
                         const pendingCode = window.pendingCscCode;
-                        cscCodeSelect.value = pendingCode;
-                        window.pendingCscCode = null;
-                        // Also set attached_to to the same value
-                        const attachedToField = document.getElementById('NewCtop_attached_to');
-                        if (attachedToField) {
-                            attachedToField.value = pendingCode;
+                        const csc = allCscCodes.find(c => c.csccode === pendingCode);
+                        if (csc) {
+                            if (cscCodeSearch) {
+                                cscCodeSearch.value = `${csc.csccode}${csc.csc_name ? ' - ' + csc.csc_name : ''}`;
+                            }
+                            if (cscCodeHidden) {
+                                cscCodeHidden.value = pendingCode;
+                            }
+                            // Also set attached_to to the same value
+                            const attachedToField = document.getElementById('NewCtop_attached_to');
+                            if (attachedToField) {
+                                attachedToField.value = pendingCode;
+                            }
                         }
+                        window.pendingCscCode = null;
                     }
+                    
+                    // Show all codes initially
+                    filterCscCodes('');
                 }
             } catch (err) {
                 console.error('Load CSC codes error:', err);
             }
         }
-        
-        // Update attached_to when CSC code is selected
-        if (cscCodeSelect) {
-            cscCodeSelect.addEventListener('change', function() {
-                const attachedToField = document.getElementById('NewCtop_attached_to');
-                if (attachedToField) {
-                    attachedToField.value = cscCodeSelect.value || '';
+
+        // Filter CSC codes based on search input
+        function filterCscCodes(searchTerm) {
+            if (!cscCodeDropdown) return;
+            
+            const term = (searchTerm || '').toLowerCase().trim();
+            const filtered = term === '' 
+                ? allCscCodes 
+                : allCscCodes.filter(csc => {
+                    const code = (csc.csccode || '').toLowerCase();
+                    const name = (csc.csc_name || '').toLowerCase();
+                    return code.includes(term) || name.includes(term);
+                });
+            
+            cscCodeDropdown.innerHTML = '';
+            
+            if (filtered.length === 0) {
+                const noResults = document.createElement('div');
+                noResults.className = 'p-2 text-muted';
+                noResults.textContent = 'No matching CSC codes found';
+                cscCodeDropdown.appendChild(noResults);
+                cscCodeDropdown.style.display = 'block';
+                return;
+            }
+            
+            filtered.forEach(csc => {
+                const item = document.createElement('div');
+                item.className = 'p-2 border-bottom csc-code-item';
+                item.style.cursor = 'pointer';
+                item.style.transition = 'background-color 0.2s';
+                item.innerHTML = `<strong>${escapeHtml(csc.csccode)}</strong>${csc.csc_name ? ' - ' + escapeHtml(csc.csc_name) : ''}`;
+                
+                item.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = 'white';
+                });
+                
+                item.addEventListener('click', function() {
+                    if (cscCodeSearch) {
+                        cscCodeSearch.value = `${csc.csccode}${csc.csc_name ? ' - ' + csc.csc_name : ''}`;
+                    }
+                    if (cscCodeHidden) {
+                        cscCodeHidden.value = csc.csccode;
+                    }
+                    cscCodeDropdown.style.display = 'none';
+                    
+                    // Update attached_to
+                    const attachedToField = document.getElementById('NewCtop_attached_to');
+                    if (attachedToField) {
+                        attachedToField.value = csc.csccode;
+                    }
+                });
+                
+                cscCodeDropdown.appendChild(item);
+            });
+            
+            cscCodeDropdown.style.display = 'block';
+        }
+
+        // Setup search input event listeners
+        if (cscCodeSearch) {
+            cscCodeSearch.addEventListener('input', function(e) {
+                const searchTerm = e.target.value;
+                filterCscCodes(searchTerm);
+                
+                // Clear hidden field if search is cleared
+                if (!searchTerm && cscCodeHidden) {
+                    cscCodeHidden.value = '';
                 }
             });
+            
+            cscCodeSearch.addEventListener('focus', function() {
+                if (allCscCodes.length > 0) {
+                    filterCscCodes(this.value);
+                }
+            });
+            
+            cscCodeSearch.addEventListener('blur', function() {
+                // Hide dropdown after a short delay to allow click events
+                setTimeout(() => {
+                    if (cscCodeDropdown) {
+                        cscCodeDropdown.style.display = 'none';
+                    }
+                }, 200);
+            });
         }
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (cscCodeSearch && cscCodeDropdown && 
+                !cscCodeSearch.contains(e.target) && 
+                !cscCodeDropdown.contains(e.target)) {
+                cscCodeDropdown.style.display = 'none';
+            }
+        });
 
         circleSelect.addEventListener('change', function () {
             const selected = circleSelect.options[circleSelect.selectedIndex];
@@ -632,7 +1258,7 @@
                 // Validate required fields
                 const ctopupno = hiddenCtopupno ? hiddenCtopupno.value : '';
                 if (!ctopupno) {
-                    showError('Please select a CTOP number first.');
+                    showSubmitError('Please select a CTOP number first.');
                     return;
                 }
 
@@ -727,69 +1353,70 @@
                     // Check if response is HTML (error page) or JSON
                     const contentType = response.headers.get('content-type');
                     
-                    if (!response.ok && response.status === 404) {
-                        const errorText = await response.text();
-                        console.error('404 Error:', errorText);
-                        showError('The requested page was not found (404). Please check the URL: ' + formAction);
-                        submitFormBtn.disabled = false;
-                        submitFormBtn.textContent = 'Create Account & Onboard';
-                        return;
-                    }
-                    
-                    if (contentType && contentType.includes('application/json')) {
-                        const result = await response.json();
-                        
-                        if (result.success) {
-                            showSuccess(result.message || 'Missing CSC admin onboarded successfully.');
-                            // Reset form after success
-                            setTimeout(() => {
-                                resetForm();
-                                // Optionally redirect or reload
-                                window.location.href = '/UserManagement/MissingCSCAdminOnboard';
-                            }, 2000);
+                    try {
+                        if (!response.ok && response.status === 404) {
+                            const errorText = await response.text();
+                            console.error('404 Error:', errorText);
+                            showSubmitError('The requested page was not found (404). Please check the URL: ' + formAction);
+                        } else if (contentType && contentType.includes('application/json')) {
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                showSuccess(result.message || 'Missing CSC admin onboarded successfully.');
+                                // Reset form after success
+                                setTimeout(() => {
+                                    resetForm();
+                                    // Optionally redirect or reload
+                                    window.location.href = '/UserManagement/MissingCSCAdminOnboard';
+                                }, 2000);
+                            } else {
+                                showErrors(result.errors || [result.error || 'An error occurred']);
+                            }
                         } else {
-                            showErrors(result.errors || [result.error || 'An error occurred']);
-                            submitFormBtn.disabled = false;
-                            submitFormBtn.textContent = 'Create Account & Onboard';
-                        }
-                    } else {
-                        // Response is HTML - parse for errors
-                        const html = await response.text();
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        
-                        // Check for validation errors
-                        const errorAlerts = doc.querySelectorAll('.alert-danger, .text-danger');
-                        const errors = [];
-                        errorAlerts.forEach(alert => {
-                            const text = alert.textContent.trim();
-                            if (text) errors.push(text);
-                        });
+                            // Response is HTML - parse for errors
+                            const html = await response.text();
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+                            
+                            // Check for validation errors
+                            const errorAlerts = doc.querySelectorAll('.alert-danger, .text-danger');
+                            const errors = [];
+                            errorAlerts.forEach(alert => {
+                                const text = alert.textContent.trim();
+                                if (text) errors.push(text);
+                            });
 
-                        if (errors.length > 0) {
-                            showErrors(errors);
-                        } else if (response.ok) {
-                            showSuccess('Missing CSC admin onboarded successfully.');
-                            setTimeout(() => {
-                                window.location.href = '/UserManagement/MissingCSCAdminOnboard';
-                            }, 2000);
-                        } else {
-                            showError('An error occurred while submitting the form.');
+                            if (errors.length > 0) {
+                                showErrors(errors);
+                            } else if (response.ok) {
+                                showSuccess('Missing CSC admin onboarded successfully.');
+                                setTimeout(() => {
+                                    window.location.href = '/UserManagement/MissingCSCAdminOnboard';
+                                }, 2000);
+                            } else {
+                                showSubmitError('An error occurred while submitting the form.');
+                            }
                         }
-                        
+                    } catch (parseError) {
+                        // Error parsing response
+                        console.error('Error parsing response:', parseError);
+                        showSubmitError('An error occurred while processing the server response.');
+                    } finally {
+                        // Always re-enable button when response is received
                         submitFormBtn.disabled = false;
                         submitFormBtn.textContent = 'Create Account & Onboard';
                     }
                 } catch (error) {
+                    // Network error or other fetch errors
                     console.error('Form submission error:', error);
-                    showError('An error occurred while submitting the form: ' + error.message);
+                    showSubmitError('An error occurred while submitting the form: ' + error.message);
                     submitFormBtn.disabled = false;
                     submitFormBtn.textContent = 'Create Account & Onboard';
                 }
             });
         }
 
-        function showError(message) {
+        function showSubmitError(message) {
             if (submitStatus) {
                 submitStatus.innerHTML = `<div class="alert alert-danger">${escapeHtml(message)}</div>`;
                 submitStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -820,6 +1447,263 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
+
+        // ========== View Users by CTOPUP No Functionality ==========
+        const ctopupnoViewSearch = document.getElementById('ctopupnoViewSearch');
+        const ctopupnoViewResults = document.getElementById('ctopupnoViewResults');
+        const getUsersBtn = document.getElementById('getUsersBtn');
+        const usersTableContainer = document.getElementById('usersTableContainer');
+        const usersTable = document.getElementById('usersTable');
+        const usersTableBody = usersTable ? usersTable.querySelector('tbody') : null;
+        const noUsersMessage = document.getElementById('noUsersMessage');
+        let viewSearchTimeout = null;
+        let viewSearchAbort = null;
+        let selectedCtopupnoForView = '';
+
+        // Search autocomplete for CTOPUP numbers
+        if (ctopupnoViewSearch) {
+            ctopupnoViewSearch.addEventListener('input', function(e) {
+                const query = (e.target.value || '').trim();
+                
+                if (viewSearchTimeout) {
+                    clearTimeout(viewSearchTimeout);
+                }
+                if (viewSearchAbort) {
+                    viewSearchAbort.abort();
+                }
+
+                if (query.length < 2) {
+                    ctopupnoViewResults.style.display = 'none';
+                    getUsersBtn.style.display = 'none';
+                    selectedCtopupnoForView = '';
+                    return;
+                }
+
+                viewSearchTimeout = setTimeout(async () => {
+                    viewSearchAbort = new AbortController();
+                    try {
+                        const url = `/UserManagement/SearchCtopupnosForView?searchTerm=${encodeURIComponent(query)}`;
+                        const resp = await fetch(url, { signal: viewSearchAbort.signal });
+
+                        if (!resp.ok) {
+                            return;
+                        }
+                        
+                        const data = await resp.json();
+                        
+                        if (data.error) {
+                            return;
+                        }
+
+                        if (data.results && data.results.length > 0) {
+                            ctopupnoViewResults.innerHTML = '';
+                            data.results.forEach(ctopupno => {
+                                const div = document.createElement('div');
+                                div.className = 'list-group-item list-group-item-action';
+                                div.style.cursor = 'pointer';
+                                div.textContent = ctopupno;
+                                div.addEventListener('click', () => {
+                                    selectedCtopupnoForView = ctopupno;
+                                    ctopupnoViewSearch.value = ctopupno;
+                                    ctopupnoViewResults.style.display = 'none';
+                                    getUsersBtn.style.display = 'block';
+                                });
+                                ctopupnoViewResults.appendChild(div);
+                            });
+                            ctopupnoViewResults.style.display = 'block';
+                        } else {
+                            ctopupnoViewResults.style.display = 'none';
+                        }
+                    } catch (err) {
+                        if (err.name !== 'AbortError') {
+                            console.error('Search error:', err);
+                        }
+                    } finally {
+                        viewSearchTimeout = null;
+                        viewSearchAbort = null;
+                    }
+                }, 300);
+            });
+        }
+
+        // Get Users button click handler
+        if (getUsersBtn) {
+            getUsersBtn.addEventListener('click', async () => {
+                if (!selectedCtopupnoForView) {
+                    alert('Please select a CTOPUP number first.');
+                    return;
+                }
+                await loadUsersTable(selectedCtopupnoForView);
+            });
+        }
+
+        // Load users table
+        async function loadUsersTable(ctopupno) {
+            if (!usersTableContainer || !usersTable || !usersTableBody) return;
+
+            usersTableContainer.style.display = 'block';
+            usersTable.style.display = 'none';
+            noUsersMessage.style.display = 'none';
+            usersTableBody.innerHTML = '<tr><td colspan="9" class="text-center">Loading...</td></tr>';
+
+            try {
+                const resp = await fetch(`/UserManagement/GetUsersByCtopupno?ctopupno=${encodeURIComponent(ctopupno)}`);
+                const data = await resp.json();
+
+                if (!data.success || !data.users || data.users.length === 0) {
+                    usersTable.style.display = 'none';
+                    noUsersMessage.style.display = 'block';
+                    return;
+                }
+
+                usersTableBody.innerHTML = '';
+                
+                // Load documents for each user and render rows
+                for (const user of data.users) {
+                    const row = document.createElement('tr');
+                    const docsCell = document.createElement('td');
+                    docsCell.id = `docs-${escapeHtml(user.username)}`;
+                    docsCell.innerHTML = '<span class="text-muted">Loading...</span>';
+                    
+                    row.innerHTML = `
+                        <td>${escapeHtml(user.username || '')}</td>
+                        <td>${escapeHtml(user.ctopupno || '')}</td>
+                        <td>${escapeHtml(user.name || '')}</td>
+                        <td>${escapeHtml(user.csccode || '')}</td>
+                        <td>${escapeHtml(user.pos_unique_code || '')}</td>
+                        <td>${escapeHtml(user.ssa_code || '')}</td>
+                        <td>${escapeHtml(user.dealertype || '')}</td>
+                        <td>${escapeHtml(user.dealer_status || '')}</td>
+                    `;
+                    row.appendChild(docsCell);
+                    usersTableBody.appendChild(row);
+                    
+                    // Load documents for this user
+                    loadUserDocuments(user.username, docsCell);
+                }
+
+                usersTable.style.display = 'table';
+            } catch (err) {
+                console.error('Error loading users:', err);
+                usersTableBody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading users</td></tr>';
+                usersTable.style.display = 'table';
+            }
+        }
+
+        // Load documents for a user
+        async function loadUserDocuments(username, container) {
+            if (!container || !username) return;
+
+            try {
+                const docsResp = await fetch(`/Csc/GetDocuments?username=${encodeURIComponent(username)}`);
+                if (!docsResp.ok) {
+                    container.innerHTML = '<span class="text-muted">Error loading documents</span>';
+                    return;
+                }
+                
+                const docs = await docsResp.json();
+                if (!docs || !Array.isArray(docs) || docs.length === 0) {
+                    container.innerHTML = '<span class="text-muted">No documents</span>';
+                    return;
+                }
+                
+                // Create thumbnails for each document
+                let html = '';
+                docs.forEach(doc => {
+                    const shortName = getDocumentShortName(doc.file_category_code);
+                    html += `<button type="button"
+                            class="btn btn-sm btn-outline-secondary doc-thumb mr-1 mb-1"
+                            data-username="${escapeHtml(username)}"
+                            data-doc-id="${doc.id}"
+                            data-category="${escapeHtml(doc.file_category_code)}"
+                            data-title="${escapeHtml(doc.file_category)} - ${escapeHtml(username)}"
+                            title="${escapeHtml(doc.file_category)}">
+                        <small>${escapeHtml(shortName)}</small>
+                    </button>`;
+                });
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('Error loading documents for', username, err);
+                container.innerHTML = '<span class="text-muted">Error loading documents</span>';
+            }
+        }
+
+        // Get document short name
+        function getDocumentShortName(categoryCode) {
+            const shortNames = {
+                'BA_APPROVAL_LETTER': 'BA',
+                'ID_CARD': 'ID',
+                'AADHAR_CARD': 'AAD',
+                'PAN_CARD': 'PAN',
+                'PHOTO': 'PH',
+                'CIN_DOCUMENT': 'CIN',
+                'GST_DOCUMENT': 'GST',
+                'BUSINESS_ADDRESS_PROOF': 'BAP',
+                'RESIDENTIAL_ADDRESS_PROOF': 'RAP',
+                'AFFIDAVIT': 'AFF',
+                'AGREEMENT_COPY': 'AGR'
+            };
+            return shortNames[categoryCode] || (categoryCode ? categoryCode.substring(0, 3).toUpperCase() : 'DOC');
+        }
+
+        // Document thumbnail click handler - download document
+        document.addEventListener('click', async function(e) {
+            if (e.target.closest('.doc-thumb')) {
+                const btn = e.target.closest('.doc-thumb');
+                const docId = btn.getAttribute('data-doc-id');
+                
+                if (!docId) {
+                    // Fallback: try to get by username and category
+                    const username = btn.getAttribute('data-username');
+                    const category = btn.getAttribute('data-category');
+                    if (username && category) {
+                        await handleDocumentDownloadByCategory(username, category);
+                    }
+                    return;
+                }
+                
+                // Download by docId
+                window.location.href = `/Csc/DownloadDocument?docId=${docId}`;
+            }
+        });
+
+        // Handle document download by username and category
+        async function handleDocumentDownloadByCategory(username, category) {
+            try {
+                const docsResp = await fetch(`/Csc/GetDocuments?username=${encodeURIComponent(username)}`);
+                if (!docsResp.ok) {
+                    alert('Error loading document information');
+                    return;
+                }
+                
+                const docs = await docsResp.json();
+                if (!docs || !Array.isArray(docs)) {
+                    alert('No documents found');
+                    return;
+                }
+                
+                const doc = docs.find(d => d.file_category_code === category && d.record_status === 'ACTIVE');
+                if (!doc || !doc.id) {
+                    alert('Document not found');
+                    return;
+                }
+                
+                window.location.href = `/Csc/DownloadDocument?docId=${doc.id}`;
+            } catch (err) {
+                console.error('Error downloading document:', err);
+                alert('Error downloading document');
+            }
+        }
+
+        // Hide search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (ctopupnoViewSearch && ctopupnoViewResults && 
+                !ctopupnoViewSearch.contains(e.target) && 
+                !ctopupnoViewResults.contains(e.target)) {
+                ctopupnoViewResults.style.display = 'none';
+            }
+        });
     })();
 </script>
 
