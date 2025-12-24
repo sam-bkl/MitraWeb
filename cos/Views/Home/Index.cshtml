@@ -80,8 +80,8 @@
                                                 <div class="form-control-position">
                                                     <i class="la la-key"></i>
                                                 </div>
-                                                <small class="form-text text-muted">
-                                                    <span id="otpTimer">OTP is valid for 5:00 minutes</span>
+                                                <small class="form-text">
+                                                    <span id="otpTimer" style="font-weight: bold; color: #4B0082;">OTP is valid for 5:00 minutes</span>
                                                 </small>
                                             </fieldset>
                                             <div class="form-group">
@@ -157,7 +157,8 @@
                     
                     if (timeLeft > 0) {
                         timerElement.textContent = 'OTP expires in ' + formattedTime;
-                        timerElement.className = 'form-text text-muted';
+                        timerElement.style.fontWeight = 'bold';
+                        timerElement.style.color = '#4B0082'; // Indigo color
                         timeLeft--;
                     } else {
                         // Timer expired

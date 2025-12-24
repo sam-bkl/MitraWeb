@@ -761,7 +761,7 @@ namespace cos.Repositories
                                             pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
                                             pos_district, pos_state, pos_pincode, created_date, pos_name,
                                             pos_name_ss, pos_owner_name, circle_name, pos_unique_code,
-                                            latitude, longitude, aadhaar_no, zone_id, attached_to,
+                                            latitude, longitude, aadhar_no as aadhaar_no, zone_id, attached_to,
                                             aggrement_through, ins_flag, insert_date
                                      FROM temp_csc_sa_data
                                      WHERE pos_ctop = @posCtop
@@ -793,7 +793,7 @@ namespace cos.Repositories
                                             pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
                                             pos_district, pos_state, pos_pincode, created_date, pos_name,
                                             pos_name_ss, pos_owner_name, circle_name, pos_unique_code,
-                                            latitude, longitude, aadhaar_no, zone_id, attached_to,
+                                            latitude, longitude, aadhar_no as aadhaar_no, zone_id, attached_to,
                                             aggrement_through, ins_flag, insert_date
                                      FROM temp_sa_pos_data
                                      WHERE pos_ctop = @posCtop
