@@ -911,9 +911,69 @@ namespace cos.Controllers
                 {
                     errors.Add("SSA is required.");
                 }
-                if (string.IsNullOrWhiteSpace(newCtop.dealertype) || (newCtop.dealertype != "CSR" && newCtop.dealertype != "OCSC"))
+                if (string.IsNullOrWhiteSpace(newCtop.dealertype))
                 {
-                    errors.Add("Dealer Type is required and must be either CSR or OCSC.");
+                    errors.Add("Dealer Type is required.");
+                }
+
+                // Validate documents based on dealer_type
+                if (!string.IsNullOrWhiteSpace(newCtop.dealertype))
+                {
+                    if (newCtop.dealertype == "CSR" || newCtop.dealertype == "CSC" || newCtop.dealertype == "DEPT")
+                    {
+                        // Validate CSR/CSC/DEPT documents
+                        if (newCtop.BaApprovalLetter == null || newCtop.BaApprovalLetter.Length == 0)
+                        {
+                            errors.Add("BA Head approved letter is required for " + newCtop.dealertype + " dealer type.");
+                        }
+                        if (newCtop.EmployeeIdCard == null || newCtop.EmployeeIdCard.Length == 0)
+                        {
+                            errors.Add("Employee ID Card is required for " + newCtop.dealertype + " dealer type.");
+                        }
+                        if (newCtop.AadhaarCard == null || newCtop.AadhaarCard.Length == 0)
+                        {
+                            errors.Add("Aadhaar Card is required for " + newCtop.dealertype + " dealer type.");
+                        }
+                        if (newCtop.Photo == null || newCtop.Photo.Length == 0)
+                        {
+                            errors.Add("Photo is required for " + newCtop.dealertype + " dealer type.");
+                        }
+                    }
+                    else
+                    {
+                        // Validate other dealer type documents
+                        var aadhaarDocOther = Request.Form.Files["AadhaarCardOther"];
+                        if (aadhaarDocOther == null || aadhaarDocOther.Length == 0)
+                        {
+                            errors.Add("Aadhaar Card is required.");
+                        }
+                        var photoOther = Request.Form.Files["PhotoOther"];
+                        if (photoOther == null || photoOther.Length == 0)
+                        {
+                            errors.Add("Photo is required.");
+                        }
+                        var businessAddrProof = Request.Form.Files["BusinessAddressProof"];
+                        if (businessAddrProof == null || businessAddrProof.Length == 0)
+                        {
+                            errors.Add("Address proof of Place of business is required.");
+                        }
+                        var residentialAddrProof = Request.Form.Files["ResidentialAddressProof"];
+                        if (residentialAddrProof == null || residentialAddrProof.Length == 0)
+                        {
+                            errors.Add("Local Residential address proof is required.");
+                        }
+                        
+                        // Agreement Copy required if Agreement Type is Normal
+                        var agreementType = Request.Form["AgreementType"].ToString();
+                        if (agreementType == "Normal")
+                        {
+                            var agreementCopy = Request.Form.Files["AgreementCopy"];
+                            if (agreementCopy == null || agreementCopy.Length == 0)
+                            {
+                                errors.Add("Agreement Copy is required when Agreement Type is Normal.");
+                            }
+                        }
+                    }
                 }
 
                 if (errors.Count > 0)
@@ -1403,9 +1463,69 @@ namespace cos.Controllers
                 {
                     ModelState.AddModelError("NewCtop.ssa_id", "SSA is required.");
                 }
-                if (string.IsNullOrWhiteSpace(newCtop.dealertype) || (newCtop.dealertype != "CSR" && newCtop.dealertype != "OCSC"))
+                if (string.IsNullOrWhiteSpace(newCtop.dealertype))
                 {
-                    ModelState.AddModelError("NewCtop.dealertype", "Dealer Type is required and must be either CSR or OCSC.");
+                    ModelState.AddModelError("NewCtop.dealertype", "Dealer Type is required.");
+                }
+
+                // Validate documents based on dealer_type
+                if (!string.IsNullOrWhiteSpace(newCtop.dealertype))
+                {
+                    if (newCtop.dealertype == "CSR" || newCtop.dealertype == "CSC" || newCtop.dealertype == "DEPT")
+                    {
+                        // Validate CSR/CSC/DEPT documents
+                        if (newCtop.BaApprovalLetter == null || newCtop.BaApprovalLetter.Length == 0)
+                        {
+                            ModelState.AddModelError("NewCtop.BaApprovalLetter", "BA Head approved letter is required for " + newCtop.dealertype + " dealer type.");
+                        }
+                        if (newCtop.EmployeeIdCard == null || newCtop.EmployeeIdCard.Length == 0)
+                        {
+                            ModelState.AddModelError("NewCtop.EmployeeIdCard", "Employee ID Card is required for " + newCtop.dealertype + " dealer type.");
+                        }
+                        if (newCtop.AadhaarCard == null || newCtop.AadhaarCard.Length == 0)
+                        {
+                            ModelState.AddModelError("NewCtop.AadhaarCard", "Aadhaar Card is required for " + newCtop.dealertype + " dealer type.");
+                        }
+                        if (newCtop.Photo == null || newCtop.Photo.Length == 0)
+                        {
+                            ModelState.AddModelError("NewCtop.Photo", "Photo is required for " + newCtop.dealertype + " dealer type.");
+                        }
+                    }
+                    else
+                    {
+                        // Validate other dealer type documents
+                        var aadhaarDocOther = Request.Form.Files["AadhaarCardOther"];
+                        if (aadhaarDocOther == null || aadhaarDocOther.Length == 0)
+                        {
+                            ModelState.AddModelError("AadhaarCardOther", "Aadhaar Card is required.");
+                        }
+                        var photoOther = Request.Form.Files["PhotoOther"];
+                        if (photoOther == null || photoOther.Length == 0)
+                        {
+                            ModelState.AddModelError("PhotoOther", "Photo is required.");
+                        }
+                        var businessAddrProof = Request.Form.Files["BusinessAddressProof"];
+                        if (businessAddrProof == null || businessAddrProof.Length == 0)
+                        {
+                            ModelState.AddModelError("BusinessAddressProof", "Address proof of Place of business is required.");
+                        }
+                        var residentialAddrProof = Request.Form.Files["ResidentialAddressProof"];
+                        if (residentialAddrProof == null || residentialAddrProof.Length == 0)
+                        {
+                            ModelState.AddModelError("ResidentialAddressProof", "Local Residential address proof is required.");
+                        }
+                        
+                        // Agreement Copy required if Agreement Type is Normal
+                        var agreementType = Request.Form["AgreementType"].ToString();
+                        if (agreementType == "Normal")
+                        {
+                            var agreementCopy = Request.Form.Files["AgreementCopy"];
+                            if (agreementCopy == null || agreementCopy.Length == 0)
+                            {
+                                ModelState.AddModelError("AgreementCopy", "Agreement Copy is required when Agreement Type is Normal.");
+                            }
+                        }
+                    }
                 }
 
                 if (!ModelState.IsValid)

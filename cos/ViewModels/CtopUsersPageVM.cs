@@ -95,23 +95,19 @@ namespace cos.ViewModels
         [StringLength(4, MinimumLength = 1, ErrorMessage = "Year must be up to 4 digits.")]
         public string? aadhaar_issue_year { get; set; }
 
-        // CSC staff POS registration documents
-        [Required(ErrorMessage = "BA Head approved letter is required.")]
+        // CSC staff POS registration documents (validation is done conditionally in controller based on dealer_type)
         [Display(Name = "BA Head Approved Letter")]
         public IFormFile? BaApprovalLetter { get; set; }
 
-        [Required(ErrorMessage = "Employee ID Card is required.")]
         [Display(Name = "Employee ID Card")]
         public IFormFile? EmployeeIdCard { get; set; }
 
-        [Required(ErrorMessage = "Aadhaar Card is required.")]
         [Display(Name = "Aadhaar Card")]
         public IFormFile? AadhaarCard { get; set; }
 
         [Display(Name = "PAN Card (optional)")]
         public IFormFile? PanCard { get; set; }
 
-        [Required(ErrorMessage = "Photo is required.")]
         [Display(Name = "Photo")]
         public IFormFile? Photo { get; set; }
     }
