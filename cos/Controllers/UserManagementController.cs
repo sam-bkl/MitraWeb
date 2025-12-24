@@ -646,12 +646,12 @@ namespace cos.Controllers
                     // Check if dealer_status = 'Active' and end_date is null
                     if (existingCtop.dealer_status == "Active" && existingCtop.end_date == null)
                     {
-                        return Json(new { 
-                            existsInCtopMaster = true,
+                    return Json(new { 
+                        existsInCtopMaster = true, 
                             isActive = true,
                             error = "User already exists in ctop_master with Active status and no end date.",
-                            ctop = existingCtop,
-                            dealer_status = existingCtop.dealer_status 
+                        ctop = existingCtop,
+                        dealer_status = existingCtop.dealer_status 
                         });
                     }
                     
@@ -827,6 +827,65 @@ namespace cos.Controllers
             catch (Exception ex)
             {
                 return Json(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchCtopupnosForView(string searchTerm)
+        {
+            try
+            {
+                if (!IsBaAdmin())
+                {
+                    return Json(new { error = "Access denied" });
+                }
+
+                if (string.IsNullOrWhiteSpace(searchTerm) || searchTerm.Length < 2)
+                {
+                    return Json(new { results = new List<string>() });
+                }
+
+                var ctopupnos = await _cscRepository.SearchCtopupnosWhereUsernameEqualsCtopupnoAsync(searchTerm);
+                return Json(new { results = ctopupnos });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsersByCtopupno(string ctopupno)
+        {
+            try
+            {
+                if (!IsBaAdmin())
+                {
+                    return Json(new { error = "Access denied" });
+                }
+
+                if (string.IsNullOrWhiteSpace(ctopupno))
+                {
+                    return Json(new { error = "CTOPUP number is required" });
+                }
+
+                var users = await _cscRepository.GetMainUserAndChildrenByCtopupnoAsync(ctopupno);
+                var userList = users.Select(u => new
+                {
+                    username = u.username,
+                    ctopupno = u.ctopupno,
+                    name = u.name,
+                    csccode = u.csccode,
+                    pos_unique_code = u.pos_unique_code,
+                    ssa_code = u.ssa_code,
+                    dealertype = u.dealertype
+                }).ToList();
+
+                return Json(new { success = true, users = userList });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, error = ex.Message });
             }
         }
 
@@ -1131,9 +1190,9 @@ namespace cos.Controllers
                 {
                     // New record or active record (which should have been caught earlier)
                     insertResult = await _cscRepository.InsertCtopAsync(ctopEntity, createdByAccountId);
-                    if (!insertResult.Success)
-                    {
-                        return Json(new { success = false, errors = new[] { $"Failed to create CTOP user: {insertResult.ErrorMessage}" } });
+                if (!insertResult.Success)
+                {
+                    return Json(new { success = false, errors = new[] { $"Failed to create CTOP user: {insertResult.ErrorMessage}" } });
                     }
                 }
 

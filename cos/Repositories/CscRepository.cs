@@ -1019,6 +1019,58 @@ namespace cos.Repositories
             }
         }
 
+        // Search for unique ctopupnos where ctopupno = username
+        public async Task<IEnumerable<string>> SearchCtopupnosWhereUsernameEqualsCtopupnoAsync(string searchTerm)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    return new List<string>();
+                }
+
+                var pattern = $"%{searchTerm}%";
+                const string sql = @"SELECT DISTINCT ctopupno
+                                     FROM ctop_master
+                                     WHERE ctopupno = username
+                                       AND ctopupno LIKE @pattern
+                                     ORDER BY ctopupno
+                                     LIMIT 20";
+                using var db = ConnectionPgSql;
+                var results = await db.QueryAsync<string>(sql, new { pattern });
+                return results;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error searching CTOPUP numbers: {ex.Message}", ex);
+            }
+        }
+
+        // Get main user and all child users for a ctopupno
+        public async Task<IEnumerable<CtopMaster>> GetMainUserAndChildrenByCtopupnoAsync(string ctopupno)
+        {
+            try
+            {
+                const string sql = @"SELECT username, ctopupno, name, dealertype, ssa_code, csccode, circle_code, attached_to,
+                                            contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
+                                            pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
+                                            pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
+                                            aadhaar_no, zone_code, ctop_type, dealer_status, end_date
+                                     FROM ctop_master
+                                     WHERE (ctopupno = @ctopupno AND username = @ctopupno)
+                                        OR parent_ctopno = @ctopupno
+                                     ORDER BY 
+                                         CASE WHEN ctopupno = @ctopupno AND username = @ctopupno THEN 0 ELSE 1 END,
+                                         created_date DESC";
+                using var db = ConnectionPgSql;
+                return await db.QueryAsync<CtopMaster>(sql, new { ctopupno });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving main user and children: {ex.Message}", ex);
+            }
+        }
+
         /// <summary>
         /// Logs audit information for ctop_master table operations (INSERT or UPDATE)
         /// </summary>

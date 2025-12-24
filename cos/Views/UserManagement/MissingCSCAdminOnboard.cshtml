@@ -32,6 +32,50 @@
     </div>
 </div>
 
+<!-- View Users by CTOPUP No Card -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>View Users by CTOPUP No</h5>
+                <div class="form-row">
+                    <div class="form-group col-md-8">
+                        <label for="ctopupnoViewSearch">Search CTOPUP No (where ctopupno = username):</label>
+                        <input type="text" class="form-control" id="ctopupnoViewSearch" placeholder="Type to search CTOPUP numbers..." autocomplete="off" />
+                        <div id="ctopupnoViewResults" class="list-group mt-2" style="display:none; max-height: 300px; overflow-y: auto; position: absolute; z-index: 1000; width: 100%; background: white; border: 1px solid #ddd;"></div>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>&nbsp;</label>
+                        <button type="button" class="btn btn-primary btn-block" id="getUsersBtn" style="display:none;">Get Users</button>
+                    </div>
+                </div>
+                <div id="usersTableContainer" style="display:none;">
+                    <div id="noUsersMessage" class="alert alert-info" style="display:none;">
+                        No users found for the selected CTOPUP number.
+                    </div>
+                    <div class="table-responsive">
+                        <table id="usersTable" class="table table-bordered table-striped" style="display:none;">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>CTOPUP No</th>
+                                    <th>Name</th>
+                                    <th>CSC Code</th>
+                                    <th>POS Unique Code</th>
+                                    <th>SSA</th>
+                                    <th>Dealer Type</th>
+                                    <th>Documents</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row mt-3">
     <div class="col-12">
         <div class="card">
@@ -1401,6 +1445,261 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
+        // ========== View Users by CTOPUP No Functionality ==========
+        const ctopupnoViewSearch = document.getElementById('ctopupnoViewSearch');
+        const ctopupnoViewResults = document.getElementById('ctopupnoViewResults');
+        const getUsersBtn = document.getElementById('getUsersBtn');
+        const usersTableContainer = document.getElementById('usersTableContainer');
+        const usersTable = document.getElementById('usersTable');
+        const usersTableBody = usersTable ? usersTable.querySelector('tbody') : null;
+        const noUsersMessage = document.getElementById('noUsersMessage');
+        let viewSearchTimeout = null;
+        let viewSearchAbort = null;
+        let selectedCtopupnoForView = '';
+
+        // Search autocomplete for CTOPUP numbers
+        if (ctopupnoViewSearch) {
+            ctopupnoViewSearch.addEventListener('input', function(e) {
+                const query = (e.target.value || '').trim();
+                
+                if (viewSearchTimeout) {
+                    clearTimeout(viewSearchTimeout);
+                }
+                if (viewSearchAbort) {
+                    viewSearchAbort.abort();
+                }
+
+                if (query.length < 2) {
+                    ctopupnoViewResults.style.display = 'none';
+                    getUsersBtn.style.display = 'none';
+                    selectedCtopupnoForView = '';
+                    return;
+                }
+
+                viewSearchTimeout = setTimeout(async () => {
+                    viewSearchAbort = new AbortController();
+                    try {
+                        const url = `/UserManagement/SearchCtopupnosForView?searchTerm=${encodeURIComponent(query)}`;
+                        const resp = await fetch(url, { signal: viewSearchAbort.signal });
+
+                        if (!resp.ok) {
+                            return;
+                        }
+                        
+                        const data = await resp.json();
+                        
+                        if (data.error) {
+                            return;
+                        }
+
+                        if (data.results && data.results.length > 0) {
+                            ctopupnoViewResults.innerHTML = '';
+                            data.results.forEach(ctopupno => {
+                                const div = document.createElement('div');
+                                div.className = 'list-group-item list-group-item-action';
+                                div.style.cursor = 'pointer';
+                                div.textContent = ctopupno;
+                                div.addEventListener('click', () => {
+                                    selectedCtopupnoForView = ctopupno;
+                                    ctopupnoViewSearch.value = ctopupno;
+                                    ctopupnoViewResults.style.display = 'none';
+                                    getUsersBtn.style.display = 'block';
+                                });
+                                ctopupnoViewResults.appendChild(div);
+                            });
+                            ctopupnoViewResults.style.display = 'block';
+                        } else {
+                            ctopupnoViewResults.style.display = 'none';
+                        }
+                    } catch (err) {
+                        if (err.name !== 'AbortError') {
+                            console.error('Search error:', err);
+                        }
+                    } finally {
+                        viewSearchTimeout = null;
+                        viewSearchAbort = null;
+                    }
+                }, 300);
+            });
+        }
+
+        // Get Users button click handler
+        if (getUsersBtn) {
+            getUsersBtn.addEventListener('click', async () => {
+                if (!selectedCtopupnoForView) {
+                    alert('Please select a CTOPUP number first.');
+                    return;
+                }
+                await loadUsersTable(selectedCtopupnoForView);
+            });
+        }
+
+        // Load users table
+        async function loadUsersTable(ctopupno) {
+            if (!usersTableContainer || !usersTable || !usersTableBody) return;
+
+            usersTableContainer.style.display = 'block';
+            usersTable.style.display = 'none';
+            noUsersMessage.style.display = 'none';
+            usersTableBody.innerHTML = '<tr><td colspan="8" class="text-center">Loading...</td></tr>';
+
+            try {
+                const resp = await fetch(`/UserManagement/GetUsersByCtopupno?ctopupno=${encodeURIComponent(ctopupno)}`);
+                const data = await resp.json();
+
+                if (!data.success || !data.users || data.users.length === 0) {
+                    usersTable.style.display = 'none';
+                    noUsersMessage.style.display = 'block';
+                    return;
+                }
+
+                usersTableBody.innerHTML = '';
+                
+                // Load documents for each user and render rows
+                for (const user of data.users) {
+                    const row = document.createElement('tr');
+                    const docsCell = document.createElement('td');
+                    docsCell.id = `docs-${escapeHtml(user.username)}`;
+                    docsCell.innerHTML = '<span class="text-muted">Loading...</span>';
+                    
+                    row.innerHTML = `
+                        <td>${escapeHtml(user.username || '')}</td>
+                        <td>${escapeHtml(user.ctopupno || '')}</td>
+                        <td>${escapeHtml(user.name || '')}</td>
+                        <td>${escapeHtml(user.csccode || '')}</td>
+                        <td>${escapeHtml(user.pos_unique_code || '')}</td>
+                        <td>${escapeHtml(user.ssa_code || '')}</td>
+                        <td>${escapeHtml(user.dealertype || '')}</td>
+                    `;
+                    row.appendChild(docsCell);
+                    usersTableBody.appendChild(row);
+                    
+                    // Load documents for this user
+                    loadUserDocuments(user.username, docsCell);
+                }
+
+                usersTable.style.display = 'table';
+            } catch (err) {
+                console.error('Error loading users:', err);
+                usersTableBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading users</td></tr>';
+                usersTable.style.display = 'table';
+            }
+        }
+
+        // Load documents for a user
+        async function loadUserDocuments(username, container) {
+            if (!container || !username) return;
+
+            try {
+                const docsResp = await fetch(`/Csc/GetDocuments?username=${encodeURIComponent(username)}`);
+                if (!docsResp.ok) {
+                    container.innerHTML = '<span class="text-muted">Error loading documents</span>';
+                    return;
+                }
+                
+                const docs = await docsResp.json();
+                if (!docs || !Array.isArray(docs) || docs.length === 0) {
+                    container.innerHTML = '<span class="text-muted">No documents</span>';
+                    return;
+                }
+                
+                // Create thumbnails for each document
+                let html = '';
+                docs.forEach(doc => {
+                    const shortName = getDocumentShortName(doc.file_category_code);
+                    html += `<button type="button"
+                            class="btn btn-sm btn-outline-secondary doc-thumb mr-1 mb-1"
+                            data-username="${escapeHtml(username)}"
+                            data-doc-id="${doc.id}"
+                            data-category="${escapeHtml(doc.file_category_code)}"
+                            data-title="${escapeHtml(doc.file_category)} - ${escapeHtml(username)}"
+                            title="${escapeHtml(doc.file_category)}">
+                        <small>${escapeHtml(shortName)}</small>
+                    </button>`;
+                });
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('Error loading documents for', username, err);
+                container.innerHTML = '<span class="text-muted">Error loading documents</span>';
+            }
+        }
+
+        // Get document short name
+        function getDocumentShortName(categoryCode) {
+            const shortNames = {
+                'BA_APPROVAL_LETTER': 'BA',
+                'ID_CARD': 'ID',
+                'AADHAR_CARD': 'AAD',
+                'PAN_CARD': 'PAN',
+                'PHOTO': 'PH',
+                'CIN_DOCUMENT': 'CIN',
+                'GST_DOCUMENT': 'GST',
+                'BUSINESS_ADDRESS_PROOF': 'BAP',
+                'RESIDENTIAL_ADDRESS_PROOF': 'RAP',
+                'AFFIDAVIT': 'AFF',
+                'AGREEMENT_COPY': 'AGR'
+            };
+            return shortNames[categoryCode] || (categoryCode ? categoryCode.substring(0, 3).toUpperCase() : 'DOC');
+        }
+
+        // Document thumbnail click handler - download document
+        document.addEventListener('click', async function(e) {
+            if (e.target.closest('.doc-thumb')) {
+                const btn = e.target.closest('.doc-thumb');
+                const docId = btn.getAttribute('data-doc-id');
+                
+                if (!docId) {
+                    // Fallback: try to get by username and category
+                    const username = btn.getAttribute('data-username');
+                    const category = btn.getAttribute('data-category');
+                    if (username && category) {
+                        await handleDocumentDownloadByCategory(username, category);
+                    }
+                    return;
+                }
+                
+                // Download by docId
+                window.location.href = `/Csc/DownloadDocument?docId=${docId}`;
+            }
+        });
+
+        // Handle document download by username and category
+        async function handleDocumentDownloadByCategory(username, category) {
+            try {
+                const docsResp = await fetch(`/Csc/GetDocuments?username=${encodeURIComponent(username)}`);
+                if (!docsResp.ok) {
+                    alert('Error loading document information');
+                    return;
+                }
+                
+                const docs = await docsResp.json();
+                if (!docs || !Array.isArray(docs)) {
+                    alert('No documents found');
+                    return;
+                }
+                
+                const doc = docs.find(d => d.file_category_code === category && d.record_status === 'ACTIVE');
+                if (!doc || !doc.id) {
+                    alert('Document not found');
+                    return;
+                }
+                
+                window.location.href = `/Csc/DownloadDocument?docId=${doc.id}`;
+            } catch (err) {
+                console.error('Error downloading document:', err);
+                alert('Error downloading document');
+            }
+        }
+
+        // Hide search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (ctopupnoViewSearch && ctopupnoViewResults && 
+                !ctopupnoViewSearch.contains(e.target) && 
+                !ctopupnoViewResults.contains(e.target)) {
+                ctopupnoViewResults.style.display = 'none';
+            }
+        });
     })();
 </script>
 
