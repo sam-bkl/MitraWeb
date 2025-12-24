@@ -201,9 +201,11 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.csccode"></label>
-                            <select class="form-control" asp-for="NewCtop.csccode" id="NewCtop_csccode" name="NewCtop.csccode">
-                                <option value="">-- Select CSC Code --</option>
-                            </select>
+                            <div style="position: relative;">
+                                <input type="text" class="form-control" id="cscCodeSearch" placeholder="Type to search CSC codes..." autocomplete="off" />
+                                <input type="hidden" asp-for="NewCtop.csccode" id="NewCtop_csccode" name="NewCtop.csccode" />
+                                <div id="cscCodeDropdown" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ced4da; border-top: none; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
+                            </div>
                             <span class="text-danger" asp-validation-for="NewCtop.csccode"></span>
                         </div>
                         <input type="hidden" asp-for="NewCtop.attached_to" id="NewCtop_attached_to" />
@@ -357,7 +359,6 @@
         const createAccountSection = document.getElementById('createAccountSection');
         const circleSelect = document.getElementById('circleSelect');
         const ssaSelect = document.getElementById('ssaSelect');
-        const cscCodeSelect = document.getElementById('NewCtop_csccode');
         const hiddenCtopupno = document.getElementById('hiddenCtopupno');
         const zoneCode = '@Model.ZoneCode';
         const showForm = @(ViewBag.ShowForm != null && ViewBag.ShowForm ? "true" : "false");
@@ -607,6 +608,18 @@
                 createAccountForm.reset();
             }
             
+            // Clear CSC code search and dropdown
+            const cscCodeSearch = document.getElementById('cscCodeSearch');
+            const cscCodeDropdown = document.getElementById('cscCodeDropdown');
+            if (cscCodeSearch) {
+                cscCodeSearch.value = '';
+            }
+            if (cscCodeDropdown) {
+                cscCodeDropdown.innerHTML = '';
+                cscCodeDropdown.style.display = 'none';
+            }
+            allCscCodes = [];
+            
             // Hide document sections
             const posUniqueCodeSection = document.getElementById('posUniqueCodeSection');
             if (posUniqueCodeSection) {
@@ -837,10 +850,14 @@
                     }
                 }, 500);
             } else if (combinedData.csccode) {
-                // If no SSA code, try to set CSC code directly (may not work if dropdown not populated)
-                const cscCodeSelect = document.getElementById('NewCtop_csccode');
-                if (cscCodeSelect) {
-                    cscCodeSelect.value = combinedData.csccode;
+                // If no SSA code, set CSC code directly
+                const cscCodeSearch = document.getElementById('cscCodeSearch');
+                const cscCodeHidden = document.getElementById('NewCtop_csccode');
+                if (cscCodeHidden) {
+                    cscCodeHidden.value = combinedData.csccode;
+                }
+                if (cscCodeSearch) {
+                    cscCodeSearch.value = combinedData.csccode;
                 }
             }
 
@@ -978,11 +995,24 @@
             }
         }
 
+        // Store all CSC codes for filtering
+        let allCscCodes = [];
+        const cscCodeSearch = document.getElementById('cscCodeSearch');
+        const cscCodeDropdown = document.getElementById('cscCodeDropdown');
+        const cscCodeHidden = document.getElementById('NewCtop_csccode');
+
         // Load CSC codes when SSA is selected
         async function loadCscCodes(ssaCode) {
-            if (!cscCodeSelect) return;
-            cscCodeSelect.innerHTML = '<option value="">-- Select CSC Code --</option>';
-            if (!ssaCode) return;
+            if (!ssaCode) {
+                allCscCodes = [];
+                if (cscCodeSearch) cscCodeSearch.value = '';
+                if (cscCodeHidden) cscCodeHidden.value = '';
+                if (cscCodeDropdown) {
+                    cscCodeDropdown.innerHTML = '';
+                    cscCodeDropdown.style.display = 'none';
+                }
+                return;
+            }
             
             try {
                 const resp = await fetch(`/Csc/GetCscCodesBySsa?ssaCode=${encodeURIComponent(ssaCode)}`);
@@ -992,39 +1022,132 @@
                 }
                 const data = await resp.json();
                 if (data.codes && Array.isArray(data.codes)) {
-                    data.codes.forEach(csc => {
-                        const opt = document.createElement('option');
-                        opt.value = csc.csccode;
-                        opt.textContent = `${csc.csccode}${csc.csc_name ? ' - ' + csc.csc_name : ''}`;
-                        cscCodeSelect.appendChild(opt);
-                    });
+                    allCscCodes = data.codes;
                     
                     // If there's a pending CSC code to set, set it now
                     if (window.pendingCscCode) {
                         const pendingCode = window.pendingCscCode;
-                        cscCodeSelect.value = pendingCode;
-                        window.pendingCscCode = null;
-                        // Also set attached_to to the same value
-                        const attachedToField = document.getElementById('NewCtop_attached_to');
-                        if (attachedToField) {
-                            attachedToField.value = pendingCode;
+                        const csc = allCscCodes.find(c => c.csccode === pendingCode);
+                        if (csc) {
+                            if (cscCodeSearch) {
+                                cscCodeSearch.value = `${csc.csccode}${csc.csc_name ? ' - ' + csc.csc_name : ''}`;
+                            }
+                            if (cscCodeHidden) {
+                                cscCodeHidden.value = pendingCode;
+                            }
+                            // Also set attached_to to the same value
+                            const attachedToField = document.getElementById('NewCtop_attached_to');
+                            if (attachedToField) {
+                                attachedToField.value = pendingCode;
+                            }
                         }
+                        window.pendingCscCode = null;
                     }
+                    
+                    // Show all codes initially
+                    filterCscCodes('');
                 }
             } catch (err) {
                 console.error('Load CSC codes error:', err);
             }
         }
-        
-        // Update attached_to when CSC code is selected
-        if (cscCodeSelect) {
-            cscCodeSelect.addEventListener('change', function() {
-                const attachedToField = document.getElementById('NewCtop_attached_to');
-                if (attachedToField) {
-                    attachedToField.value = cscCodeSelect.value || '';
+
+        // Filter CSC codes based on search input
+        function filterCscCodes(searchTerm) {
+            if (!cscCodeDropdown) return;
+            
+            const term = (searchTerm || '').toLowerCase().trim();
+            const filtered = term === '' 
+                ? allCscCodes 
+                : allCscCodes.filter(csc => {
+                    const code = (csc.csccode || '').toLowerCase();
+                    const name = (csc.csc_name || '').toLowerCase();
+                    return code.includes(term) || name.includes(term);
+                });
+            
+            cscCodeDropdown.innerHTML = '';
+            
+            if (filtered.length === 0) {
+                const noResults = document.createElement('div');
+                noResults.className = 'p-2 text-muted';
+                noResults.textContent = 'No matching CSC codes found';
+                cscCodeDropdown.appendChild(noResults);
+                cscCodeDropdown.style.display = 'block';
+                return;
+            }
+            
+            filtered.forEach(csc => {
+                const item = document.createElement('div');
+                item.className = 'p-2 border-bottom csc-code-item';
+                item.style.cursor = 'pointer';
+                item.style.transition = 'background-color 0.2s';
+                item.innerHTML = `<strong>${escapeHtml(csc.csccode)}</strong>${csc.csc_name ? ' - ' + escapeHtml(csc.csc_name) : ''}`;
+                
+                item.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = 'white';
+                });
+                
+                item.addEventListener('click', function() {
+                    if (cscCodeSearch) {
+                        cscCodeSearch.value = `${csc.csccode}${csc.csc_name ? ' - ' + csc.csc_name : ''}`;
+                    }
+                    if (cscCodeHidden) {
+                        cscCodeHidden.value = csc.csccode;
+                    }
+                    cscCodeDropdown.style.display = 'none';
+                    
+                    // Update attached_to
+                    const attachedToField = document.getElementById('NewCtop_attached_to');
+                    if (attachedToField) {
+                        attachedToField.value = csc.csccode;
+                    }
+                });
+                
+                cscCodeDropdown.appendChild(item);
+            });
+            
+            cscCodeDropdown.style.display = 'block';
+        }
+
+        // Setup search input event listeners
+        if (cscCodeSearch) {
+            cscCodeSearch.addEventListener('input', function(e) {
+                const searchTerm = e.target.value;
+                filterCscCodes(searchTerm);
+                
+                // Clear hidden field if search is cleared
+                if (!searchTerm && cscCodeHidden) {
+                    cscCodeHidden.value = '';
                 }
             });
+            
+            cscCodeSearch.addEventListener('focus', function() {
+                if (allCscCodes.length > 0) {
+                    filterCscCodes(this.value);
+                }
+            });
+            
+            cscCodeSearch.addEventListener('blur', function() {
+                // Hide dropdown after a short delay to allow click events
+                setTimeout(() => {
+                    if (cscCodeDropdown) {
+                        cscCodeDropdown.style.display = 'none';
+                    }
+                }, 200);
+            });
         }
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (cscCodeSearch && cscCodeDropdown && 
+                !cscCodeSearch.contains(e.target) && 
+                !cscCodeDropdown.contains(e.target)) {
+                cscCodeDropdown.style.display = 'none';
+            }
+        });
 
         circleSelect.addEventListener('change', function () {
             const selected = circleSelect.options[circleSelect.selectedIndex];

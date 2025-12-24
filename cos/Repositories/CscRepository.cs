@@ -938,13 +938,13 @@ namespace cos.Repositories
                 using var transaction = db.BeginTransaction();
                 try
                 {
-                    // First, get the current row to backup
+                    // First, get the current row to log to audit
                     const string selectSql = @"SELECT username, ctopupno, name, dealertype, ssa_code, csccode, circle_code, attached_to,
                                                       contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
                                                       pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
                                                       pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
                                                       aadhaar_no, zone_code, ctop_type, dealercode, ref_dealer_id, master_dealer_id,
-                                                      parent_ctopno, dealer_status
+                                                      parent_ctopno, dealer_status, end_date
                                                FROM ctop_master
                                                WHERE ctopupno = @ctopupno
                                                ORDER BY created_date DESC
@@ -958,54 +958,9 @@ namespace cos.Repositories
                         return (false, "CTOP record not found.");
                     }
 
-                    // Backup the current row to backup table
-                    const string backupSql = @"INSERT INTO ctop_master_pos_unique_code_backup 
-                                                (username, ctopupno, name, dealertype, ssa_code, csccode, circle_code, attached_to,
-                                                 contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
-                                                 pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
-                                                 pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
-                                                 aadhaar_no, zone_code, ctop_type, updated_by_account_id, updated_at, new_pos_unique_code)
-                                                VALUES 
-                                                (@username, @ctopupno, @name, @dealertype, @ssa_code, @csccode, @circle_code, @attached_to,
-                                                 @contact_number, @pos_hno, @pos_street, @pos_landmark, @pos_locality, @pos_city,
-                                                 @pos_district, @pos_state, @pos_pincode, @created_date, @pos_name_ss, @pos_owner_name,
-                                                 @pos_code, @pos_ctop, @circle_name, @pos_unique_code, @latitude, @longitude,
-                                                 @aadhaar_no, @zone_code, @ctop_type, @updated_by_account_id, CURRENT_TIMESTAMP, @new_pos_unique_code)";
-                    
-                    await db.ExecuteAsync(backupSql, new
-                    {
-                        username = currentRow.username,
-                        ctopupno = currentRow.ctopupno,
-                        name = currentRow.name,
-                        dealertype = currentRow.dealertype,
-                        ssa_code = currentRow.ssa_code,
-                        csccode = currentRow.csccode,
-                        circle_code = currentRow.circle_code,
-                        attached_to = currentRow.attached_to,
-                        contact_number = currentRow.contact_number,
-                        pos_hno = currentRow.pos_hno,
-                        pos_street = currentRow.pos_street,
-                        pos_landmark = currentRow.pos_landmark,
-                        pos_locality = currentRow.pos_locality,
-                        pos_city = currentRow.pos_city,
-                        pos_district = currentRow.pos_district,
-                        pos_state = currentRow.pos_state,
-                        pos_pincode = currentRow.pos_pincode,
-                        created_date = currentRow.created_date,
-                        pos_name_ss = currentRow.pos_name_ss,
-                        pos_owner_name = currentRow.pos_owner_name,
-                        pos_code = currentRow.pos_code,
-                        pos_ctop = currentRow.pos_ctop,
-                        circle_name = currentRow.circle_name,
-                        pos_unique_code = currentRow.pos_unique_code, // OLD value
-                        latitude = currentRow.latitude,
-                        longitude = currentRow.longitude,
-                        aadhaar_no = currentRow.aadhaar_no,
-                        zone_code = currentRow.zone_code,
-                        ctop_type = currentRow.ctop_type,
-                        updated_by_account_id = updatedByAccountId,
-                        new_pos_unique_code = newPosUniqueCode
-                    }, transaction);
+                    // Log current data to audit table before update
+                    await LogCtopMasterAuditAsync(currentRow, updatedByAccountId, "UPDATE", currentRow.pos_unique_code, 
+                        $"Updating pos_unique_code from '{currentRow.pos_unique_code}' to '{newPosUniqueCode}'", transaction);
 
                     // Update the pos_unique_code in ctop_master
                     const string updateSql = @"UPDATE ctop_master 
@@ -1029,14 +984,14 @@ namespace cos.Repositories
                         return (false, "Failed to update pos_unique_code. No rows affected.");
                     }
 
-                    // Log to audit table - get updated row
+                    // Log updated row to audit table - get updated row
                     var updatedRow = await db.QueryFirstOrDefaultAsync<CtopMaster>(
                         @"SELECT username, ctopupno, name, dealertype, ssa_code, csccode, circle_code, attached_to,
                                  contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
                                  pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
                                  pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
                                  aadhaar_no, zone_code, ctop_type, dealercode, ref_dealer_id, master_dealer_id,
-                                 parent_ctopno, dealer_status
+                                 parent_ctopno, dealer_status, end_date
                           FROM ctop_master
                           WHERE ctopupno = @ctopupno
                           ORDER BY created_date DESC
