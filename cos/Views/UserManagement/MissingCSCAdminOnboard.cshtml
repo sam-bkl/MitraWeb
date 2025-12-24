@@ -155,26 +155,24 @@
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label>Circle</label>
-                            <select class="form-control" id="circleSelect" asp-for="NewCtop.circle_id" disabled>
+                            <select class="form-control" id="circleSelect" asp-for="NewCtop.circle_id" name="NewCtop.circle_id">
                                 <option value="">-- Select Circle --</option>
                                 @foreach (var c in Model.Circles)
                                 {
                                     <option value="@c.id" data-code="@c.circle_code" data-zone="@c.zone_code" data-name="@c.circle_name">@c.circle_name</option>
                                 }
                             </select>
-                            <input type="hidden" id="NewCtop_circle_id" name="NewCtop.circle_id" />
                             <span class="text-danger" asp-validation-for="NewCtop.circle_id"></span>
                         </div>
                         <div class="form-group col-md-4">
                             <label>SSA</label>
-                            <select class="form-control" id="ssaSelect" asp-for="NewCtop.ssa_id" disabled>
+                            <select class="form-control" id="ssaSelect" asp-for="NewCtop.ssa_id" name="NewCtop.ssa_id">
                                 <option value="">-- Select SSA --</option>
                                 @foreach (var s in Model.Ssas)
                                 {
                                     <option value="@s.id" data-name="@s.ssa_name" data-code="@s.ssa_code">@s.ssa_name</option>
                                 }
                             </select>
-                            <input type="hidden" id="NewCtop_ssa_id" name="NewCtop.ssa_id" />
                             <span class="text-danger" asp-validation-for="NewCtop.ssa_id"></span>
                         </div>
                         <div class="form-group col-md-4">
@@ -203,10 +201,9 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label asp-for="NewCtop.csccode"></label>
-                            <select class="form-control" asp-for="NewCtop.csccode" id="NewCtop_csccode" disabled>
+                            <select class="form-control" asp-for="NewCtop.csccode" id="NewCtop_csccode" name="NewCtop.csccode">
                                 <option value="">-- Select CSC Code --</option>
                             </select>
-                            <input type="hidden" id="NewCtop_csccode_hidden" name="NewCtop.csccode" />
                             <span class="text-danger" asp-validation-for="NewCtop.csccode"></span>
                         </div>
                         <input type="hidden" asp-for="NewCtop.attached_to" id="NewCtop_attached_to" />
@@ -822,19 +819,11 @@
                 const ssaCodeField = document.getElementById('NewCtop_ssa_code');
                 if (ssaCodeField) ssaCodeField.value = combinedData.ssa_code || '';
 
-                // Set CSC code
-                const cscCodeSelect = document.getElementById('NewCtop_csccode');
-                const cscCodeHidden = document.getElementById('NewCtop_csccode_hidden');
-                if (cscCodeSelect && combinedData.csccode) {
-                    cscCodeSelect.value = combinedData.csccode;
-                    if (cscCodeHidden) cscCodeHidden.value = combinedData.csccode;
-                }
-
                 const attachedToField = document.getElementById('NewCtop_attached_to');
                 if (attachedToField) attachedToField.value = combinedData.attached_to || combinedData.csccode || '';
             }
 
-            // Circle and SSA - set values but keep disabled
+            // Circle and SSA - set values
             if (combinedData.circle_code) {
                 selectCircleByCode(combinedData.circle_code);
             }
@@ -842,10 +831,25 @@
             if (combinedData.ssa_code) {
                 setTimeout(() => {
                     selectSsaByCode(combinedData.ssa_code);
+                    // Set CSC code after SSA codes are loaded
+                    if (combinedData.csccode) {
+                        window.pendingCscCode = combinedData.csccode;
+                    }
                 }, 500);
+            } else if (combinedData.csccode) {
+                // If no SSA code, try to set CSC code directly (may not work if dropdown not populated)
+                const cscCodeSelect = document.getElementById('NewCtop_csccode');
+                if (cscCodeSelect) {
+                    cscCodeSelect.value = combinedData.csccode;
+                }
             }
 
-            // POS Unique Code
+            // POS Unique Code - show section and set value
+            const posUniqueCodeSection = document.getElementById('posUniqueCodeSection');
+            if (posUniqueCodeSection) {
+                posUniqueCodeSection.style.display = 'block';
+            }
+            
             const posUniqueCodeField = document.getElementById('pos_unique_code');
             if (posUniqueCodeField && posUniqueCode) {
                 posUniqueCodeField.value = posUniqueCode;
