@@ -1369,64 +1369,65 @@
                     // Check if response is HTML (error page) or JSON
                     const contentType = response.headers.get('content-type');
                     
-                    if (!response.ok && response.status === 404) {
-                        hideLoadingModal();
-                        const errorText = await response.text();
-                        console.error('404 Error:', errorText);
-                        showSubmitError('The requested page was not found (404). Please check the URL: ' + formAction);
-                        submitFormBtn.disabled = false;
-                        submitFormBtn.textContent = 'Create Account & Onboard';
-                        return;
-                    }
-                    
-                    if (contentType && contentType.includes('application/json')) {
-                        const result = await response.json();
-                        
-                        if (result.success) {
-                            hideLoadingModal();
-                            showSuccess(result.message || 'Missing CSC admin onboarded successfully.');
-                            // Reset form after success
-                            setTimeout(() => {
-                                resetForm();
-                                // Optionally redirect or reload
-                                window.location.href = '/UserManagement/MissingCSCAdminOnboard';
-                            }, 2000);
-                        } else {
-                            hideLoadingModal();
-                            showErrors(result.errors || [result.error || 'An error occurred']);
-                            submitFormBtn.disabled = false;
-                            submitFormBtn.textContent = 'Create Account & Onboard';
+                    try {
+                        if (!response.ok && response.status === 404) {
+                            const errorText = await response.text();
+                            console.error('404 Error:', errorText);
+                            showSubmitError('The requested page was not found (404). Please check the URL: ' + formAction);
+                            return;
                         }
-                    } else {
-                        // Response is HTML - parse for errors
-                        const html = await response.text();
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
                         
-                        // Check for validation errors
-                        const errorAlerts = doc.querySelectorAll('.alert-danger, .text-danger');
-                        const errors = [];
-                        errorAlerts.forEach(alert => {
-                            const text = alert.textContent.trim();
-                            if (text) errors.push(text);
-                        });
+                        if (contentType && contentType.includes('application/json')) {
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                showSuccess(result.message || 'Missing CSC admin onboarded successfully.');
+                                // Reset form after success
+                                setTimeout(() => {
+                                    resetForm();
+                                    // Optionally redirect or reload
+                                    window.location.href = '/UserManagement/MissingCSCAdminOnboard';
+                                }, 2000);
+                            } else {
+                                showErrors(result.errors || [result.error || 'An error occurred']);
+                            }
+                        } else {
+                            // Response is HTML - parse for errors
+                            const html = await response.text();
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+                            
+                            // Check for validation errors
+                            const errorAlerts = doc.querySelectorAll('.alert-danger, .text-danger');
+                            const errors = [];
+                            errorAlerts.forEach(alert => {
+                                const text = alert.textContent.trim();
+                                if (text) errors.push(text);
+                            });
 
-                        hideLoadingModal();
-                        if (errors.length > 0) {
-                            showErrors(errors);
-                        } else if (response.ok) {
-                            showSuccess('Missing CSC admin onboarded successfully.');
-                            setTimeout(() => {
-                                window.location.href = '/UserManagement/MissingCSCAdminOnboard';
-                            }, 2000);
-                        } else {
-                            showSubmitError('An error occurred while submitting the form.');
+                            if (errors.length > 0) {
+                                showErrors(errors);
+                            } else if (response.ok) {
+                                showSuccess('Missing CSC admin onboarded successfully.');
+                                setTimeout(() => {
+                                    window.location.href = '/UserManagement/MissingCSCAdminOnboard';
+                                }, 2000);
+                            } else {
+                                showSubmitError('An error occurred while submitting the form.');
+                            }
                         }
-                        
+                    } catch (parseError) {
+                        // Error parsing response
+                        console.error('Error parsing response:', parseError);
+                        showSubmitError('An error occurred while processing the server response.');
+                    } finally {
+                        // Always hide loading modal and re-enable button
+                        hideLoadingModal();
                         submitFormBtn.disabled = false;
                         submitFormBtn.textContent = 'Create Account & Onboard';
                     }
                 } catch (error) {
+                    // Network error or other fetch errors
                     hideLoadingModal();
                     console.error('Form submission error:', error);
                     showSubmitError('An error occurred while submitting the form: ' + error.message);
