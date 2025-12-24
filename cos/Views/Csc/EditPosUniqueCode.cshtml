@@ -71,46 +71,50 @@
                 <form id="editPosUniqueCodeForm">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="ctopupno" name="ctopupno" />
+                    <input type="hidden" id="dealertype" name="dealertype" />
                     
                     <div class="form-group">
                         <label for="currentPosUniqueCode">Current POS Unique Code:</label>
-                        <input type="text" class="form-control" id="currentPosUniqueCode" readonly />
+                        <input type="text" class="form-control" id="currentPosUniqueCode" readonly style="font-weight: bold; background-color: #f8f9fa;" />
                     </div>
                     
-                    <div class="form-group">
-                        <label for="generatedPosUniqueCode">Generated POS Unique Code:</label>
-                        <input type="text" class="form-control" id="generatedPosUniqueCode" readonly style="font-weight: bold; color: red; font-size: 1.1em;" />
-                        <small class="form-text text-muted">This code will be generated automatically from the fields below</small>
+                    <!-- Auto-generation section for CSR/CSC/DEPT -->
+                    <div id="autoGenerationSection" style="display:none;">
+                        <div class="form-group">
+                            <label for="generatedPosUniqueCode">Generated POS Unique Code:</label>
+                            <input type="text" class="form-control" id="generatedPosUniqueCode" readonly style="font-weight: bold; color: red; font-size: 1.1em;" />
+                            <small class="form-text text-muted">This code will be generated automatically from the fields below</small>
+                        </div>
+                        
+                        <hr />
+                        <h6>Enter Details to Generate New POS Unique Code</h6>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label for="aadharName">Name (As in Aadhar Card): <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="aadharName" name="aadharName" />
+                                <small class="form-text text-muted">Enter the name as it appears on the Aadhar card</small>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="aadharNo">Aadhar No: <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="aadharNo" name="aadharNo" maxlength="12" />
+                                <small class="form-text text-muted">Enter the 12-digit Aadhar number</small>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="yearOfBirth">Year of Birth: <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="yearOfBirth" name="yearOfBirth" maxlength="4" />
+                                <small class="form-text text-muted">Enter the year of birth (YYYY)</small>
+                            </div>
+                        </div>
                     </div>
                     
-                    <hr />
-                    <h6>Enter Details to Generate New POS Unique Code</h6>
-                    
-                    <div class="form-row">
-                        <div class="form-group col-md-4">
-                            <label for="aadharName">Name (As in Aadhar Card): <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="aadharName" name="aadharName" required />
-                            <small class="form-text text-muted">Enter the name as it appears on the Aadhar card</small>
-                            <div class="invalid-feedback"></div>
+                    <!-- Manual entry section for other dealer types -->
+                    <div id="manualEntrySection" style="display:none;">
+                        <div class="form-group">
+                            <label for="newPosUniqueCode">New POS Unique Code: <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="newPosUniqueCode" name="newPosUniqueCode" placeholder="Enter new POS Unique Code" />
+                            <small class="form-text text-muted">Enter the new POS Unique Code manually</small>
                         </div>
-                        <div class="form-group col-md-4">
-                            <label for="aadharNo">Aadhar No: <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="aadharNo" name="aadharNo" required maxlength="12" />
-                            <small class="form-text text-muted">Enter the 12-digit Aadhar number</small>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="form-group col-md-4">
-                            <label for="yearOfBirth">Year of Birth: <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="yearOfBirth" name="yearOfBirth" required maxlength="4" />
-                            <small class="form-text text-muted">Enter the year of birth (YYYY)</small>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <button type="button" class="btn btn-info" id="generateCodeBtn">
-                            <i class="material-icons">refresh</i> Generate POS Unique Code
-                        </button>
                     </div>
                     
                     <button type="submit" class="btn btn-warning" id="updateBtn" disabled>
@@ -232,30 +236,77 @@
                 
                 $('#ctopDetails').html(detailsHtml);
                 $('#ctopupno').val(ctop.ctopupno);
+                $('#dealertype').val(ctop.dealertype || '');
                 $('#currentPosUniqueCode').val(ctop.pos_unique_code || '');
+                
+                // Reset all fields
                 $('#generatedPosUniqueCode').val('');
-                $('#aadharName').val('');
-                $('#aadharNo').val('');
-                $('#yearOfBirth').val('');
+                $('#newPosUniqueCode').val('');
+                
+                // Pre-populate fields from CTOP record if available
+                $('#aadharName').val(ctop.name || '');
+                $('#aadharNo').val(ctop.aadhaar_no || '');
+                // Extract year from aadhaar_issue_year if available, or leave empty
+                $('#yearOfBirth').val(ctop.aadhaar_issue_year || '');
+                
+                // Show/hide sections based on dealer type
+                const dealertype = (ctop.dealertype || '').toUpperCase();
+                const isCscDept = dealertype === 'CSR' || dealertype === 'CSC' || dealertype === 'DEPT';
+                
+                if (isCscDept) {
+                    // Show auto-generation section, hide manual entry
+                    $('#autoGenerationSection').show();
+                    $('#manualEntrySection').hide();
+                    setupAutoGeneration();
+                    // Auto-generate if all fields are already populated
+                    if (ctop.name && ctop.aadhaar_no && ctop.aadhaar_issue_year) {
+                        setTimeout(function() {
+                            generatePosUniqueCode();
+                        }, 100);
+                    }
+                } else {
+                    // Show manual entry section, hide auto-generation
+                    $('#autoGenerationSection').hide();
+                    $('#manualEntrySection').show();
+                    setupManualEntry();
+                }
+                
                 $('#updateBtn').prop('disabled', true);
                 $('#updateError').hide();
                 $('#updateSuccess').hide();
             }
             
-            // Generate POS Unique Code button
-            $('#generateCodeBtn').on('click', function() {
-                generatePosUniqueCode();
-            });
+            // Setup auto-generation for CSR/CSC/DEPT
+            function setupAutoGeneration() {
+                // Remove existing event listeners to avoid duplicates
+                $('#aadharName, #aadharNo, #yearOfBirth').off('input');
+                
+                // Auto-generate when fields change
+                $('#aadharName, #aadharNo, #yearOfBirth').on('input', function() {
+                    const aadharName = $('#aadharName').val().trim();
+                    const aadharNo = $('#aadharNo').val().trim();
+                    const yearOfBirth = $('#yearOfBirth').val().trim();
+                    
+                    if (aadharName && aadharNo && yearOfBirth) {
+                        generatePosUniqueCode();
+                    } else {
+                        $('#generatedPosUniqueCode').val('');
+                        $('#updateBtn').prop('disabled', true);
+                    }
+                });
+            }
             
-            // Auto-generate when fields change
-            $('#aadharName, #aadharNo, #yearOfBirth').on('input', function() {
-                if ($('#aadharName').val().trim() && $('#aadharNo').val().trim() && $('#yearOfBirth').val().trim()) {
-                    generatePosUniqueCode();
-                } else {
-                    $('#generatedPosUniqueCode').val('');
-                    $('#updateBtn').prop('disabled', true);
-                }
-            });
+            // Setup manual entry for other dealer types
+            function setupManualEntry() {
+                // Remove existing event listeners to avoid duplicates
+                $('#newPosUniqueCode').off('input');
+                
+                // Enable/disable update button based on input
+                $('#newPosUniqueCode').on('input', function() {
+                    const newCode = $(this).val().trim();
+                    $('#updateBtn').prop('disabled', !newCode);
+                });
+            }
             
             function generatePosUniqueCode() {
                 const aadharName = $('#aadharName').val().trim();
@@ -263,7 +314,6 @@
                 const yearOfBirth = $('#yearOfBirth').val().trim();
                 
                 if (!aadharName || !aadharNo || !yearOfBirth) {
-                    showUpdateError('Please fill in all three fields to generate the POS unique code');
                     $('#generatedPosUniqueCode').val('');
                     $('#updateBtn').prop('disabled', true);
                     return;
@@ -285,25 +335,40 @@
                             $('#updateBtn').prop('disabled', false);
                             $('#updateError').hide();
                         } else {
-                            showUpdateError(response.message || 'Failed to generate POS unique code');
                             $('#generatedPosUniqueCode').val('');
                             $('#updateBtn').prop('disabled', true);
+                            if (response.message) {
+                                showUpdateError(response.message);
+                            }
                         }
                     },
                     error: function(xhr, status, error) {
-                        showUpdateError('Error generating POS unique code: ' + (xhr.responseJSON?.message || error));
                         $('#generatedPosUniqueCode').val('');
                         $('#updateBtn').prop('disabled', true);
+                        showUpdateError('Error generating POS unique code: ' + (xhr.responseJSON?.message || error));
                     }
                 });
             }
             
             function updatePosUniqueCode() {
                 const ctopupno = $('#ctopupno').val();
-                const newPosUniqueCode = $('#generatedPosUniqueCode').val().trim();
+                const dealertype = ($('#dealertype').val() || '').toUpperCase();
+                const isCscDept = dealertype === 'CSR' || dealertype === 'CSC' || dealertype === 'DEPT';
+                
+                // Get the new code from the appropriate field
+                let newPosUniqueCode = '';
+                if (isCscDept) {
+                    newPosUniqueCode = $('#generatedPosUniqueCode').val().trim();
+                } else {
+                    newPosUniqueCode = $('#newPosUniqueCode').val().trim();
+                }
                 
                 if (!newPosUniqueCode) {
-                    showUpdateError('Please generate the POS unique code first');
+                    if (isCscDept) {
+                        showUpdateError('Please enter all details to generate the POS unique code');
+                    } else {
+                        showUpdateError('Please enter the new POS unique code');
+                    }
                     return;
                 }
                 
@@ -377,9 +442,12 @@
                 $('#updateError').hide();
                 $('#updateSuccess').hide();
                 $('#generatedPosUniqueCode').val('');
+                $('#newPosUniqueCode').val('');
                 $('#aadharName').val('');
                 $('#aadharNo').val('');
                 $('#yearOfBirth').val('');
+                $('#autoGenerationSection').hide();
+                $('#manualEntrySection').hide();
                 $('#updateBtn').prop('disabled', true);
                 selectedCtop = null;
             }

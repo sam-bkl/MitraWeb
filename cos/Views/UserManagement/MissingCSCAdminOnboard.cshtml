@@ -64,6 +64,7 @@
                                     <th>POS Unique Code</th>
                                     <th>SSA</th>
                                     <th>Dealer Type</th>
+                                    <th>Dealer Status</th>
                                     <th>Documents</th>
                                 </tr>
                             </thead>
@@ -97,7 +98,7 @@
 <div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
+            <div class="modal-header bg-warning">
                 <h5 class="modal-title" id="errorModalLabel">
                     <i class="fas fa-exclamation-triangle"></i> Error
                 </h5>
@@ -1542,7 +1543,7 @@
             usersTableContainer.style.display = 'block';
             usersTable.style.display = 'none';
             noUsersMessage.style.display = 'none';
-            usersTableBody.innerHTML = '<tr><td colspan="8" class="text-center">Loading...</td></tr>';
+            usersTableBody.innerHTML = '<tr><td colspan="9" class="text-center">Loading...</td></tr>';
 
             try {
                 const resp = await fetch(`/UserManagement/GetUsersByCtopupno?ctopupno=${encodeURIComponent(ctopupno)}`);
@@ -1571,6 +1572,7 @@
                         <td>${escapeHtml(user.pos_unique_code || '')}</td>
                         <td>${escapeHtml(user.ssa_code || '')}</td>
                         <td>${escapeHtml(user.dealertype || '')}</td>
+                        <td>${escapeHtml(user.dealer_status || '')}</td>
                     `;
                     row.appendChild(docsCell);
                     usersTableBody.appendChild(row);
@@ -1582,7 +1584,7 @@
                 usersTable.style.display = 'table';
             } catch (err) {
                 console.error('Error loading users:', err);
-                usersTableBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading users</td></tr>';
+                usersTableBody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading users</td></tr>';
                 usersTable.style.display = 'table';
             }
         }

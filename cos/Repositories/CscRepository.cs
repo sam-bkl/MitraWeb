@@ -169,14 +169,14 @@ namespace cos.Repositories
                              pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name, pos_code, pos_ctop,
                              circle_name, pos_unique_code, latitude, longitude, aadhaar_no, zone_code, ctop_type,
                              dealercode, ref_dealer_id, master_dealer_id, parent_ctopno, dealer_status, end_date,
-                             account_id, created_on, updated_on, data_source)
+                             dealer_id, active, account_id, created_on, updated_on, data_source)
                             VALUES
                             (@username, @ctopupno, @name, @dealertype, @ssa_code, @csccode, @circle_code, @attached_to,
                              @contact_number, @pos_hno, @pos_street, @pos_landmark, @pos_locality, @pos_city, @pos_district,
                              @pos_state, @pos_pincode, @created_date, @pos_name_ss, @pos_owner_name, @pos_code, @pos_ctop,
                              @circle_name, @pos_unique_code, @latitude, @longitude, @aadhaar_no, @zone_code, @ctop_type,
                              @dealercode, @ref_dealer_id, @master_dealer_id, @parent_ctopno, @dealer_status, @end_date,
-                             @account_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, @data_source)");
+                             @dealer_id, @active, @account_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, @data_source)");
 
                 using var db = ConnectionPgSql;
                 var parameters = new
@@ -216,6 +216,8 @@ namespace cos.Repositories
                     parent_ctopno = entity.parent_ctopno,
                     dealer_status = entity.dealer_status,
                     end_date = entity.end_date,
+                    dealer_id = entity.dealer_id,
+                    active = entity.active,
                     account_id = accountId,
                     data_source = "MITRA"
                 };
@@ -256,7 +258,7 @@ namespace cos.Repositories
                                                       pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
                                                       pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
                                                       aadhaar_no, zone_code, ctop_type, dealercode, ref_dealer_id, master_dealer_id,
-                                                      parent_ctopno, dealer_status, end_date
+                                                      parent_ctopno, dealer_status, end_date, dealer_id, active
                                                FROM ctop_master
                                                WHERE username = @username AND ctopupno = @ctopupno
                                                ORDER BY created_date DESC
@@ -297,6 +299,7 @@ namespace cos.Repositories
                                 zone_code = @zone_code, ctop_type = @ctop_type, dealercode = @dealercode,
                                 ref_dealer_id = @ref_dealer_id, master_dealer_id = @master_dealer_id,
                                 parent_ctopno = @parent_ctopno, dealer_status = @dealer_status, end_date = @end_date,
+                                dealer_id = @dealer_id, active = @active,
                                 updated_on = CURRENT_TIMESTAMP
                                 WHERE username = @username AND ctopupno = @ctopupno");
 
@@ -335,7 +338,9 @@ namespace cos.Repositories
                         master_dealer_id = entity.master_dealer_id,
                         parent_ctopno = entity.parent_ctopno,
                         dealer_status = entity.dealer_status,
-                        end_date = entity.end_date
+                        end_date = entity.end_date,
+                        dealer_id = entity.dealer_id,
+                        active = entity.active
                     };
 
                     var rowsAffected = await db.ExecuteAsync(sb.ToString(), parameters, transaction);
@@ -944,7 +949,7 @@ namespace cos.Repositories
                                                       pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
                                                       pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
                                                       aadhaar_no, zone_code, ctop_type, dealercode, ref_dealer_id, master_dealer_id,
-                                                      parent_ctopno, dealer_status, end_date
+                                                      parent_ctopno, dealer_status, end_date, dealer_id, active
                                                FROM ctop_master
                                                WHERE ctopupno = @ctopupno
                                                ORDER BY created_date DESC
@@ -991,7 +996,7 @@ namespace cos.Repositories
                                  pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
                                  pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
                                  aadhaar_no, zone_code, ctop_type, dealercode, ref_dealer_id, master_dealer_id,
-                                 parent_ctopno, dealer_status, end_date
+                                 parent_ctopno, dealer_status, end_date, dealer_id, active
                           FROM ctop_master
                           WHERE ctopupno = @ctopupno
                           ORDER BY created_date DESC
@@ -1055,7 +1060,8 @@ namespace cos.Repositories
                                             contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
                                             pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
                                             pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
-                                            aadhaar_no, zone_code, ctop_type, dealer_status, end_date
+                                            aadhaar_no, zone_code, ctop_type, dealercode, ref_dealer_id, master_dealer_id,
+                                            parent_ctopno, dealer_status, end_date, dealer_id, active
                                      FROM ctop_master
                                      WHERE (ctopupno = @ctopupno AND username = @ctopupno)
                                         OR parent_ctopno = @ctopupno

@@ -878,7 +878,8 @@ namespace cos.Controllers
                     csccode = u.csccode,
                     pos_unique_code = u.pos_unique_code,
                     ssa_code = u.ssa_code,
-                    dealertype = u.dealertype
+                    dealertype = u.dealertype,
+                    dealer_status = u.dealer_status
                 }).ToList();
 
                 return Json(new { success = true, users = userList });
@@ -1101,11 +1102,13 @@ namespace cos.Controllers
                     return Json(new { success = false, errors = new[] { $"The username '{finalUsername}' and ctopupno '{finalCtopupno}' combination already exists in ctop_master and cannot be created." } });
                 }
                 
-                // Handle the 5 new fields: dealercode, ref_dealer_id, master_dealer_id, parent_ctopno, dealer_status
+                // Handle the fields from zonal data: dealercode, ref_dealer_id, master_dealer_id, parent_ctopno, dealer_id, active
                 // If no value, pass null for all except parent_ctopno. For parent_ctopno, if no value, use ctopupno
                 var dealercode = !string.IsNullOrWhiteSpace(zonalData.dealercode) ? zonalData.dealercode : null;
                 var refDealerId = zonalData.ref_dealer_id.HasValue == true ? zonalData.ref_dealer_id : null;
                 var masterDealerId = zonalData.master_dealer_id.HasValue == true ? zonalData.master_dealer_id : null;
+                var dealerId = !string.IsNullOrWhiteSpace(zonalData.dealer_id) ? zonalData.dealer_id : null;
+                var active = !string.IsNullOrWhiteSpace(zonalData.active) ? zonalData.active : null;
                 var parentCtopno = !string.IsNullOrWhiteSpace(zonalData.parent_ctopno) 
                     ? zonalData.parent_ctopno 
                     : (!string.IsNullOrWhiteSpace(zonalData.parent_ctop) 
@@ -1168,7 +1171,9 @@ namespace cos.Controllers
                     master_dealer_id = masterDealerId,
                     parent_ctopno = parentCtopno,
                     dealer_status = dealerStatus,
-                    end_date = endDate
+                    end_date = endDate,
+                    dealer_id = dealerId,
+                    active = active
                 };
 
                 // Check if record exists and needs update
