@@ -138,20 +138,7 @@
                 </ul>
             </li>
             @* brijesh *@
-            @if (ViewBag.UserRole != null && (string.Equals(ViewBag.UserRole.ToString(), "csc_admin", StringComparison.OrdinalIgnoreCase)))
-            {
-                <li class=" nav-item">
-                    <a href="#">
-                        <i class="mbri-file"></i><span class="menu-title" data-i18n="Admin Panels">CSC</span>
-                    </a>
-                    <ul class="menu-content">
-                        <li>
-                            <a class="menu-item" asp-controller="Csc" asp-action="CtopUsers"><i class="material-icons">assessment</i><span>Ctop Users</span></a>
-                        </li>
-                    </ul>
-                </li>
-            }
-
+            
             @if (ViewBag.UserRole != null && (string.Equals(ViewBag.UserRole.ToString(), "ba_admin", StringComparison.OrdinalIgnoreCase)))
             {
                 <li class=" nav-item">
@@ -159,9 +146,6 @@
                         <i class="mbri-file"></i><span class="menu-title" data-i18n="Admin Panels">CSC</span>
                     </a>
                     <ul class="menu-content">
-                        <li>
-                            <a class="menu-item" asp-controller="Csc" asp-action="Agents"><i class="material-icons">people</i><span>Agents</span></a>
-                        </li>
                         <li>
                             <a class="menu-item" asp-controller="Csc" asp-action="EditPosUniqueCode"><i class="material-icons">edit</i><span>Edit POS Unique Code</span></a>
                         </li>
@@ -177,16 +161,9 @@
                         <i class="mbri-user"></i><span class="menu-title" data-i18n="User Management">User Management</span>
                     </a>
                     <ul class="menu-content">
-                        <li>
-                            <a class="menu-item" asp-controller="UserManagement" asp-action="CreateCscAdmin"><i class="material-icons">person_add</i><span>Onboard Existing CSC Admin</span></a>
-                        </li>
+
                         @if (ViewBag.UserRole != null && string.Equals(ViewBag.UserRole.ToString(), "ba_admin", StringComparison.OrdinalIgnoreCase))
                         {
-                            <li>
-                                <a class="menu-item" asp-controller="Csc" asp-action="Agents"><i class="material-icons">people</i><span>Agent Onboarding</span></a>
-                            </li>
-
-
                             <li>
                                 <a class="menu-item" asp-controller="UserManagement" asp-action="MissingCSCAdminOnboard"><i class="material-icons">person_add</i><span>Onboard Missing Ctop Users</span></a>
                             </li>
