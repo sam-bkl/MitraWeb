@@ -1374,10 +1374,7 @@
                             const errorText = await response.text();
                             console.error('404 Error:', errorText);
                             showSubmitError('The requested page was not found (404). Please check the URL: ' + formAction);
-                            return;
-                        }
-                        
-                        if (contentType && contentType.includes('application/json')) {
+                        } else if (contentType && contentType.includes('application/json')) {
                             const result = await response.json();
                             
                             if (result.success) {
@@ -1421,7 +1418,7 @@
                         console.error('Error parsing response:', parseError);
                         showSubmitError('An error occurred while processing the server response.');
                     } finally {
-                        // Always hide loading modal and re-enable button
+                        // Always hide loading modal and re-enable button when response is received
                         hideLoadingModal();
                         submitFormBtn.disabled = false;
                         submitFormBtn.textContent = 'Create Account & Onboard';
