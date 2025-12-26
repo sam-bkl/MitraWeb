@@ -641,7 +641,7 @@ namespace cos.Controllers
             var _cookieuserid = HttpContext.Request.Cookies["SessionUser"];
             ViewBag.userid = _protector.Unprotect(_cookieuserid);
 
-            bool result = await userDashRepository.RejectCAFAsync(model.Gsmnumber, model.Reason, ViewBag.LoggedIn, ViewBag.userid);
+            bool result = await userDashRepository.RejectCAFAsync(model.Caf_Serial_No, model.Gsmnumber, model.Reason, ViewBag.LoggedIn, ViewBag.userid);
 
             if (result)
                 return Ok();
