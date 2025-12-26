@@ -1,37 +1,29 @@
-﻿{
-  "$schema": "http://json.schemastore.org/launchsettings.json",
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:26951",
-      "sslPort": 44385
-    }
-  },
+{
   "profiles": {
     "http": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "http://localhost:5203",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5203"
     },
     "https": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:7089;http://localhost:5203",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "TRUSTED_REVERSE_PROXIES": "127.0.0.1,::1,10.198.216.90",
         "TRUSTED_REVERSE_NETWORKS": "FORWARDED_HEADERS_LIMIT=3",
         "PYRO_USIM_LOCAL_API_URL": "https://pyrousimapi.local:9840/pyro-usim/SimSaleInfo",
-        "PYRO_USIM_CA_CERT" : "/home/bsnlcos/bcos-certs/ca.crt",
+        "PYRO_USIM_CA_CERT": "/home/bsnlcos/bcos-certs/ca.crt",
         "PYRO_USIM_CLIENT_CERT": "/home/bsnlcos/bcos-certs/mitra-portal-19122025.crt",
         "PYRO_USIM_CLIENT_KEY": "/home/bsnlcos/bcos-certs/mitra-portal-19122025.key"
-      }
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7089;http://localhost:5203",
+      "hotReloadEnabled": false
     },
     "IIS Express": {
       "commandName": "IISExpress",
@@ -39,6 +31,15 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    }
+  },
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:26951",
+      "sslPort": 44385
     }
   }
 }

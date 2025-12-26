@@ -1,0 +1,82 @@
+﻿@model cos.ViewModels.PwdchngVM
+
+@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "Login Page";
+}
+
+<div class="content-header row">
+    <div class="content-header-left col-md-6 col-12 mb-2 breadcrumb-new">
+        <h3 class="content-header-title mb-0 d-inline-block">Change Password</h3>       
+    </div>    
+</div>
+<div class="content-body">
+    <!-- Row separator layout section start -->
+    <section id="row-separator-form-layouts">      
+       
+        <div class="row">
+            <div class="col-12">
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger">@TempData["Error"]</div>
+                }
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success">@TempData["Success"]</div>
+                }
+                
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">                   
+                    <div class="card-content collapse show">
+                        <div class="card-body">
+                            <form asp-action="ChangePwd" method="post" id="PasswordChnge">
+                                @Html.AntiForgeryToken()
+
+                                <div class="form-group row mx-auto">
+                                    <label class="col-md-3 label-control" asp-for="UserName"></label>
+                                    <div class="col-md-9">
+                                        @ViewBag.sessionUser
+                                        <input type="hidden" asp-for="UserName" value="@ViewBag.sessionUser" />
+                                    </div>
+                                </div>
+
+                                <div class="form-group row mx-auto">
+                                    <label class="col-md-3 label-control" asp-for="Newpassword"></label>
+                                    <div class="col-md-9">
+                                        <input asp-for="Newpassword" type="password" class="form-control" placeholder="New Password" />
+                                        <span asp-validation-for="Newpassword" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group row mx-auto">
+                                    <label class="col-md-3 label-control" asp-for="ConfirmPassword">Confirm Password</label>
+                                    <div class="col-md-9">
+                                        <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirm Password" />
+                                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group row mx-auto last">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="la la-check"></i> Update
+                                    </button>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+    <!-- // Row separator layout section end -->
+
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+}

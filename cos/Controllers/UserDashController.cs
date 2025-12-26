@@ -3,7 +3,10 @@ using cos.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Rewrite;
+using System.Data;
 using System.Net;
+using System.Text;
 using YourProject.Repositories.Interfaces;
 
 namespace cos.Controllers
@@ -236,10 +239,26 @@ namespace cos.Controllers
             ViewBag.LoggedIn = _protector.Unprotect(_cookieLoggedIn);
             return View();
         }
+
+        [HttpGet]
+        // [Authorize(Roles = "circle_admin,circle_view,ba_admin")]
+        public async Task<JsonResult> GetkycstatusrejectedCount()
+        {
+            var _cookiecircle = HttpContext.Request.Cookies["Circle"];
+            ViewBag.Circle = _protector.Unprotect(_cookiecircle);
+            var _cookieRole = HttpContext.Request.Cookies["Role"];
+            var role = _protector.Unprotect(_cookieRole);
+            var _cookieSsa = HttpContext.Request.Cookies["SSA"];
+            var ssa = _protector.Unprotect(_cookieSsa);
+        
+            var result = await userDashRepository.GetkycstatusrejectedCount(ViewBag.Circle, role, ssa);
+            return Json(result);
+        }
+
         //get details of kyc request status see later
         [HttpPost]
         // [Authorize(Roles = "circle_admin,circle_view,ba_admin")]
-        public async Task<JsonResult> Getkycstatusrejected()
+        public async Task<JsonResult> Getkycstatusrejected(string type)
         {
             var _cookiecircle = HttpContext.Request.Cookies["Circle"];
             ViewBag.Circle = _protector.Unprotect(_cookiecircle);
@@ -248,12 +267,60 @@ namespace cos.Controllers
             var _cookieSsa = HttpContext.Request.Cookies["SSA"];
             var ssa = _protector.Unprotect(_cookieSsa);
 
-            List<kycstatusVM> kycstatusVMs = await userDashRepository.Getkycstatusrejected(ViewBag.Circle, role, ssa);
-            return Json(kycstatusVMs);
+            var data = await userDashRepository.Getkycstatusrejected(ViewBag.Circle, role, ssa, type);
+            return Json(data);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadKycCsv(string type)
+        {
+            var _cookiecircle = HttpContext.Request.Cookies["Circle"];
+            var circle = _protector.Unprotect(_cookiecircle);
+
+            var _cookieRole = HttpContext.Request.Cookies["Role"];
+            var role = _protector.Unprotect(_cookieRole);
+
+            var _cookieSsa = HttpContext.Request.Cookies["SSA"];
+            var ssa = _protector.Unprotect(_cookieSsa);
+
+            // Get data from your existing repository
+            var data = await userDashRepository.Getkycstatusrejected(circle, role, ssa, type);
+
+            // Build CSV
+            var sb = new StringBuilder();
+            sb.AppendLine("Circle,Name,GSM Number,SIM Number,CAF Sl. No,Status,Verified By,Verified Date,Reason");
+
+            foreach (var item in data)
+            {
+                sb.AppendLine(
+                    $"{item.circle}," +
+                    $"{EscapeCsv(item.name)}," +
+                    $"{EscapeCsv(item.gsmnumber)}," +
+                    $"{EscapeCsv(item.simnumber)}," +
+                    $"{EscapeCsv(item.cafslno)}," +
+                    $"{(item.status == "R" ? "Rejected" : item.status)}," +
+                    $"{EscapeCsv(item.verified_by)}," +
+                    $"{EscapeCsv(item.verified_date)}," +
+                    $"{EscapeCsv(item.reason)}"
+                );
+            }
+
+            var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+            return File(bytes, "text/csv", $"KYC_Rejected_{type}_{DateTime.Now:yyyyMMdd}.csv");
+        }
+
+        private string EscapeCsv(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+            if (value.Contains(",") || value.Contains("\"") || value.Contains("\n"))
+            {
+                return "\"" + value.Replace("\"", "\"\"") + "\"";
+            }
+            return value;
         }
 
 
-       
+
         [HttpGet]
         public async Task<IActionResult> CAFForm(string cafslno)
         {

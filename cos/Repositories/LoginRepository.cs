@@ -380,5 +380,82 @@ namespace cos.Repositories
                 }
             }
         }
+
+        public async Task<string> ChangePwd(PwdchngVM postData)
+        {
+            const string selectSql = @"
+                    SELECT * FROM accounts 
+                    WHERE username = @username";
+
+            string updateSql;
+
+            if (postData.modeofoperation == "reset")
+            {
+                updateSql = @"
+                            UPDATE accounts 
+                            SET user_password_safe = @pwd,
+                                user_password = @pwd,
+                                reset_by = @user,
+                                reset_on = NOW()
+                            WHERE username = @username";
+            }
+            else
+            {
+                updateSql = @"
+                    UPDATE accounts 
+                    SET user_password_safe = @pwd,
+                        user_password = @pwd,
+                        updated_by = @user,
+                        updated_on = NOW()
+                    WHERE username = @username";
+            }
+
+            using (IDbConnection dbConnection = ConnectionPgSql)
+            {
+                dbConnection.Open();
+                using (var transaction = dbConnection.BeginTransaction())
+                {
+                    try
+                    {
+                        var account = await dbConnection.QueryFirstOrDefaultAsync<User>(
+                            selectSql,
+                            new { username = postData.UserName },
+                            transaction
+                        );
+
+                        if (account == null)
+                        {
+                            transaction.Rollback();
+                            return "User does not exist";
+                        }
+                        else
+                        {
+                            await dbConnection.ExecuteAsync(
+                                updateSql,
+                                new
+                                {
+                                    pwd = postData.Newpassword,   // hash it ideally
+                                    user = postData.update_by,
+                                    username = postData.UserName,
+                                    resetby=postData.reset_by_User
+                                },
+                                transaction
+                            );
+
+                            transaction.Commit();
+                            return "SUCCESS";
+                        }
+                            
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        return "Error: " + ex.Message;
+                    }
+                }
+            }
+        }
+
+
     }
 }

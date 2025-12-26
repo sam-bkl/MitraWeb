@@ -5,14 +5,15 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Diagnostics;
-using System.Security.Claims;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
-using Newtonsoft.Json;
+using System.Security.Claims;
+using System.Security.Principal;
 using System.Text;
-using Newtonsoft.Json.Linq;
 
 
 namespace cos.Controllers
@@ -41,6 +42,42 @@ namespace cos.Controllers
             ViewBag.Error = "";
             var model = new LoginVM { otp_sent = false };
             return View(model);
+        }
+
+        public IActionResult ChngePwd()
+        {
+            var _cookieLoggedIn = HttpContext.Request.Cookies["LoggedIn"];
+            var User = _protector.Unprotect(_cookieLoggedIn);
+            var _cookieLoggedAccountId = HttpContext.Request.Cookies["Account"];
+            var UserId = _protector.Unprotect(_cookieLoggedAccountId);
+            var _cookiecircle = HttpContext.Request.Cookies["Circle"];
+            ViewBag.Circle = _protector.Unprotect(_cookiecircle);
+            var _cookieRole = HttpContext.Request.Cookies["Role"];
+            var role = _protector.Unprotect(_cookieRole);
+
+            var _cookieSessionUser = HttpContext.Request.Cookies["SessionUser"];
+            ViewBag.sessionUser = _protector.Unprotect(_cookieSessionUser);
+
+            
+            var _cookieSsa = HttpContext.Request.Cookies["SSA"];
+            var ssa = _protector.Unprotect(_cookieSsa); 
+            return View();
+        }
+
+        public IActionResult ResetPwd()
+        {
+            var _cookieLoggedIn = HttpContext.Request.Cookies["LoggedIn"];
+            var User = _protector.Unprotect(_cookieLoggedIn);
+            var _cookieLoggedAccountId = HttpContext.Request.Cookies["Account"];
+            var UserId = _protector.Unprotect(_cookieLoggedAccountId);
+            var _cookiecircle = HttpContext.Request.Cookies["Circle"];
+            ViewBag.Circle = _protector.Unprotect(_cookiecircle);
+            var _cookieRole = HttpContext.Request.Cookies["Role"];
+            var role = _protector.Unprotect(_cookieRole);
+
+            var _cookieSsa = HttpContext.Request.Cookies["SSA"];
+            var ssa = _protector.Unprotect(_cookieSsa);
+            return View();
         }
 
         public IActionResult CaptchaImage()
@@ -176,7 +213,7 @@ namespace cos.Controllers
                     }
 
                     // Check if user role requires OTP or can skip it
-                    bool requiresOtp = account.role_name != "cc_admin" && account.role_name != "reports_view";
+                    bool requiresOtp = account.role_name != "cc_admin" && account.role_name != "reports_view" && account.role_name != "circle_admin";
 
                     if (!requiresOtp)
                     {
@@ -518,5 +555,84 @@ namespace cos.Controllers
         {
             return new Random().Next(100000, 999999).ToString(); // 6-digit OTP
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+
+        public async Task<IActionResult> ChangePwd(PwdchngVM postData)
+        {
+            var _cookieLoggedAccountId = HttpContext.Request.Cookies["Account"];
+            var UserId = _protector.Unprotect(_cookieLoggedAccountId);
+
+            
+            postData.update_by = Convert.ToInt32(UserId);
+            
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Error = "Invalid input data";
+                return RedirectToAction("ChngePwd", "Home");
+            }
+
+            try
+            {
+                string result = await loginRepository.ChangePwd(postData);
+
+                if (result == "SUCCESS")
+                {
+                    TempData["Success"] = "Password updated successfully";
+                }
+                else
+                {
+                    TempData["Error"] = result; // User not exists / error msg                    
+                }
+                return RedirectToAction("ChngePwd");
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction("ChngePwd");
+            }
+            
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+
+        public async Task<IActionResult>ResetPassword(PwdchngVM postData)
+        {
+            var _cookieLoggedAccountId = HttpContext.Request.Cookies["Account"];
+            var UserId = _protector.Unprotect(_cookieLoggedAccountId);
+
+            var _cookieLoggedLoggedIn = HttpContext.Request.Cookies["LoggedIn"];
+            var LoggedIn = _protector.Unprotect(_cookieLoggedLoggedIn);
+
+            postData.update_by = Convert.ToInt64(UserId);
+            postData.ConfirmPassword = "Bsnl@123";
+            postData.Newpassword = "Bsnl@123";
+            postData.reset_by_User = LoggedIn;
+            postData.modeofoperation = "reset";
+            try
+            {
+                string result = await loginRepository.ChangePwd(postData);
+
+                if (result == "SUCCESS")
+                {
+                    TempData["Success"] = "Password updated successfully";
+                }
+                else
+                {
+                    TempData["Error"] = result; // User not exists / error msg                    
+                }
+                return RedirectToAction("ResetPwd");
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction("ResetPwd");
+            }
+
+        }
+
     }
 }
