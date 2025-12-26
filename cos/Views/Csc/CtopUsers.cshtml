@@ -32,11 +32,7 @@
                 <th>Username</th>
                 <th>CTOPUP No</th>
                 <th>Contact</th>
-                <th>BA Letter</th>
-                <th>ID Card</th>
-                <th>Aadhaar</th>
-                <th>PAN</th>
-                <th>Photo</th>
+                <th>User Docs</th>
             </tr>
             </thead>
             <tbody>
@@ -47,50 +43,10 @@
                     <td>@u.username</td>
                     <td>@u.ctopupno</td>
                     <td>@u.contact_number</td>
-                    <td class="text-center">
-                        <button type="button"
-                                class="btn btn-link p-0 doc-thumb"
-                                data-username="@u.username"
-                                data-category="BA_APPROVAL"
-                                data-title="BA Head Approved Letter - @u.name">
-                            <span class="badge badge-light">BA</span>
-                        </button>
-                    </td>
-                    <td class="text-center">
-                        <button type="button"
-                                class="btn btn-link p-0 doc-thumb"
-                                data-username="@u.username"
-                                data-category="ID_CARD"
-                                data-title="Employee ID Card - @u.name">
-                            <span class="badge badge-light">ID</span>
-                        </button>
-                    </td>
-                    <td class="text-center">
-                        <button type="button"
-                                class="btn btn-link p-0 doc-thumb"
-                                data-username="@u.username"
-                                data-category="AADHAR"
-                                data-title="Aadhaar Card - @u.name">
-                            <span class="badge badge-light">AAD</span>
-                        </button>
-                    </td>
-                    <td class="text-center">
-                        <button type="button"
-                                class="btn btn-link p-0 doc-thumb"
-                                data-username="@u.username"
-                                data-category="PAN_CARD"
-                                data-title="PAN Card - @u.name">
-                            <span class="badge badge-light">PAN</span>
-                        </button>
-                    </td>
-                    <td class="text-center">
-                        <button type="button"
-                                class="btn btn-link p-0 doc-thumb"
-                                data-username="@u.username"
-                                data-category="PHOTO"
-                                data-title="Photo - @u.name">
-                            <span class="badge badge-light">PH</span>
-                        </button>
+                    <td class="text-center" data-username="@u.username">
+                        <div class="user-docs-container-@u.username">
+                            <!-- Documents will be loaded dynamically via JavaScript -->
+                        </div>
                     </td>
                 </tr>
             }
@@ -534,12 +490,94 @@
             checkForFormErrors();
         });
 
-        // Document thumbnail click handler - uses DownloadDocument (remote-first, local-fallback)
-        docThumbButtons.forEach(btn => {
-            btn.addEventListener('click', async function () {
-                const username = this.getAttribute('data-username');
-                const category = this.getAttribute('data-category');
-
+        // Load all documents for each user and display in User Docs column
+        async function loadUserDocuments() {
+            const userDocContainers = document.querySelectorAll('[class^="user-docs-container-"]');
+            userDocContainers.forEach(async (container) => {
+                const className = container.className;
+                const username = className.replace('user-docs-container-', '');
+                
+                try {
+                    const docsResp = await fetch(`/Csc/GetDocuments?username=${encodeURIComponent(username)}`);
+                    if (!docsResp.ok) {
+                        container.innerHTML = '<span class="text-muted">Error loading documents</span>';
+                        return;
+                    }
+                    
+                    const docs = await docsResp.json();
+                    if (!docs || !Array.isArray(docs) || docs.length === 0) {
+                        container.innerHTML = '<span class="text-muted">No documents</span>';
+                        return;
+                    }
+                    
+                    // Create badges for each document
+                    let html = '';
+                    docs.forEach(doc => {
+                        const shortName = getDocumentShortName(doc.file_category_code);
+                        html += `<button type="button"
+                                class="btn btn-link p-0 doc-thumb mr-1"
+                                data-username="${escapeHtml(username)}"
+                                data-category="${escapeHtml(doc.file_category_code)}"
+                                data-title="${escapeHtml(doc.file_category)} - ${escapeHtml(username)}">
+                            <span class="badge badge-light">${escapeHtml(shortName)}</span>
+                        </button>`;
+                    });
+                    container.innerHTML = html;
+                } catch (err) {
+                    console.error('Error loading documents for', username, err);
+                    container.innerHTML = '<span class="text-muted">Error loading documents</span>';
+                }
+            });
+        }
+        
+        function getDocumentShortName(categoryCode) {
+            const shortNames = {
+                'BA_APPROVAL_LETTER': 'BA',
+                'ID_CARD': 'ID',
+                'AADHAR_CARD': 'AAD',
+                'PAN_CARD': 'PAN',
+                'PHOTO': 'PH',
+                'CIN_DOCUMENT': 'CIN',
+                'GST_DOCUMENT': 'GST',
+                'BUSINESS_ADDRESS_PROOF': 'BAP',
+                'RESIDENTIAL_ADDRESS_PROOF': 'RAP',
+                'AFFIDAVIT': 'AFF',
+                'AGREEMENT_COPY': 'AGR'
+            };
+            return shortNames[categoryCode] || categoryCode.substring(0, 3).toUpperCase();
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Load documents on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadUserDocuments);
+        } else {
+            loadUserDocuments();
+        }
+        
+        // Document thumbnail click handler - uses event delegation for dynamically loaded documents
+        document.addEventListener('click', async function(e) {
+            if (e.target.closest('.doc-thumb')) {
+                const btn = e.target.closest('.doc-thumb');
+                const username = btn.getAttribute('data-username');
+                const category = btn.getAttribute('data-category');
+                
+                if (!username || !category) {
+                    return;
+                }
+                
+                // Use existing document download logic
+                await handleDocumentDownload(username, category);
+            }
+        });
+        
+        async function handleDocumentDownload(username, category) {
                 if (!username || !category) {
                     return;
                 }

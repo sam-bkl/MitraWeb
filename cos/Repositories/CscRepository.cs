@@ -151,6 +151,13 @@ namespace cos.Repositories
             public string? ErrorMessage { get; set; }
         }
 
+        public class TempDataResult<T>
+        {
+            public bool Success { get; set; }
+            public T? Data { get; set; }
+            public string? Error { get; set; }
+        }
+
         public async Task<InsertResult> InsertCtopAsync(CtopMaster entity, long accountId)
         {
             try
@@ -161,15 +168,15 @@ namespace cos.Repositories
                              contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city, pos_district,
                              pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name, pos_code, pos_ctop,
                              circle_name, pos_unique_code, latitude, longitude, aadhaar_no, zone_code, ctop_type,
-                             dealercode, ref_dealer_id, master_dealer_id, parent_ctopno, dealer_status,
-                             account_id, created_on, updated_on, data_source)
+                             dealercode, ref_dealer_id, master_dealer_id, parent_ctopno, dealer_status, end_date,
+                             dealer_id, active, account_id, created_on, updated_on, data_source)
                             VALUES
                             (@username, @ctopupno, @name, @dealertype, @ssa_code, @csccode, @circle_code, @attached_to,
                              @contact_number, @pos_hno, @pos_street, @pos_landmark, @pos_locality, @pos_city, @pos_district,
                              @pos_state, @pos_pincode, @created_date, @pos_name_ss, @pos_owner_name, @pos_code, @pos_ctop,
                              @circle_name, @pos_unique_code, @latitude, @longitude, @aadhaar_no, @zone_code, @ctop_type,
-                             @dealercode, @ref_dealer_id, @master_dealer_id, @parent_ctopno, @dealer_status,
-                             @account_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, @data_source)");
+                             @dealercode, @ref_dealer_id, @master_dealer_id, @parent_ctopno, @dealer_status, @end_date,
+                             @dealer_id, @active, @account_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, @data_source)");
 
                 using var db = ConnectionPgSql;
                 var parameters = new
@@ -208,6 +215,9 @@ namespace cos.Repositories
                     master_dealer_id = entity.master_dealer_id,
                     parent_ctopno = entity.parent_ctopno,
                     dealer_status = entity.dealer_status,
+                    end_date = entity.end_date,
+                    dealer_id = entity.dealer_id,
+                    active = entity.active,
                     account_id = accountId,
                     data_source = "MITRA"
                 };
@@ -220,6 +230,139 @@ namespace cos.Repositories
                 }
                 
                 return new InsertResult { Success = true, RowsAffected = rowsAffected };
+            }
+            catch (Exception ex)
+            {
+                return new InsertResult
+                {
+                    Success = false,
+                    RowsAffected = 0,
+                    ErrorMessage = $"Database error: {ex.Message}" + (ex.InnerException != null ? $" Inner: {ex.InnerException.Message}" : "")
+                };
+            }
+        }
+
+        public async Task<InsertResult> UpdateCtopAsync(CtopMaster entity, long accountId)
+        {
+            try
+            {
+                using var db = ConnectionPgSql;
+                db.Open();
+                var transaction = db.BeginTransaction();
+
+                try
+                {
+                    // First, get the current row to log to audit
+                    const string selectSql = @"SELECT username, ctopupno, name, dealertype, ssa_code, csccode, circle_code, attached_to,
+                                                      contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
+                                                      pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
+                                                      pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
+                                                      aadhaar_no, zone_code, ctop_type, dealercode, ref_dealer_id, master_dealer_id,
+                                                      parent_ctopno, dealer_status, end_date, dealer_id, active
+                                               FROM ctop_master
+                                               WHERE username = @username AND ctopupno = @ctopupno
+                                               ORDER BY created_date DESC
+                                               LIMIT 1";
+                    
+                    var currentRow = await db.QueryFirstOrDefaultAsync<CtopMaster>(selectSql, new 
+                    { 
+                        username = entity.username, 
+                        ctopupno = entity.ctopupno 
+                    }, transaction);
+
+                    if (currentRow == null)
+                    {
+                        transaction.Rollback();
+                        return new InsertResult
+                        {
+                            Success = false,
+                            RowsAffected = 0,
+                            ErrorMessage = "Record not found for update"
+                        };
+                    }
+
+                    // Log current data to audit table before update
+                    await LogCtopMasterAuditAsync(currentRow, accountId, "UPDATE", currentRow.pos_unique_code, 
+                        "Record updated from Missing CSC Admin Onboard", transaction);
+
+                    // Update the record
+                    var sb = new StringBuilder();
+                    sb.Append(@"UPDATE ctop_master SET
+                                name = @name, dealertype = @dealertype, ssa_code = @ssa_code, csccode = @csccode, 
+                                circle_code = @circle_code, attached_to = @attached_to,
+                                contact_number = @contact_number, pos_hno = @pos_hno, pos_street = @pos_street, 
+                                pos_landmark = @pos_landmark, pos_locality = @pos_locality, pos_city = @pos_city, 
+                                pos_district = @pos_district, pos_state = @pos_state, pos_pincode = @pos_pincode,
+                                pos_name_ss = @pos_name_ss, pos_owner_name = @pos_owner_name, pos_code = @pos_code, 
+                                pos_ctop = @pos_ctop, circle_name = @circle_name, pos_unique_code = @pos_unique_code,
+                                latitude = @latitude, longitude = @longitude, aadhaar_no = @aadhaar_no, 
+                                zone_code = @zone_code, ctop_type = @ctop_type, dealercode = @dealercode,
+                                ref_dealer_id = @ref_dealer_id, master_dealer_id = @master_dealer_id,
+                                parent_ctopno = @parent_ctopno, dealer_status = @dealer_status, end_date = @end_date,
+                                dealer_id = @dealer_id, active = @active,
+                                updated_on = CURRENT_TIMESTAMP
+                                WHERE username = @username AND ctopupno = @ctopupno");
+
+                    var parameters = new
+                    {
+                        username = entity.username,
+                        ctopupno = entity.ctopupno,
+                        name = entity.name,
+                        dealertype = entity.dealertype,
+                        ssa_code = entity.ssa_code,
+                        csccode = entity.csccode,
+                        circle_code = entity.circle_code,
+                        attached_to = entity.attached_to,
+                        contact_number = entity.contact_number,
+                        pos_hno = entity.pos_hno,
+                        pos_street = entity.pos_street,
+                        pos_landmark = entity.pos_landmark,
+                        pos_locality = entity.pos_locality,
+                        pos_city = entity.pos_city,
+                        pos_district = entity.pos_district,
+                        pos_state = entity.pos_state,
+                        pos_pincode = entity.pos_pincode,
+                        pos_name_ss = entity.pos_name_ss,
+                        pos_owner_name = entity.pos_owner_name,
+                        pos_code = entity.pos_code,
+                        pos_ctop = entity.pos_ctop,
+                        circle_name = entity.circle_name,
+                        pos_unique_code = entity.pos_unique_code,
+                        latitude = entity.latitude,
+                        longitude = entity.longitude,
+                        aadhaar_no = entity.aadhaar_no,
+                        zone_code = entity.zone_code,
+                        ctop_type = entity.ctop_type,
+                        dealercode = entity.dealercode,
+                        ref_dealer_id = entity.ref_dealer_id,
+                        master_dealer_id = entity.master_dealer_id,
+                        parent_ctopno = entity.parent_ctopno,
+                        dealer_status = entity.dealer_status,
+                        end_date = entity.end_date,
+                        dealer_id = entity.dealer_id,
+                        active = entity.active
+                    };
+
+                    var rowsAffected = await db.ExecuteAsync(sb.ToString(), parameters, transaction);
+                    
+                    // Log updated row to audit
+                    await LogCtopMasterAuditAsync(entity, accountId, "UPDATE", currentRow.pos_unique_code, 
+                        "Record updated from Missing CSC Admin Onboard", transaction);
+
+                    transaction.Commit();
+                    
+                    return new InsertResult { Success = true, RowsAffected = rowsAffected };
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    return new InsertResult
+                    {
+                        Success = false,
+                        RowsAffected = 0,
+                        ErrorMessage = $"Database error: {ex.Message}" + (ex.InnerException != null ? $" Inner: {ex.InnerException.Message}" : "")
+                    };
+                }
             }
             catch (Exception ex)
             {
@@ -261,7 +404,7 @@ namespace cos.Repositories
                                             pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
                                             aadhaar_no, zone_code, ctop_type
                                      FROM ctop_master
-                                     WHERE ctopupno = @ctopupno
+                                     WHERE username = @ctopupno
                                      ORDER BY created_date DESC
                                      LIMIT 1";
                 using var db = ConnectionPgSql;
@@ -403,7 +546,7 @@ namespace cos.Repositories
             }
         }
 
-        // Zone-specific CTOP search methods
+        // Zone-specific CTOP search methods - returns distinct ctopup nos only
         public async Task<IEnumerable<CtopSearchResultVM>> SearchMissingCscCtopByZoneAsync(string ctopupno, string zoneCode)
         {
             try
@@ -421,50 +564,38 @@ namespace cos.Repositories
                 {
                     case "EZ":
                     case "EAST":
-                        sql = @"SELECT ctopupno, name, contact_number
+                        sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_ez cme
-                                WHERE cme.dealer_status = 'Active' 
-                                  AND cme.dealertype = 'CSR'
-                                  AND cme.ctopupno = cme.contact_number
+                                WHERE cme.active = 'A'
                                   AND cme.ctopupno LIKE @pattern
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)
-                                ORDER BY cme.ctopupno
+                                ORDER BY ctopupno
                                 LIMIT 20";
                         break;
                     case "SZ":
                     case "SOUTH":
-                        sql = @"SELECT ctopupno, name, contact_number
+                        sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_sz cme
-                                WHERE cme.dealer_status = 'Active' 
-                                  AND cme.dealertype = 'CSR'
-                                  AND cme.ctopupno = cme.contact_number
+                                WHERE cme.active = 'A' 
                                   AND cme.ctopupno LIKE @pattern
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)
-                                ORDER BY cme.ctopupno
+                                ORDER BY ctopupno
                                 LIMIT 20";
                         break;
                     case "NZ":
                     case "NORTH":
-                        sql = @"SELECT ctopupno, name, contact_number
+                        sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_nz cme
-                                WHERE cme.dealer_status = 'Active' 
-                                  AND cme.dealertype = 'DEPT'
-                                  AND cme.ctopupno = cme.contact_number
+                                WHERE cme.active = 'A'
                                   AND cme.ctopupno LIKE @pattern
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)
-                                ORDER BY cme.ctopupno
+                                ORDER BY ctopupno
                                 LIMIT 20";
                         break;
                     case "WZ":
                     case "WEST":
-                        sql = @"SELECT ctopupno, name, contact_number
+                        sql = @"SELECT DISTINCT ctopupno, name, contact_number
                                 FROM ctop_master_wz cme
-                                WHERE cme.dealer_status = 'Active' 
-                                  AND cme.dealertype = 'CSR'
-                                  AND cme.ctopupno = cme.contact_number
+                                WHERE cme.active = 'A' 
                                   AND cme.ctopupno LIKE @pattern
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)
-                                ORDER BY cme.ctopupno
+                                ORDER BY ctopupno
                                 LIMIT 20";
                         break;
                     default:
@@ -498,50 +629,38 @@ namespace cos.Repositories
                     case "EAST":
                         sql = @"SELECT ctopupno, name, second_name, last_name, dealertype, 
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
-                                       dealer_address, dealer_status, parent_ctopno as parent_ctop
+                                       dealer_address, dealer_status, parent_ctopno as parent_ctop, active,
+                                       dealer_id, master_dealer_id, deact_date
                                 FROM ctop_master_ez cme
-                                WHERE cme.ctopupno = @ctopupno
-                                  AND cme.dealer_status = 'Active'
-                                  AND cme.dealertype = 'CSR'
-                                  AND cme.ctopupno = cme.contact_number
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     case "SZ":
                     case "SOUTH":
                         sql = @"SELECT ctopupno, name, second_name, last_name, dealertype, 
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
                                        dealer_address, dealer_status, parent_ctopno as parent_ctop,
-                                       aadhaar_no, zone_code, ssa_city
+                                       aadhaar_no, zone_code, ssa_city, active,
+                                       dealer_id, master_dealer_id, deact_date
                                 FROM ctop_master_sz cme
-                                WHERE cme.ctopupno = @ctopupno
-                                  AND cme.dealer_status = 'Active'
-                                  AND cme.dealertype = 'CSR'
-                                  AND cme.ctopupno = cme.contact_number
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     case "NZ":
                     case "NORTH":
                         sql = @"SELECT ctopupno, name, second_name, last_name, dealertype, 
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
-                                       dealer_address, dealer_status, parent_ctop, ssa_city
+                                       dealer_address, dealer_status, parent_ctop, ssa_city, active,
+                                       dealer_id, master_dealer_id, deact_date
                                 FROM ctop_master_nz cme
-                                WHERE cme.ctopupno = @ctopupno
-                                  AND cme.dealer_status = 'Active'
-                                  AND cme.dealertype = 'DEPT'
-                                  AND cme.ctopupno = cme.contact_number
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     case "WZ":
                     case "WEST":
                         sql = @"SELECT ctopupno, name, second_name, last_name, dealertype, 
                                        ssa_code, circle_code, csccode, attached_to, contact_number,
-                                       dealer_address, dealer_status, parent_ctop, ssa_city
+                                       dealer_address, dealer_status, parent_ctop, ssa_city, active,
+                                       dealer_id, master_dealer_id, deact_date
                                 FROM ctop_master_wz cme
-                                WHERE cme.ctopupno = @ctopupno
-                                  AND cme.dealer_status = 'Active'
-                                  AND cme.dealertype = 'CSR'
-                                  AND cme.ctopupno = cme.contact_number
-                                  AND cme.ctopupno NOT IN (SELECT DISTINCT username FROM ctop_master)";
+                                WHERE cme.ctopupno = @ctopupno";
                         break;
                     default:
                         throw new Exception($"Invalid zone code: {zoneCode}");
@@ -560,6 +679,163 @@ namespace cos.Repositories
             catch (Exception ex)
             {
                 throw new Exception($"Error retrieving missing CSC CTOP details: {ex.Message}", ex);
+            }
+        }
+
+        // Check if user exists in ctop_master
+        public async Task<CtopMaster?> GetCtopMasterByCtopupnoAsync(string ctopupno)
+        {
+            try
+            {
+                const string sql = @"SELECT username, ctopupno, name, dealertype, ssa_code, csccode, circle_code, attached_to,
+                                            contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
+                                            pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
+                                            pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
+                                            aadhaar_no, zone_code, ctop_type, dealer_status, end_date
+                                     FROM ctop_master
+                                     WHERE username = @ctopupno
+                                     ORDER BY created_date DESC
+                                     LIMIT 1";
+                using var db = ConnectionPgSql;
+                return await db.QueryFirstOrDefaultAsync<CtopMaster>(sql, new { ctopupno });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving CTOP from ctop_master: {ex.Message}", ex);
+            }
+        }
+
+        // Check count of records in zonal table by ctopupno
+        public async Task<int> GetZonalDataCountByCtopupnoAsync(string ctopupno, string zoneCode)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(zoneCode))
+                {
+                    throw new Exception("Zone code is required");
+                }
+
+                var zone = zoneCode.ToUpper();
+                string sql;
+
+                switch (zone)
+                {
+                    case "EZ":
+                    case "EAST":
+                        sql = @"SELECT COUNT(1)
+                                FROM ctop_master_ez cme
+                                WHERE cme.ctopupno = @ctopupno";
+                        break;
+                    case "SZ":
+                    case "SOUTH":
+                        sql = @"SELECT COUNT(1)
+                                FROM ctop_master_sz cme
+                                WHERE cme.ctopupno = @ctopupno";
+                        break;
+                    case "NZ":
+                    case "NORTH":
+                        sql = @"SELECT COUNT(1)
+                                FROM ctop_master_nz cme
+                                WHERE cme.ctopupno = @ctopupno";
+                        break;
+                    case "WZ":
+                    case "WEST":
+                        sql = @"SELECT COUNT(1)
+                                FROM ctop_master_wz cme
+                                WHERE cme.ctopupno = @ctopupno";
+                        break;
+                    default:
+                        throw new Exception($"Invalid zone code: {zoneCode}");
+                }
+
+                using var db = ConnectionPgSql;
+                return await db.QueryFirstOrDefaultAsync<int>(sql, new { ctopupno });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error checking count in zonal table: {ex.Message}", ex);
+            }
+        }
+
+        // Get data from temp_csc_sa_data
+        public async Task<TempDataResult<TempCscSaDataVM>> GetTempCscSaDataByPosCtopAsync(string posCtop)
+        {
+            try
+            {
+                const string sql = @"SELECT csccode, pos_ctop, dealer_type, ssa_code, circle_code,
+                                            pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
+                                            pos_district, pos_state, pos_pincode, created_date, pos_name,
+                                            pos_name_ss, pos_owner_name, circle_name, pos_unique_code,
+                                            latitude, longitude, aadhar_no as aadhaar_no, zone_id, attached_to,
+                                            aggrement_through, ins_flag, insert_date
+                                     FROM temp_csc_sa_data
+                                     WHERE pos_ctop = @posCtop
+                                     LIMIT 1";
+                using var db = ConnectionPgSql;
+                var data = await db.QueryFirstOrDefaultAsync<TempCscSaDataVM>(sql, new { posCtop });
+                return new TempDataResult<TempCscSaDataVM>
+                {
+                    Success = true,
+                    Data = data
+                };
+            }
+            catch (Exception ex)
+            {
+                return new TempDataResult<TempCscSaDataVM>
+                {
+                    Success = false,
+                    Error = $"Error retrieving temp_csc_sa_data: {ex.Message}"
+                };
+            }
+        }
+
+        // Get data from temp_sa_pos_data
+        public async Task<TempDataResult<TempSaPosDataVM>> GetTempSaPosDataByPosCtopAsync(string posCtop)
+        {
+            try
+            {
+                const string sql = @"SELECT csccode, pos_ctop, dealer_type, ssa_code, circle_code,
+                                            pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
+                                            pos_district, pos_state, pos_pincode, created_date, pos_name,
+                                            pos_name_ss, pos_owner_name, circle_name, pos_unique_code,
+                                            latitude, longitude, aadhar_no as aadhaar_no, zone_id, attached_to,
+                                            aggrement_through, ins_flag, insert_date
+                                     FROM temp_sa_pos_data
+                                     WHERE pos_ctop = @posCtop
+                                     LIMIT 1";
+                using var db = ConnectionPgSql;
+                var data = await db.QueryFirstOrDefaultAsync<TempSaPosDataVM>(sql, new { posCtop });
+                return new TempDataResult<TempSaPosDataVM>
+                {
+                    Success = true,
+                    Data = data
+                };
+            }
+            catch (Exception ex)
+            {
+                return new TempDataResult<TempSaPosDataVM>
+                {
+                    Success = false,
+                    Error = $"Error retrieving temp_sa_pos_data: {ex.Message}"
+                };
+            }
+        }
+
+        // Check if username+ctopnumber combination already exists in ctop_master
+        public async Task<bool> CheckUsernameCtopupnoExistsAsync(string username, string ctopupno)
+        {
+            try
+            {
+                const string sql = @"SELECT COUNT(1)
+                                     FROM ctop_master
+                                     WHERE username = @username AND ctopupno = @ctopupno";
+                using var db = ConnectionPgSql;
+                var count = await db.QueryFirstOrDefaultAsync<int>(sql, new { username, ctopupno });
+                return count > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error checking username+ctopupno combination: {ex.Message}", ex);
             }
         }
 
@@ -667,13 +943,13 @@ namespace cos.Repositories
                 using var transaction = db.BeginTransaction();
                 try
                 {
-                    // First, get the current row to backup
+                    // First, get the current row to log to audit
                     const string selectSql = @"SELECT username, ctopupno, name, dealertype, ssa_code, csccode, circle_code, attached_to,
                                                       contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
                                                       pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
                                                       pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
                                                       aadhaar_no, zone_code, ctop_type, dealercode, ref_dealer_id, master_dealer_id,
-                                                      parent_ctopno, dealer_status
+                                                      parent_ctopno, dealer_status, end_date, dealer_id, active
                                                FROM ctop_master
                                                WHERE ctopupno = @ctopupno
                                                ORDER BY created_date DESC
@@ -687,54 +963,9 @@ namespace cos.Repositories
                         return (false, "CTOP record not found.");
                     }
 
-                    // Backup the current row to backup table
-                    const string backupSql = @"INSERT INTO ctop_master_pos_unique_code_backup 
-                                                (username, ctopupno, name, dealertype, ssa_code, csccode, circle_code, attached_to,
-                                                 contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
-                                                 pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
-                                                 pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
-                                                 aadhaar_no, zone_code, ctop_type, updated_by_account_id, updated_at, new_pos_unique_code)
-                                                VALUES 
-                                                (@username, @ctopupno, @name, @dealertype, @ssa_code, @csccode, @circle_code, @attached_to,
-                                                 @contact_number, @pos_hno, @pos_street, @pos_landmark, @pos_locality, @pos_city,
-                                                 @pos_district, @pos_state, @pos_pincode, @created_date, @pos_name_ss, @pos_owner_name,
-                                                 @pos_code, @pos_ctop, @circle_name, @pos_unique_code, @latitude, @longitude,
-                                                 @aadhaar_no, @zone_code, @ctop_type, @updated_by_account_id, CURRENT_TIMESTAMP, @new_pos_unique_code)";
-                    
-                    await db.ExecuteAsync(backupSql, new
-                    {
-                        username = currentRow.username,
-                        ctopupno = currentRow.ctopupno,
-                        name = currentRow.name,
-                        dealertype = currentRow.dealertype,
-                        ssa_code = currentRow.ssa_code,
-                        csccode = currentRow.csccode,
-                        circle_code = currentRow.circle_code,
-                        attached_to = currentRow.attached_to,
-                        contact_number = currentRow.contact_number,
-                        pos_hno = currentRow.pos_hno,
-                        pos_street = currentRow.pos_street,
-                        pos_landmark = currentRow.pos_landmark,
-                        pos_locality = currentRow.pos_locality,
-                        pos_city = currentRow.pos_city,
-                        pos_district = currentRow.pos_district,
-                        pos_state = currentRow.pos_state,
-                        pos_pincode = currentRow.pos_pincode,
-                        created_date = currentRow.created_date,
-                        pos_name_ss = currentRow.pos_name_ss,
-                        pos_owner_name = currentRow.pos_owner_name,
-                        pos_code = currentRow.pos_code,
-                        pos_ctop = currentRow.pos_ctop,
-                        circle_name = currentRow.circle_name,
-                        pos_unique_code = currentRow.pos_unique_code, // OLD value
-                        latitude = currentRow.latitude,
-                        longitude = currentRow.longitude,
-                        aadhaar_no = currentRow.aadhaar_no,
-                        zone_code = currentRow.zone_code,
-                        ctop_type = currentRow.ctop_type,
-                        updated_by_account_id = updatedByAccountId,
-                        new_pos_unique_code = newPosUniqueCode
-                    }, transaction);
+                    // Log current data to audit table before update
+                    await LogCtopMasterAuditAsync(currentRow, updatedByAccountId, "UPDATE", currentRow.pos_unique_code, 
+                        $"Updating pos_unique_code from '{currentRow.pos_unique_code}' to '{newPosUniqueCode}'", transaction);
 
                     // Update the pos_unique_code in ctop_master
                     const string updateSql = @"UPDATE ctop_master 
@@ -758,14 +989,14 @@ namespace cos.Repositories
                         return (false, "Failed to update pos_unique_code. No rows affected.");
                     }
 
-                    // Log to audit table - get updated row
+                    // Log updated row to audit table - get updated row
                     var updatedRow = await db.QueryFirstOrDefaultAsync<CtopMaster>(
                         @"SELECT username, ctopupno, name, dealertype, ssa_code, csccode, circle_code, attached_to,
                                  contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
                                  pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
                                  pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
                                  aadhaar_no, zone_code, ctop_type, dealercode, ref_dealer_id, master_dealer_id,
-                                 parent_ctopno, dealer_status
+                                 parent_ctopno, dealer_status, end_date, dealer_id, active
                           FROM ctop_master
                           WHERE ctopupno = @ctopupno
                           ORDER BY created_date DESC
@@ -790,6 +1021,59 @@ namespace cos.Repositories
             catch (Exception ex)
             {
                 return (false, $"Error updating pos_unique_code: {ex.Message}");
+            }
+        }
+
+        // Search for unique ctopupnos where ctopupno = username
+        public async Task<IEnumerable<string>> SearchCtopupnosWhereUsernameEqualsCtopupnoAsync(string searchTerm)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    return new List<string>();
+                }
+
+                var pattern = $"%{searchTerm}%";
+                const string sql = @"SELECT DISTINCT ctopupno
+                                     FROM ctop_master
+                                     WHERE ctopupno = username
+                                       AND ctopupno LIKE @pattern
+                                     ORDER BY ctopupno
+                                     LIMIT 20";
+                using var db = ConnectionPgSql;
+                var results = await db.QueryAsync<string>(sql, new { pattern });
+                return results;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error searching CTOPUP numbers: {ex.Message}", ex);
+            }
+        }
+
+        // Get main user and all child users for a ctopupno
+        public async Task<IEnumerable<CtopMaster>> GetMainUserAndChildrenByCtopupnoAsync(string ctopupno)
+        {
+            try
+            {
+                const string sql = @"SELECT username, ctopupno, name, dealertype, ssa_code, csccode, circle_code, attached_to,
+                                            contact_number, pos_hno, pos_street, pos_landmark, pos_locality, pos_city,
+                                            pos_district, pos_state, pos_pincode, created_date, pos_name_ss, pos_owner_name,
+                                            pos_code, pos_ctop, circle_name, pos_unique_code, latitude, longitude,
+                                            aadhaar_no, zone_code, ctop_type, dealercode, ref_dealer_id, master_dealer_id,
+                                            parent_ctopno, dealer_status, end_date, dealer_id, active
+                                     FROM ctop_master
+                                     WHERE (ctopupno = @ctopupno AND username = @ctopupno)
+                                        OR parent_ctopno = @ctopupno
+                                     ORDER BY 
+                                         CASE WHEN ctopupno = @ctopupno AND username = @ctopupno THEN 0 ELSE 1 END,
+                                         created_date DESC";
+                using var db = ConnectionPgSql;
+                return await db.QueryAsync<CtopMaster>(sql, new { ctopupno });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving main user and children: {ex.Message}", ex);
             }
         }
 
@@ -875,6 +1159,233 @@ namespace cos.Repositories
                 // Log error but don't fail the main operation
                 // In production, you might want to log this to a separate error log
                 System.Diagnostics.Debug.WriteLine($"Failed to log audit entry: {ex.Message}");
+            }
+        }
+
+        // Account and User management methods for CSC/DEPT
+        public class AccountInfo
+        {
+            public long id { get; set; }
+            public string? record_status { get; set; }
+        }
+
+        public class UserInfo
+        {
+            public long id { get; set; }
+            public long account_id { get; set; }
+            public string? record_status { get; set; }
+        }
+
+        public async Task<AccountInfo?> GetAccountByUsernameAsync(string username)
+        {
+            try
+            {
+                const string sql = @"SELECT id, record_status FROM accounts WHERE username = @username";
+                using var db = ConnectionPgSql;
+                return await db.QueryFirstOrDefaultAsync<AccountInfo>(sql, new { username });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving account by username: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> UpdateAccountRecordStatusAsync(long accountId, string recordStatus, long updatedBy)
+        {
+            try
+            {
+                const string sql = @"UPDATE accounts 
+                                    SET record_status = @recordStatus, 
+                                        updated_on = CURRENT_TIMESTAMP,
+                                        updated_by = @updatedBy
+                                    WHERE id = @accountId";
+                using var db = ConnectionPgSql;
+                var rowsAffected = await db.ExecuteAsync(sql, new { accountId, recordStatus, updatedBy });
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error updating account record status: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<UserInfo?> GetUserByMobileAsync(string mobile)
+        {
+            try
+            {
+                const string sql = @"SELECT id, account_id, record_status FROM users WHERE mobile = @mobile";
+                using var db = ConnectionPgSql;
+                return await db.QueryFirstOrDefaultAsync<UserInfo>(sql, new { mobile });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving user by mobile: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> UpdateUserRecordStatusAsync(long userId, string recordStatus, long updatedBy)
+        {
+            try
+            {
+                const string sql = @"UPDATE users 
+                                    SET record_status = @recordStatus, 
+                                        updated_on = CURRENT_TIMESTAMP,
+                                        updated_by = @updatedBy
+                                    WHERE id = @userId";
+                using var db = ConnectionPgSql;
+                var rowsAffected = await db.ExecuteAsync(sql, new { userId, recordStatus, updatedBy });
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error updating user record status: {ex.Message}", ex);
+            }
+        }
+
+        public class InsertAccountUserResult
+        {
+            public bool Success { get; set; }
+            public string? ErrorMessage { get; set; }
+            public long? AccountId { get; set; }
+        }
+
+        public async Task<InsertAccountUserResult> InsertAccountAndUserForCscDeptAsync(
+            string username, 
+            string name, 
+            string? mobile, 
+            string? ssaCode, 
+            string? circleCode,
+            long roleId,
+            string encryptedPassword,
+            string defaultPassword,
+            long createdByAccountId,
+            string createdByMobile)
+        {
+            try
+            {
+                using var db = ConnectionPgSql;
+                db.Open();
+                var transaction = db.BeginTransaction();
+
+                try
+                {
+                    // Insert into accounts table
+                    var accountSql = @"INSERT INTO accounts 
+                                      (role_id, username, user_password_safe, user_password, is_verified, record_status, 
+                                       created_on, updated_on, updated_by, reset_by, reset_on)
+                                      VALUES 
+                                      (@role_id, @username, @user_password_safe, @user_password, @is_verified, @record_status,
+                                       @created_on, @updated_on, @updated_by, @reset_by, @reset_on)
+                                      RETURNING id";
+                    
+                    var accountId = await db.QuerySingleAsync<long>(accountSql, new
+                    {
+                        role_id = roleId,
+                        username = username,
+                        user_password_safe = encryptedPassword,
+                        user_password = defaultPassword,
+                        is_verified = "VERIFIED",
+                        record_status = "ACTIVE",
+                        created_on = DateTime.UtcNow,
+                        updated_on = DateTime.UtcNow,
+                        updated_by = createdByAccountId,
+                        reset_by = createdByMobile,
+                        reset_on = DateTime.UtcNow
+                    }, transaction);
+                    
+                    // Insert into users table
+                    var userSql = @"INSERT INTO users 
+                                  (account_id, staff_name, mobile, email, hrno, designation_code, ssa_code, 
+                                   record_status, created_on, updated_on, updated_by, changepassword, circle)
+                                  VALUES 
+                                  (@account_id, @staff_name, @mobile, @email, @hrno, @designation_code, @ssa_code,
+                                   @record_status, @created_on, @updated_on, @updated_by, @changepassword, @circle)";
+                    
+                    await db.ExecuteAsync(userSql, new
+                    {
+                        account_id = accountId,
+                        staff_name = name,
+                        mobile = mobile,
+                        email = (string?)null,
+                        hrno = 0L,
+                        designation_code = (string?)null,
+                        ssa_code = ssaCode,
+                        record_status = "ACTIVE",
+                        created_on = DateTime.UtcNow,
+                        updated_on = DateTime.UtcNow,
+                        updated_by = createdByAccountId,
+                        changepassword = "0",
+                        circle = circleCode
+                    }, transaction);
+                    
+                    transaction.Commit();
+                    return new InsertAccountUserResult { Success = true, AccountId = accountId };
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    return new InsertAccountUserResult 
+                    { 
+                        Success = false, 
+                        ErrorMessage = $"Failed to create account/user records: {ex.Message}" 
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new InsertAccountUserResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = $"Error creating account/user: {ex.Message}" 
+                };
+            }
+        }
+
+        public async Task<InsertAccountUserResult> InsertUserForExistingAccountAsync(
+            long accountId,
+            string name,
+            string? mobile,
+            string? ssaCode,
+            string? circleCode,
+            long createdByAccountId)
+        {
+            try
+            {
+                using var db = ConnectionPgSql;
+                
+                var userSql = @"INSERT INTO users 
+                              (account_id, staff_name, mobile, email, hrno, designation_code, ssa_code, 
+                               record_status, created_on, updated_on, updated_by, changepassword, circle)
+                              VALUES 
+                              (@account_id, @staff_name, @mobile, @email, @hrno, @designation_code, @ssa_code,
+                               @record_status, @created_on, @updated_on, @updated_by, @changepassword, @circle)";
+                
+                await db.ExecuteAsync(userSql, new
+                {
+                    account_id = accountId,
+                    staff_name = name,
+                    mobile = mobile,
+                    email = (string?)null,
+                    hrno = 0L,
+                    designation_code = (string?)null,
+                    ssa_code = ssaCode,
+                    record_status = "ACTIVE",
+                    created_on = DateTime.UtcNow,
+                    updated_on = DateTime.UtcNow,
+                    updated_by = createdByAccountId,
+                    changepassword = "0",
+                    circle = circleCode
+                });
+                
+                return new InsertAccountUserResult { Success = true, AccountId = accountId };
+            }
+            catch (Exception ex)
+            {
+                return new InsertAccountUserResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = $"Error creating user: {ex.Message}" 
+                };
             }
         }
 

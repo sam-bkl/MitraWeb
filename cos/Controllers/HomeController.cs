@@ -258,6 +258,10 @@ namespace cos.Controllers
                 // Limit attempts
                 if (tryCount >= 5)
                 {
+                    if (long.TryParse(preAuthAccountId, out var accIdLimit))
+                    {
+                        await loginRepository.ExpireCurrentOtpAsync(accIdLimit);
+                    }
                     ClearOtpSession();
                     ViewBag.Error = "Too many incorrect OTP attempts. Please login again.";
                     postData.otp_sent = false;
@@ -266,6 +270,10 @@ namespace cos.Controllers
 
                 if (expectedOtp != postData.otp)
                 {
+                    if (long.TryParse(preAuthAccountId, out var accIdFail))
+                    {
+                        await loginRepository.IncrementOtpAttemptAsync(accIdFail);
+                    }
                     HttpContext.Session.SetInt32("OTPTryCount", tryCount + 1);
                     ViewBag.Error = "Invalid OTP.";
                     postData.otp_sent = true;
@@ -277,6 +285,10 @@ namespace cos.Controllers
                 {
                     if ((DateTime.UtcNow - otpTime).TotalMinutes > 5)
                     {
+                        if (long.TryParse(preAuthAccountId, out var accIdExp))
+                        {
+                            await loginRepository.ExpireCurrentOtpAsync(accIdExp);
+                        }
                         ClearOtpSession();
                         ViewBag.Error = "OTP expired. Please login again.";
                         postData.otp_sent = false;
@@ -293,6 +305,7 @@ namespace cos.Controllers
                     if (long.TryParse(preAuthAccountId, out long accountId))
                     {
                         account = await loginRepository.GetAccountByIdAsync(accountId);
+                        await loginRepository.MarkOtpVerifiedAsync(accountId, postData.otp ?? string.Empty);
                     }
 
                     // Validate account retrieval

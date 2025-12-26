@@ -39,6 +39,9 @@ namespace cos.ViewModels
         public long? master_dealer_id { get; set; }
         public string? parent_ctopno { get; set; }
         public string? dealer_status { get; set; }
+        public DateTime? end_date { get; set; }
+        public decimal? dealer_id { get; set; }
+        public string? active { get; set; }
 
         /// <summary>
         /// Builds the POS unique code using the provided Aadhaar number, Aadhaar issue year, and name.

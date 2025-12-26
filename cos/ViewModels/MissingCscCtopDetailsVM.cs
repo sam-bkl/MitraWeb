@@ -25,6 +25,8 @@ namespace cos.ViewModels
         public string? parent_ctopno { get; set; }
         public string? parent_ctop { get; set; }
         public string? dealer_status { get; set; }
+        public string? active { get; set; }
+        public DateTime? deact_date { get; set; }
         
         // Computed/combined fields
         public string? full_name 

@@ -218,8 +218,13 @@ namespace cos.Repositories
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.Append("insert into otp_entrylog(username,clientip,entry_date,expiry_date,mobileno,otp,user_account_id) values( ");
-            sb.Append(" @parm_username,@parm_clientip,now(), now() + (5 ||' minutes')::interval,@parm_mob,@parm_otp,@parm_id)");
+            // First, expire any previous OTPs for this user to avoid multiple active tokens
+            await ExpirePreviousOtpsAsync(lgchk.id);
+
+            sb.Append("insert into otp_entrylog(username,clientip,entry_date,expiry_date,mobileno,otp,user_account_id,");
+            sb.Append("is_verified, verified_at, verification_attempts, is_expired) values( ");
+            sb.Append(" @parm_username,@parm_clientip,now(), now() + (5 ||' minutes')::interval,@parm_mob,@parm_otp,@parm_id,");
+            sb.Append(" false, NULL, 0, false)");
 
 
             using (IDbConnection dbConnection = ConnectionPgSql)
@@ -248,6 +253,89 @@ namespace cos.Repositories
                     return "failure";
                 }
             }
+        }
+
+        /// <summary>
+        /// Force-expire all previous OTPs for this account.
+        /// </summary>
+        public async Task ExpirePreviousOtpsAsync(long accountId)
+        {
+            const string sql = @"UPDATE otp_entrylog
+                                 SET is_expired = true
+                                 WHERE user_account_id = @accountId
+                                   AND is_expired = false";
+
+            using var dbConnection = ConnectionPgSql;
+            await dbConnection.ExecuteAsync(sql, new { accountId });
+        }
+
+        /// <summary>
+        /// Mark the latest matching OTP as verified.
+        /// </summary>
+        public async Task MarkOtpVerifiedAsync(long accountId, string otp)
+        {
+            const string sql = @"
+                WITH latest AS (
+                    SELECT id
+                    FROM otp_entrylog
+                    WHERE user_account_id = @accountId
+                      AND otp = @otp
+                      AND is_expired = false
+                    ORDER BY entry_date DESC
+                    LIMIT 1
+                )
+                UPDATE otp_entrylog
+                SET is_verified = true,
+                    verified_at = NOW(),
+                    is_expired = false
+                WHERE id IN (SELECT id FROM latest)";
+
+            using var dbConnection = ConnectionPgSql;
+            await dbConnection.ExecuteAsync(sql, new { accountId, otp });
+        }
+
+        /// <summary>
+        /// Increment verification attempts for the latest active OTP.
+        /// </summary>
+        public async Task IncrementOtpAttemptAsync(long accountId)
+        {
+            const string sql = @"
+                WITH latest AS (
+                    SELECT id
+                    FROM otp_entrylog
+                    WHERE user_account_id = @accountId
+                      AND is_expired = false
+                    ORDER BY entry_date DESC
+                    LIMIT 1
+                )
+                UPDATE otp_entrylog
+                SET verification_attempts = COALESCE(verification_attempts, 0) + 1
+                WHERE id IN (SELECT id FROM latest)";
+
+            using var dbConnection = ConnectionPgSql;
+            await dbConnection.ExecuteAsync(sql, new { accountId });
+        }
+
+        /// <summary>
+        /// Expire the current active OTP (e.g., on timeout).
+        /// </summary>
+        public async Task ExpireCurrentOtpAsync(long accountId)
+        {
+            const string sql = @"
+                WITH latest AS (
+                    SELECT id
+                    FROM otp_entrylog
+                    WHERE user_account_id = @accountId
+                      AND is_expired = false
+                    ORDER BY entry_date DESC
+                    LIMIT 1
+                )
+                UPDATE otp_entrylog
+                SET is_expired = true
+                WHERE id IN (SELECT id FROM latest)";
+
+            using var dbConnection = ConnectionPgSql;
+            await dbConnection.ExecuteAsync(sql, new { accountId });
         }
 
         /// <summary>
