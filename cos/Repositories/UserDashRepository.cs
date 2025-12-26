@@ -719,7 +719,7 @@ WHERE TRIM(gsmnumber) = TRIM(@Gsmnumber) and caf_serial_no = @Caf_Serial_No
             }
         }
 
-        public async Task<bool> RejectCAFAsync(string gsm, string reason, string loggedin,string userid)
+        public async Task<bool> RejectCAFAsync(string cafslno,string gsm, string reason, string loggedin,string userid)
 {
             //string sql = @"
             //    UPDATE cos_bcd
@@ -742,7 +742,7 @@ WHERE TRIM(gsmnumber) = TRIM(@Gsmnumber) and caf_serial_no = @Caf_Serial_No
             ins_usr = @userid,
             process_by = @loggedin,
             process_at = NOW()
-        WHERE gsmnumber = @Gsmnumber
+        WHERE gsmnumber = @Gsmnumber and caf_serial_no = @cafslno
           AND verified_flag IS NULL
           AND (in_process = false OR in_process IS NULL);
     ";
@@ -750,7 +750,7 @@ WHERE TRIM(gsmnumber) = TRIM(@Gsmnumber) and caf_serial_no = @Caf_Serial_No
 
 
             using var db = ConnectionPgSql;
-    return await db.ExecuteAsync(sql, new { Gsmnumber = gsm, Reason = reason, loggedin , userid }) == 1;
+    return await db.ExecuteAsync(sql, new { cafslno = cafslno, Gsmnumber = gsm, Reason = reason, loggedin , userid }) == 1;
 }
 
 
