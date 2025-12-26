@@ -6,18 +6,20 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using CosApp.PyroUsim;
+using Oracle.ManagedDataAccess.Client;
 using System.Collections.Generic;
-
 
 namespace cos.Repositories
 {
     public class UserDashRepository
     {
         private readonly string connectionStringPgSql;
+        private readonly string _oracleConnectionString;
 
         public UserDashRepository(IConfiguration configuration)
         {
             connectionStringPgSql = configuration.GetValue<string>("ConnectionStrings:PgSql");
+            _oracleConnectionString =configuration.GetConnectionString("OracleDb");
         }
 
         internal IDbConnection ConnectionPgSql
@@ -25,6 +27,13 @@ namespace cos.Repositories
             get
             {
                 return new NpgsqlConnection(connectionStringPgSql);
+            }
+        }
+        internal IDbConnection OracleConnection
+        {
+            get
+            {
+                return new OracleConnection(_oracleConnectionString);
             }
         }
 
@@ -325,54 +334,204 @@ if (role != "cc_admin")
         }
 
         //show status of see later
-        public async Task<List<kycstatusVM>> Getkycstatusrejected(string circle, string role, string ssa)
+
+        public async Task<ResponseCountVm> GetkycstatusrejectedCount(string circle, string role, string ssa)
         {
+            var response = new ResponseCountVm();
 
-            List<kycstatusVM> kycststusdetails = new List<kycstatusVM>();
-
-            StringBuilder query = new StringBuilder();
+            string query_cos;
+            string query_bcd;
 
             if (role == "cc_admin")
             {
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason, ");
-                query.Append("ssa_code,alternate_contact_no,de_username , de_csccode,TO_CHAR(live_photo_time, 'DD-MM-YYYY') AS live_photo_date, parent_ctopup_number ");
-                query.Append("from cos_bcd where  verified_flag = 'R'");
+                query_cos = "SELECT COUNT(*) FROM cos_bcd WHERE verified_flag = 'R'";
+                query_bcd = "SELECT COUNT(*) FROM caf_admin.bcd WHERE BILLING_STATUS = 'REJECTED'";
             }
             else if (role == "circle_admin")
             {
+                query_cos = @"SELECT COUNT(*) FROM cos_bcd WHERE verified_flag = 'R' AND circle_code =  CAST(@circle AS INTEGER)";
 
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason, ");
-                query.Append("ssa_code,alternate_contact_no,de_username , de_csccode,TO_CHAR(live_photo_time, 'DD-MM-YYYY') AS live_photo_date, parent_ctopup_number ");
-                query.Append("from cos_bcd where  verified_flag = 'R' AND circle_code = @circle::int");
+                query_bcd = @"SELECT COUNT(*) FROM caf_admin.bcd WHERE BILLING_STATUS = 'REJECTED' AND circle_code = :circle";
             }
             else
             {
-                query.Append("select circle_code circle ,name,gsmnumber,simnumber,caf_serial_no cafslno,verified_flag status,to_char(verified_date, 'DD-MM-YY HH24:MI:SS') as verified_date,verified_by,rejection_reason reason, ");
-                query.Append("ssa_code,alternate_contact_no,de_username , de_csccode,TO_CHAR(live_photo_time, 'DD-MM-YYYY') AS live_photo_date, parent_ctopup_number ");
-                query.Append("from cos_bcd where  verified_flag = 'R' AND circle_code = @circle::int and ssa_code = @oa");
+                query_cos = @"SELECT COUNT(*) FROM cos_bcd WHERE verified_flag = 'R' AND circle_code =  CAST(@circle AS INTEGER)
+                      AND ssa_code = @oa";
 
-            }       
+                query_bcd = @"SELECT COUNT(*) FROM caf_admin.bcd WHERE BILLING_STATUS = 'REJECTED' AND circle_code = :circle 
+                      AND ssa_code = :oa";
+            }
 
-                using (IDbConnection dbConnection = ConnectionPgSql)
+            try
+            {
+                //  PostgreSQL (COS)
+                using (IDbConnection pgConn = ConnectionPgSql)
                 {
-                    dbConnection.Open();
-
-                    try
-                    {
-                        var result = await dbConnection.QueryAsync<kycstatusVM>(query.ToString(), new { circle = circle, oa = ssa });
-
-                        kycststusdetails = result.AsList();
-                        return kycststusdetails;
-                    }
-                    catch (Exception)
-                    {
-                        return kycststusdetails;
-                    }
-
-
+                    response.Count1 = await pgConn.ExecuteScalarAsync<int>(
+                        query_cos,
+                        new { circle, oa = ssa }
+                    );
                 }
 
+                //  Oracle (BCD)
+                using (IDbConnection oraConn = OracleConnection)
+                {
+                    response.Count2 = await oraConn.ExecuteScalarAsync<int>(
+                        query_bcd,
+                        new { circle, oa = ssa }
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                // optional logging
+                throw;
+            }
+
+            return response;
         }
+
+        public async Task<List<kycstatusVM>> Getkycstatusrejected(string circle,string role,string ssa,string type)
+        {
+            var resultList = new List<kycstatusVM>();
+            string query;
+            try
+            {
+                if (type == "BCD")
+                {
+                    //  ORACLE QUERY
+                    if (role == "cc_admin")
+                    {
+                        query = @"SELECT circle_code circle,
+                             name,
+                             gsmnumber,
+                             simnumber,
+                             caf_serial_no cafslno,
+                             'R' status,
+                             TO_CHAR(INSERTED_TIME,'DD/MM/YYYY') verified_date,
+                             verified_by,
+                             ACTIVATION_REMARKS reason
+                      FROM caf_admin.bcd
+                      WHERE BILLING_STATUS = 'REJECTED'";
+                    }
+                    else if (role == "circle_admin")
+                    {
+                        query = @"SELECT circle_code circle,
+                             name,
+                             gsmnumber,
+                             simnumber,
+                             caf_serial_no cafslno,
+                             'R' status,
+                             TO_CHAR(INSERTED_TIME,'DD/MM/YYYY') verified_date,
+                             verified_by,
+                             ACTIVATION_REMARKS reason
+                      FROM caf_admin.bcd
+                      WHERE BILLING_STATUS = 'REJECTED'
+                      AND circle_code = :circle";
+                    }
+                    else
+                    {
+                        query = @"SELECT circle_code circle,
+                             name,
+                             gsmnumber,
+                             simnumber,
+                             caf_serial_no cafslno,
+                             'R' status,
+                             TO_CHAR(INSERTED_TIME,'DD/MM/YYYY') verified_date,
+                             verified_by,
+                             ACTIVATION_REMARKS reason
+                      FROM caf_admin.bcd
+                      WHERE BILLING_STATUS = 'REJECTED'
+                      AND circle_code = :circle
+                      AND ssa_code = :oa";
+                    }
+
+                    using (IDbConnection oraConn = OracleConnection)
+                    {
+                        var result = await oraConn.QueryAsync<kycstatusVM>(
+                            query,
+                            new { circle, oa = ssa });
+
+                        resultList = result.AsList();
+                    }
+                }
+                else
+                {
+                    // POSTGRESQL QUERY
+                    if (role == "cc_admin")
+                    {
+                        query = @"SELECT circle_code circle,
+                             name,
+                             gsmnumber,
+                             simnumber,
+                             caf_serial_no cafslno,
+                             verified_flag status,
+                             TO_CHAR(
+                               verified_date AT TIME ZONE 'UTC'
+                               AT TIME ZONE 'Asia/Kolkata',
+                               'DD-MM-YYYY HH24:MI:SS') verified_date,
+                             verified_by,
+                             rejection_reason reason
+                      FROM cos_bcd
+                      WHERE verified_flag = 'R'";
+                    }
+                    else if (role == "circle_admin")
+                    {
+                        query = @"SELECT circle_code circle,
+                             name,
+                             gsmnumber,
+                             simnumber,
+                             caf_serial_no cafslno,
+                             verified_flag status,
+                             TO_CHAR(
+                               verified_date AT TIME ZONE 'UTC'
+                               AT TIME ZONE 'Asia/Kolkata',
+                               'DD-MM-YYYY HH24:MI:SS') verified_date,
+                             verified_by,
+                             rejection_reason reason
+                      FROM cos_bcd
+                      WHERE verified_flag = 'R'
+                      AND circle_code = CAST(@circle AS INTEGER)";
+                    }
+                    else
+                    {
+                        query = @"SELECT circle_code circle,
+                             name,
+                             gsmnumber,
+                             simnumber,
+                             caf_serial_no cafslno,
+                             verified_flag status,
+                             TO_CHAR(
+                               verified_date AT TIME ZONE 'UTC'
+                               AT TIME ZONE 'Asia/Kolkata',
+                               'DD-MM-YYYY HH24:MI:SS') verified_date,
+                             verified_by,
+                             rejection_reason reason
+                      FROM cos_bcd
+                      WHERE verified_flag = 'R'
+                      AND circle_code =CAST(@circle AS INTEGER)
+                      AND ssa_code = @oa";
+                    }
+
+                    using (IDbConnection pgConn = ConnectionPgSql)
+                    {
+                        var result = await pgConn.QueryAsync<kycstatusVM>(
+                            query,
+                            new { circle, oa = ssa });
+
+                        resultList = result.AsList();
+                    }
+                }
+
+                return resultList;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw;
+            }
+        }
+
         public async Task<bool> UpdateSACustomerIdAsync(string gsmnumber)
         {
             string query = @"
