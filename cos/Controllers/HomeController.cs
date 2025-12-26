@@ -397,7 +397,7 @@ namespace cos.Controllers
                 Response.Cookies.Append("LoggedIn", _protector.Protect(account.staff_name?.ToString() ?? ""));
                 Response.Cookies.Append("SSA", _protector.Protect(account.ssa_code ?? ""));
                 Response.Cookies.Append("Circle", _protector.Protect(account.circle ?? ""));
-                Response.Cookies.Append("SessionUser", _protector.Protect(account.staff_name?.ToString() ?? ""));
+                Response.Cookies.Append("SessionUser", _protector.Protect(account.user_name?.ToString() ?? ""));  //corrected on 26-12-2025
                 Response.Cookies.Append("Pwdflag", _protector.Protect(account.changepassword?.ToString() ?? ""));
 
                 // Create the identity for the user

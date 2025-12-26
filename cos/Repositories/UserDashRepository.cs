@@ -6,6 +6,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using CosApp.PyroUsim;
+using System.Collections.Generic;
 
 
 namespace cos.Repositories
@@ -578,22 +579,39 @@ WHERE caf_serial_no = @cafslno;";
             //    WHERE gsmnumber = @Gsmnumber and verified_flag is null;
             //";
 
-            string sql = @"
-        UPDATE cos_bcd
-        SET f_h_name = @F_H_Name,
-            other_connection_det = @Distinct_Operators,
-            local_ref_name = @local_ref_name,
-            local_ref_contact = @Local_Ref_Contact,
-            verified_flag = 'Y',
-            verified_date = NOW(),
-            verified_by = @loggedin,
-            ins_usr = @userid,
-            in_process = false
-        WHERE gsmnumber = @Gsmnumber
-          AND verified_flag IS NULL
-          AND in_process = true
-          AND process_by = @loggedin;
-    ";
+            //        string sql = @"
+            //    UPDATE cos_bcd
+            //    SET f_h_name = @F_H_Name,
+            //        other_connection_det = @Distinct_Operators,
+            //        local_ref_name = @local_ref_name,
+            //        local_ref_contact = @Local_Ref_Contact,
+            //        verified_flag = 'Y',
+            //        verified_date = NOW(),
+            //        verified_by = @loggedin,
+            //        ins_usr = @userid,
+            //        in_process = false
+            //    WHERE gsmnumber = @Gsmnumber
+            //      AND verified_flag IS NULL
+            //      AND in_process = true
+            //      AND process_by = @loggedin;
+            //";
+
+
+            //alternate query added on 24/12/25 has to check here
+            string sql = @" UPDATE cos_bcd
+SET f_h_name = @F_H_Name,
+    other_connection_det = @Distinct_Operators,
+    local_ref_name = @local_ref_name,
+    local_ref_contact = @Local_Ref_Contact,
+    verified_flag = 'Y',
+    verified_date = NOW(),
+    verified_by = @loggedin,
+    ins_usr = @userid,
+    in_process = false
+WHERE TRIM(gsmnumber) = TRIM(@Gsmnumber) and caf_serial_no = @Caf_Serial_No
+  AND verified_flag IS NULL
+  AND in_process = true
+  AND TRIM(process_by) = TRIM(@loggedin);";
 
             using (IDbConnection db = ConnectionPgSql)
             {
@@ -609,7 +627,8 @@ WHERE caf_serial_no = @cafslno;";
                         model.Local_Ref_Contact,
                         model.Gsmnumber,
                         loggedin,
-                        userid
+                        userid,
+                        model.Caf_Serial_No
                     });
 
                     status = rows > 0;
@@ -618,7 +637,7 @@ WHERE caf_serial_no = @cafslno;";
                 catch (Exception ex)
                 {
                     // OPTIONAL: Log error (recommended)
-                    Console.WriteLine("ERROR-SaveCAFEditableFieldsAsync: " + ex.Message);
+                    Console.WriteLine("ERROR -SaveCAFEditableFieldsAsync: " + ex.Message);
                     return status; // false
                 }
             }
