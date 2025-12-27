@@ -6,7 +6,7 @@ using cos.Repositories;
 using CosApp.Infra;  //*****************//
 using cos.Services;
 using cos.Interfaces;
-
+using System.Runtime.InteropServices;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddConfiguredForwardedHeaders();  //*****************//
 builder.Services.AddMemoryCache();
@@ -67,8 +67,26 @@ builder.Services.AddSession(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
+
+
+
+string keyPath;
+
+if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+{
+    keyPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "cos-keys"
+    );
+}
+else
+{
+    keyPath = "/home/bsnlcos/keys";
+}
+
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo("/home/bsnlcos/keys"))
+    .PersistKeysToFileSystem(new DirectoryInfo(keyPath))
+ 
     .SetApplicationName("bcos-app");
 
 var app = builder.Build();
