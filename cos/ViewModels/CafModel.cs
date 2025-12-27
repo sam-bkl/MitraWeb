@@ -201,6 +201,8 @@
     {
         public string Gsmnumber { get; set; }
         public string Reason { get; set; }
+
+        public string Caf_Serial_No { get; set; }
     }
 
     public class SeelaterModel
