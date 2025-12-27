@@ -1,0 +1,321 @@
+﻿@{
+    Layout = "~/Views/Shared/UserDash/_Layoutdb.cshtml";
+    ViewData["Title"] = "DayWiseActivation";
+}
+
+
+@section header {
+    <!-- Bootstrap 5 CSS -->
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+
+
+
+
+
+    </style>
+
+}
+<div id="app">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Customer Information Search</h5>
+                    <div class="d-flex justify-content-between flex-wrap">
+                        <div class="input-group mb-3 col-4">
+                            <input v-model="cafsearchQuery" @@keyup.enter="search" type="text" class="form-control"
+                                placeholder="CAF Serial No">
+
+                            <button @@click="search('caf')" class="btn btn-primary">Search Caf</button>
+                        </div>
+
+                        <div class="input-group mb-3 col-4">
+                            <input v-model="gsmsearchQuery" @@keyup.enter="search" type="text" class="form-control"
+                                placeholder="GSM Number" pattern="[0-9]{10,11}" minlength="10" maxlength="11">
+                            <button @@click="search('gsm')" class="btn btn-success">Search GSM</button>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="card-body  ">
+
+                    <div v-if="searched">
+                        <!-- No Information -->
+                        <div class="d-flex justify-content-between flex-wrap">
+                            <div>
+                                <div v-if="!cafDetails && !activationDetails" class="alert alert-danger">
+                                    <strong>No Information Available</strong>
+                                </div>
+
+                                <!-- CAF Details -->
+                                <div v-if="cafDetails" class="card mb-3">
+                                    <div class="card-header bg-primary text-white">
+                                        CAF Details 
+                                        <span class="text-danger me-1 p-1">[{{cafDetails.caf_type.toUpperCase()}}]</span>
+                                         <span class="text-danger fw-bold me-1 p-1">[{{cafDetails.sim_type.toUpperCase()}}]</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table table-sm mb-0">
+                                            <tr v-if="cafDetails.live_photo_time">
+                                                <td class="fw-bold" style="width: 40%">Onboarded On</td>
+                                                <td>{{ formatValue(cafDetails.live_photo_time) }}</td>
+                                            </tr>
+                                            <tr v-if="cafDetails.caf_serial_no">
+                                                <td class="fw-bold">CAF Serial No</td>
+                                                <td>{{ cafDetails.caf_serial_no }}</td>
+                                            </tr>                                            
+                                             <tr v-if="cafDetails.name">
+                                                <td class="fw-bold">Name</td>
+                                                <td>{{ cafDetails.name }}</td>
+                                            </tr>          
+                                            <tr v-if="cafDetails.gsmnumber">
+                                                <td class="fw-bold">GSM Number</td>
+                                                <td>{{ cafDetails.gsmnumber }}</td>
+                                            </tr>
+                                             <tr v-if="cafDetails.simnumber">
+                                                <td class="fw-bold">SIM Number</td>
+                                                <td>{{ cafDetails.simnumber }}</td>
+                                            </tr>
+                                            <tr v-if="cafDetails.imsi">
+                                                <td class="fw-bold">IMSI</td>
+                                                <td>{{ cafDetails.imsi }}</td>
+                                            </tr>
+                                            <tr v-if="cafDetails.frc_plan_name">
+                                                <td class="fw-bold">FRC PLAN NAME</td>
+                                                <td>{{ cafDetails.frc_plan_name }}</td>
+                                            </tr>                                            
+                                            <tr v-if="cafDetails.alternate_contact_no">
+                                                <td class="fw-bold">Alternate Contact No</td>
+                                                <td>{{ cafDetails.alternate_contact_no }}</td>
+                                            </tr>                                            
+                                            <tr v-if="cafDetails.upc_code">
+                                                <td class="fw-bold">UPC CODE</td>
+                                                <td>{{ cafDetails.upc_code }}</td>
+                                            </tr>                                            
+
+                                            <tr v-if="cafDetails.perm_addr_locality">
+                                                <td class="fw-bold">Permanent Address Locality</td>
+                                                <td>{{ cafDetails.perm_addr_locality }}</td>
+                                            </tr>
+
+                                            <tr v-if="cafDetails.de_csccode">
+                                                <td class="fw-bold">POS CODE</td>
+                                                <td>{{ cafDetails.de_csccode }}</td>
+                                            </tr>
+                                            <tr v-if="cafDetails.de_username">
+                                                <td class="fw-bold">POS USER</td>
+                                                <td>{{ cafDetails.de_username }}</td>
+                                            </tr>
+
+
+              
+     
+                                            @* <tr v-if="cafDetails.parent_ctopup_number">
+                                                <td class="fw-bold">Parent CTopup Number</td>
+                                                <td>{{ cafDetails.parent_ctopup_number }}</td>
+                                            </tr> *@
+               
+                                        </table>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div>
+                                <!-- Approval Details -->
+                                <div v-if="cafDetails" class="card mb-3">
+                                    <div class="card-header bg-secondary text-white">Approval Details</div>
+                                    <div class="card-body">
+                                        <table class="table table-sm mb-0">
+                                            <tr v-if="cafDetails.verified_date">
+                                                <td class="fw-bold">Verified Date</td>
+                                                <td>{{ formatValue(cafDetails.verified_date) }}</td>
+                                            </tr>
+                                            <tr v-if="cafDetails.verified_flag">
+                                                <td class="fw-bold">Verified Flag</td>
+                                                <td>{{ cafDetails.verified_flag }}</td>
+                                            </tr>
+                                            <tr v-if="cafDetails.verified_by">
+                                                <td class="fw-bold">Verified By</td>
+                                                <td>{{ cafDetails.verified_by }}</td>
+                                            </tr>
+                                            <tr v-if="cafDetails.circle_code">
+                                                <td class="fw-bold">circle</td>
+                                                <td>{{cafDetails.circle_name}}[{{ cafDetails.circle_code }}]</td>
+                                            </tr>
+                                            <tr v-if="cafDetails.ssa_code">
+                                                <td class="fw-bold">SSA Code</td>
+                                                <td>{{ cafDetails.ssa_code }}</td>
+                                            </tr>                                            
+                                            <tr v-if="cafDetails.rejection_reason">
+                                                <td class="fw-bold ">Remark</td>
+                                                <td class="text-danger">{{ cafDetails.rejection_reason }}</td>
+                                            </tr>                                            
+                                            
+                                            <tr
+                                                v-if="cafDetails.in_process !== null && cafDetails.in_process !== undefined">
+                                                <td class="fw-bold">{{ cafDetails.in_process ? '🔒' : '' }}</td>
+                                                
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div>
+                                <!-- Activation Details or Not Started -->
+                                <div v-if="cafDetails && !activationDetails" class="alert alert-warning">
+                                    <strong>Activation not yet started</strong>
+                                </div>
+
+                                <div v-if="activationDetails" class="card">
+                                    <div class="card-header bg-success text-white">Activation Details</div>
+                                    <div class="card-body">
+                                        <table class="table table-sm mb-0">
+                                            <tr v-if="activationDetails.HLR_FINAL_ACT_DATE">
+                                                <td class="fw-bold">HLR Final Act Date</td>
+                                                <td>{{ formatValue(activationDetails.HLR_FINAL_ACT_DATE) }}</td>
+                                            </tr>
+                                            <tr v-if="activationDetails.ACTIVATION_STATUS">
+                                                <td class="fw-bold">Activation Status</td>
+                                                <td>{{ activationDetails.ACTIVATION_STATUS }}</td>
+                                            </tr>
+                                            <tr v-if="activationDetails.ACTIVATION_REMARKS">
+                                                <td class="fw-bold">Activation Remarks</td>
+                                                <td>{{ activationDetails.ACTIVATION_REMARKS }}</td>
+                                            </tr>
+                                            <tr v-if="activationDetails.MSISDN_TYPE">
+                                                <td class="fw-bold">MSISDN Type</td>
+                                                <td>{{ activationDetails.MSISDN_TYPE }}</td>
+                                            </tr>
+                                            @* <tr v-if="activationDetails.SIM_TYPE">
+                                                <td class="fw-bold">SIM Type</td>
+                                                <td>{{ activationDetails.SIM_TYPE }}</td>
+                                            </tr> *@
+                                            <tr v-if="activationDetails.PRINT_SERVICE_CENTER_ID">
+                                                <td class="fw-bold">Print Service Center ID</td>
+                                                <td>{{ activationDetails.PRINT_SERVICE_CENTER_ID }}</td>
+                                            </tr>
+                                            @* <tr v-if="activationDetails.IMSI">
+                                                <td class="fw-bold">IMSI</td>
+                                                <td>{{ activationDetails.IMSI }}</td>
+                                            </tr>
+                                            <tr v-if="activationDetails.SIMSTATE">
+                                                <td class="fw-bold">SIM State</td>
+                                                <td>{{ activationDetails.SIMSTATE }}</td>
+                                            </tr> *@
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+</div>
+
+
+
+@section Scripts {
+    <script>
+        const { createApp, ref, reactive, onMounted, computed } = Vue;
+
+        createApp({
+            setup() {
+                const cafsearchQuery = ref('');
+                const gsmsearchQuery = ref('');
+                const searched = ref(false);
+                const cafDetails = ref(null);
+                const activationDetails = ref(null);
+
+                const formatLabel = (key) => {
+                    return key.replace(/([A-Z])/g, ' $1')
+                              .replace(/_/g, ' ')
+                              .replace(/^./, s => s.toUpperCase())
+                              .trim();
+                };
+
+                const formatValue = (value) => {
+                    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+                    if (value instanceof Date || /^\d{4}-\d{2}-\d{2}T/.test(value)) {
+                        try {
+                            return new Date(value).toLocaleString();
+                        } catch {
+                            return value;
+                        }
+                    }
+                    return value;
+                };
+
+                const search = async (input) => {
+
+                    let searchQuery = input === "caf" ? cafsearchQuery.value : gsmsearchQuery.value;
+                    if (!searchQuery.trim()) return;
+
+                    searched.value = true;
+
+
+                    try {
+                        const params = new URLSearchParams();
+                        if (input === "caf") {
+                            params.append('cafSerialNo', searchQuery);
+
+                        }
+                        else {
+                            if (!/^\d+$/.test(searchQuery)) {
+                                alert('Please enter only numbers');
+                                return;
+                            }
+                            
+                            if (searchQuery.length < 10 || searchQuery.length > 11) {
+                                alert('GSM number must be 10-11 digits');
+                                return;
+                            }                            
+                            params.append('gsmNumber', searchQuery);
+                        }
+
+                        const url = `/summary/GetCafSummary?${params}`;
+                        const response = await fetch(url);
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+
+                        // Parse the data - adjust this based on your actual API response format
+                        // Assuming the API returns an array of objects or raw data
+
+
+                        cafDetails.value = result.data?.cafDetails || null;
+                        activationDetails.value = result.data?.activationDetails || null;
+
+                    } catch (err) {
+                        // error.value = `Failed to fetch data: ${err.message}`;
+                        console.error('Error fetching data:', err);
+                    } finally {
+                        // loading.value = false;
+                    }
+                };
+
+                return {
+                    cafsearchQuery,
+                    gsmsearchQuery,
+                    searched,
+                    cafDetails,
+                    activationDetails,
+                    search,
+                    formatLabel,formatValue
+                };
+            }
+        }).mount('#app');
+    </script>
+}

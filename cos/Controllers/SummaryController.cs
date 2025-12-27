@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using cos.Repositories;
-
+using cos.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using System.Diagnostics;
 
 namespace cos.Controllers
 {
@@ -9,11 +10,13 @@ namespace cos.Controllers
     public class SummaryController : Controller
     {
         private readonly SummaryRepository _summaryRepository;
+        private readonly IUserCookieContextAccessor _userContext;
   
 
-        public SummaryController(IConfiguration configuration,SummaryRepository summaryRepository)
+        public SummaryController(IConfiguration configuration,IUserCookieContextAccessor userContext,SummaryRepository summaryRepository)
         {
             _summaryRepository = summaryRepository;
+            _userContext = userContext;            
 
         }
 
@@ -47,6 +50,13 @@ namespace cos.Controllers
         {
             return View();
         }
+
+        [Authorize(Roles = "ba_admin,circle_admin")]
+        public ActionResult CafStatus()
+        {
+            return View();
+        }
+
 
         /// <summary>
         /// KYC details grouped by Circle, POS and TYPE
@@ -165,6 +175,81 @@ namespace cos.Controllers
         }  
 
 
-    
+        /// <summary>
+        /// Fetch CAF summary using GSM number or CAF serial number
+        /// </summary>
+        
+        [HttpGet]
+        [Authorize(Roles = "ba_admin,circle_admin")]
+        public async Task<JsonResult> GetCafSummary(
+            string gsmNumber = null,
+            string cafSerialNo = null)
+        {
+            // Input validation
+            if (string.IsNullOrWhiteSpace(gsmNumber) &&
+                string.IsNullOrWhiteSpace(cafSerialNo))
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "Either GSM number or CAF serial number is required."
+                });
+            }
+
+            var user = _userContext.Get();
+            // int? circle = user.Circle == null ? null : int.Parse(user.Circle);
+
+            Console.WriteLine(user.Circle);
+            try
+            {
+                var cafDetails = await _summaryRepository.GetCafSummaryAsync(
+                    cafSerialNo,
+                    gsmNumber
+                    
+                );
+                // Console.WriteLine((string)cafDetails?.caf_serial_no);
+
+                if (cafDetails == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "No record found."
+                    });
+                }
+                object activationDetails = null;
+                // if cos_bcd haiving data and approved
+                // the activation status can be pulled
+                if (cafDetails?.verified_flag == "Y")
+                {
+                    activationDetails = await _summaryRepository.GetCafActivationByCafAsync(
+                    cafSerialNo = cafDetails.caf_serial_no
+                    );
+
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    data = new{
+                        cafDetails,
+                        activationDetails
+                    }
+                });
+            }
+            catch (Exception)
+            {
+                // Generic safety net
+                throw;
+                // return Json(new
+                // {
+                //     success = false,
+                //     message = "An error occurred while fetching CAF details."
+                // });
+            }
+        }
+
     }
+
+
 }

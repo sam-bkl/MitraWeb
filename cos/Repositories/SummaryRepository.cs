@@ -13,15 +13,15 @@ namespace cos.Repositories
         private readonly string _connectionStringOracle;
         private readonly IMemoryCache _cache;
 
-        public SummaryRepository(IConfiguration configuration,IMemoryCache cache)
+        public SummaryRepository(IConfiguration configuration, IMemoryCache cache)
         {
             _connectionStringPgSql = configuration.GetConnectionString("PgSql");
             _connectionStringOracle = configuration.GetConnectionString("OracleDb");
-             _cache = cache;
+            _cache = cache;
         }
 
-        private IDbConnection CreateConnection(){ return new NpgsqlConnection(_connectionStringPgSql);}
-        
+        private IDbConnection CreateConnection() { return new NpgsqlConnection(_connectionStringPgSql); }
+
         private IDbConnection ConnectionOracle => new OracleConnection(_connectionStringOracle);
 
         /// <summary>
@@ -77,8 +77,8 @@ namespace cos.Repositories
 
                     return data ?? new object(); //                    
                 });
-        }        
-        
+        }
+
         /// <summary>
         /// activation details grouped by Circle, POS and TYPE
         /// </summary>        
@@ -121,7 +121,7 @@ namespace cos.Repositories
 
                     return data ?? new object(); //                    
                 });
-        }                
+        }
 
 
         /// <summary>
@@ -326,7 +326,7 @@ namespace cos.Repositories
                 throw;
             }
         }
-          
+
 
         /// <summary>
         /// GetDayWiseActivationAsync
@@ -355,7 +355,7 @@ namespace cos.Repositories
 
             // postgres
             using var conn = CreateConnection();
-            return await conn.QueryAsync(sql,new { startDate, endDate });
+            return await conn.QueryAsync(sql, new { startDate, endDate });
         }
 
 
@@ -412,6 +412,123 @@ namespace cos.Repositories
             return await conn.QueryAsync(sql);
         }
 
+
+
+        /// <summary>
+        /// Returns CAF summary from cos_bcd table
+        /// Search by caf_serial_no OR gsmnumber
+        /// circle_code is optional
+        /// </summary>   
+        public async Task<dynamic> GetCafSummaryAsync(
+            string cafSerialNo = null,
+            string gsmNumber = null,
+            int? circleCode = null)
+            {
+            const string sql = @"
+            SELECT
+                live_photo_time,
+                de_csccode,
+                de_username,
+                gsmnumber,
+                simnumber,
+                caf_serial_no,
+                name,
+                perm_addr_locality,
+                alternate_contact_no,
+                local_ref,
+                local_ref_contact,
+                upc_code,
+                circle_code,
+                (select cc.circle_name from cos_circles cc where cc.circle_code = circle_code limit 1) as circle_name,
+                ssa_code,
+                pos_mobile_no,
+                CASE 
+                    WHEN sim_type = 2 THEN 'USIM'
+                    ELSE 'NORMAL'
+                END AS sim_type,
+                imsi,
+                verified_flag,
+                verified_by,
+                verified_date,
+                rejection_reason,
+                upcvalidupto,
+                caf_type,
+                frc_plan_name,
+                parent_ctopup_number,
+                in_process
+            FROM cos_bcd
+            WHERE
+                (
+                    (:cafSerialNo IS NOT NULL AND caf_serial_no = :cafSerialNo)
+                    OR
+                    (:gsmNumber IS NOT NULL AND gsmnumber = :gsmNumber)
+                )
+                AND
+                (:circleCode IS NULL OR circle_code = :circleCode)
+            
+            ORDER BY live_photo_time DESC                
+            FETCH FIRST 1 ROW ONLY
+            ";
+
+            using var conn = CreateConnection();
+
+            return await conn.QuerySingleOrDefaultAsync(sql, new
+            {
+                cafSerialNo,
+                gsmNumber,
+                circleCode
+            });
+
+
+        }
+
+        /// <summary>
+        /// Get CAF details by CAF number and optional Circle Code
+        /// </summary>
+        public async Task<object> GetCafActivationByCafAsync(
+            string cafSerialNo,
+            int? circleCode = null)
+        {
+            const string sql = @"
+        SELECT
+            CAF_SERIAL_NO,
+            UPC_CODE,
+            CIRCLE_CODE,
+            HLR_FINAL_ACT_DATE,
+            ACTIVATION_STATUS,
+            ACTIVATION_REMARKS,
+            HLR_FINAL_SENT_DATE,
+            MSISDN_TYPE,
+            SIM_TYPE,
+            PRINT_SERVICE_CENTER_ID,
+            IMSI,
+            SIMSTATE,
+            IN_STATUS,
+            BILLING_STATUS
+        FROM CAF_ADMIN.BCD
+        WHERE CAF_SERIAL_NO = :cafSerialNo
+          AND CIRCLE_CODE = NVL(:circleCode, CIRCLE_CODE)
+    ";
+
+            using var conn = ConnectionOracle;
+
+            try
+            {
+                conn.Open();
+
+                return await conn.QuerySingleOrDefaultAsync(
+                    sql,
+                    new
+                    {
+                        cafSerialNo,
+                        circleCode
+                    });
+            }
+            catch
+            {
+                throw;
+            }
+        }
 
     }
 }
